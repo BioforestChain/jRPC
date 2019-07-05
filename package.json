@@ -1,0 +1,23 @@
+{
+  "name": "@bfchain/comlink",
+  "version": "1.0.0",
+  "description": "worker-thread",
+  "main": "./build/src/index.js",
+  "typings": "./build/src/index.d.ts",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc --build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://xmn-tfs-isn01:22/tfs/DefaultCollection/BFChain/_git/BFChain-Comlink"
+  },
+  "keywords": [
+    "worker"
+  ],
+  "author": "Gaubee",
+  "license": "ISC",
+  "files": [
+    "build"
+  ]
+}

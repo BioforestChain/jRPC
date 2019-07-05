@@ -1,0 +1,3 @@
+[submodule "third_pardy/comlink"]
+	path = third_pardy/comlink
+	url = ssh://xmn-tfs-isn01:22/tfs/DefaultCollection/IFMChainEngine/_git/comlink
