@@ -1,1 +1,1 @@
-export * from "../third_pardy/comlink/comlink";
+export * from "./lib/comlink/comlink";
