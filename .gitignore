@@ -1,2 +1,4 @@
 /build
 /src/lib/comlink
+node_modules
+package-lock.json
