@@ -13,5 +13,10 @@ declare namespace BFChainComlink {
   type ApplyMessage = import("./lib/comlink/src/protocol").ApplyMessage;
   type ConstructMessage = import("./lib/comlink/src/protocol").ConstructMessage;
   type EndpointMessage = import("./lib/comlink/src/protocol").EndpointMessage;
+  type ReleaseMessage = import("./lib/comlink/src/protocol").ReleaseMessage;
   type Message = import("./lib/comlink/src/protocol").Message;
+
+  type TransferHandler = import("./lib/comlink/src/comlink").TransferHandler;
+  type Remote<T> = import("./lib/comlink/src/comlink").Remote<T>;
 }
+

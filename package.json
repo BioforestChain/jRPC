@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/comlink",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "worker-thread",
   "main": "./build/src/index.js",
   "module": "./build/esm/index.js",
@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "tsc -w",
     "p1": "bdk-p1 & npm publ",
+    "publ": "bdk-upv -p ./",
     "clear": "bdk-clear -p ./build",
     "build": "npm run clear & npm run build:cjs & npm run build:esm",
     "build:cjs": "tsc",
