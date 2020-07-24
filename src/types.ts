@@ -17,5 +17,6 @@ declare namespace BFChainComlink {
   type Message = import("./lib/comlink/src/protocol").Message;
 
   type TransferHandler = import("./lib/comlink/src/comlink").TransferHandler;
+  type TransferHandlerMap = import("./lib/comlink/src/comlink").TransferHandlerMap;
   type Remote<T> = import("./lib/comlink/src/comlink").Remote<T>;
 }
