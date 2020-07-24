@@ -19,4 +19,3 @@ declare namespace BFChainComlink {
   type TransferHandler = import("./lib/comlink/src/comlink").TransferHandler;
   type Remote<T> = import("./lib/comlink/src/comlink").Remote<T>;
 }
-
