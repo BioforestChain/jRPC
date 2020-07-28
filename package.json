@@ -1,23 +1,49 @@
 {
   "name": "@bfchain/comlink",
-  "version": "1.3.7",
+  "version": "mono",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "description": "worker-thread",
   "main": "./build/src/index.js",
   "module": "./build/esm/index.js",
   "typings": "./build/src/index.d.ts",
   "scripts": {
     "up": "yarn upgrade-interactive --latest",
-    "dev": "tsc -w",
+    "mono": "bdk-mono ./",
+    "dev": "bdk-tsc --build -w",
+    "dev:all": "bdk-tsc --build tsconfig.all.json -w",
     "p1": "bdk-p1 & npm publ",
-    "publ": "bdk-upv -p ./ & npm publ",
+    "publ": "lerna publish",
+    "publ:force": "lerna publish --force-publish",
+    "lsts": "bdk-lsts --path tsconfig.json",
     "clear": "bdk-clear -p ./build",
     "build": "npm run clear & npm run build:cjs & npm run build:esm",
     "build:cjs": "tsc",
     "build:esm": "tsc -p tsconfig-esm.json"
   },
-  "repository": {
-    "type": "git",
-    "url": "ssh://xmn-tfs-isn01:22/tfs/DefaultCollection/BFChain/_git/BFChain-Comlink"
+  "bdkMono": {
+    "generateConfigFiles": [
+      {
+        "packages": "*,-test_",
+        "type": "mergejson",
+        "from": "$ROOT_PROJECT/config/tsconfig_template/tsconfig.cjs.json",
+        "to": "$PACKAGE/tsconfig.json"
+      },
+      {
+        "packages": "*,-test,-demo,-test_*",
+        "type": "mergejson",
+        "from": "$ROOT_PROJECT/config/tsconfig_template/tsconfig.esm-es6.json",
+        "to": "$PACKAGE/tsconfig.esm-es6.json"
+      },
+      {
+        "packages": "*,-test,-demo,-test_*",
+        "type": "mergejson",
+        "from": "$ROOT_PROJECT/config/tsconfig_template/tsconfig.esm.json",
+        "to": "$PACKAGE/tsconfig.esm.json"
+      }
+    ]
   },
   "keywords": [
     "worker"
@@ -28,6 +54,7 @@
     "build"
   ],
   "devDependencies": {
-    "@bfchain/devkit": "^0.7.10"
+    "@bfchain/devkit": "^0.8.19",
+    "lerna": "^3.20.2"
   }
 }
