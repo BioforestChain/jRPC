@@ -16,6 +16,8 @@
     "src/@types.ts",
     "src/const.ts",
     "src/index.ts",
-    "src/transferHandlerMap.ts"
+    "src/transferClassMap.ts",
+    "src/transferHandlerMap.ts",
+    "src/TransferMap.ts"
   ]
 }

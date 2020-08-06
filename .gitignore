@@ -1,5 +1,6 @@
-/build
+build
 /src/lib/comlink
+.vscode
 .node_modules
 node_modules
 package-lock.json

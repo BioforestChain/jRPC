@@ -64,7 +64,7 @@ declare namespace BFChainComlink {
     id?: string;
     type: import("./const").WireValueType.HANDLER;
     name: string;
-    value: {};
+    value: unknown;
   }
 
   type WireValue = RawWireValue | RawListWireValue | HandlerWireValue;
@@ -72,7 +72,7 @@ declare namespace BFChainComlink {
 
   //#region Message
 
-  type MessageID = string;
+  type MessageID = number;
 
   interface GetMessage {
     id?: MessageID;
@@ -121,12 +121,21 @@ declare namespace BFChainComlink {
     | ReleaseMessage;
   //#endregion
 
-  //#region TransferHandler
+  //#region Transfer
   interface TransferHandler<T = unknown, S = unknown> {
     canHandle(value: unknown): value is T;
     serialize(obj: T): [S, Transferable[]];
     deserialize(obj: S): T;
   }
+  interface TransferClass<C extends AnyClass = AnyClass, S = unknown> {
+    ctor: C;
+    serialize(obj: C): [S, Transferable[]];
+    deserialize(obj: S): C;
+  }
+  type AnyClass<P = any> = new (...args: any) => P;
 
+  type SerializedThrownValue =
+    | { isError: true; value: Error }
+    | { isError: false; value: unknown };
   //#endregion
 }
