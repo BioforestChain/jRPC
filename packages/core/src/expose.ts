@@ -8,40 +8,57 @@ import { toWireValue, customTransfer } from "./toWireValue";
 import { closeEndPoint } from "@bfchain/comlink-helper";
 import { transferProtos } from "@bfchain/comlink-map";
 
+const getParent = (rootObj: any, path: string[]) =>
+  path.slice(0, -1).reduce((obj, prop) => obj[prop], rootObj);
+
+const getRawValue = (rootObj: any, path: string[]) =>
+  path.reduce((obj, prop) => obj[prop], rootObj);
+
 export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
   ep.addEventListener("message", async function callback(ev: MessageEvent) {
-    if (!ev || !ev.data) {
+    if (
+      !ev ||
+      !ev.data ||
+      typeof ev.data.id !== "number" ||
+      typeof ev.data.type !== "number"
+    ) {
       return;
     }
-    const { id, type, path } = {
-      path: [] as string[],
-      ...(ev.data as BFChainComlink.Message)
-    };
-    const argumentList = (ev.data.argumentList || []).map(fromWireValue);
+    const message = ev.data as BFChainComlink.Message;
+    // const { id, type, path = [] } = message;
     let returnValue;
     try {
-      const parent = path.slice(0, -1).reduce((obj, prop) => obj[prop], obj);
-      const rawValue = path.reduce((obj, prop) => obj[prop], obj);
-      switch (type) {
+      // const parent = path.slice(0, -1).reduce((obj, prop) => obj[prop], obj);
+      // const rawValue = path.reduce((obj, prop) => obj[prop], obj);
+      switch (message.type) {
         case MessageType.GET:
           {
-            returnValue = await rawValue;
+            returnValue = await getRawValue(obj, message.path);
           }
           break;
         case MessageType.SET:
           {
-            parent[path.slice(-1)[0]] = fromWireValue(ev.data.value);
+            const parent = getParent(obj, message.path);
+            parent[message.path[message.path.length - 1]] = fromWireValue(
+              ev.data.value
+            );
             returnValue = true;
           }
           break;
         case MessageType.APPLY:
           {
-            returnValue = await rawValue.apply(parent, argumentList);
+            const parent = getParent(obj, message.path);
+            const argumentList = message.argumentList.map(fromWireValue);
+            returnValue = await parent[
+              message.path[message.path.length - 1]
+            ].apply(parent, argumentList);
           }
           break;
         case MessageType.CONSTRUCT:
           {
-            const value = new rawValue(...argumentList);
+            const RawCtor = getRawValue(obj, message.path);
+            const argumentList = message.argumentList.map(fromWireValue);
+            const value = await new RawCtor(...argumentList);
             returnValue = proxy(value);
           }
           break;
@@ -57,22 +74,25 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
             returnValue = undefined;
           }
           break;
+        default:
+          return;
       }
     } catch (value) {
       returnValue = transferProtos.setInstance(
-        { value } as BFChainComlink.ThrowMarked,
+        value as BFChainComlink.ThrowMarked,
         THROW_MARKER
       );
     }
 
-    const [wireValue, transferables] = toWireValue(returnValue);
-    ep.postMessage({ ...wireValue, id }, transferables);
-    if (type === MessageType.RELEASE) {
+    const [wireValue, transferables] = toWireValue(message.id, returnValue);
+    ep.postMessage(wireValue, transferables);
+    if (message.type === MessageType.RELEASE) {
       // detach and deactive after sending release response above.
-      ep.removeEventListener("message", callback as any);
+      ep.removeEventListener("message", callback);
       closeEndPoint(ep);
     }
-  } as any);
+  });
+
   if (ep.start) {
     ep.start();
   }
@@ -80,7 +100,7 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
 
 export function proxy<T extends object>(obj: T) {
   return transferProtos.setInstance(
-    { value: obj } as BFChainComlink.ProxyMarked<T>,
+    obj ,
     PROXY_MARKER
   );
 }

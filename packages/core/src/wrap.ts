@@ -1,4 +1,8 @@
-import { requestResponseMessage, closeEndPoint } from "@bfchain/comlink-helper";
+import {
+  requestResponseMessage,
+  closeEndPoint,
+  generateUUID
+} from "@bfchain/comlink-helper";
 import {
   MessageType,
   RELEASE_PROXY_SYMBOL,
@@ -41,78 +45,99 @@ function createProxy<T>(
       throwIfProxyReleased(isProxyReleased);
       if (prop === RELEASE_PROXY_SYMBOL) {
         return () => {
-          return requestResponseMessage(ep, {
-            type: MessageType.RELEASE,
-            path: path.map(p => p.toString())
-          }).then(() => {
-            closeEndPoint(ep);
-            isProxyReleased = true;
-          });
+          return requestResponseMessage(
+            ep,
+            {
+              id: generateUUID(),
+              type: MessageType.RELEASE,
+              path: path.map(p => p.toString())
+            },
+            () => {
+              closeEndPoint(ep);
+              isProxyReleased = true;
+            }
+          );
         };
       }
       if (prop === "then") {
         if (path.length === 0) {
           return { then: () => proxy };
         }
-        const r = requestResponseMessage<BFChainComlink.WireValue>(ep, {
-          type: MessageType.GET,
-          path: path.map(p => p.toString())
-        }).then(fromWireValue);
+        const r = requestResponseMessage(
+          ep,
+          {
+            id: generateUUID(),
+            type: MessageType.GET,
+            path: path.map(p => p.toString())
+          },
+          fromWireValue
+        );
         return r.then.bind(r);
       }
       return createProxy(ep, [...path, prop]);
     },
     set(_target, prop, rawValue) {
       throwIfProxyReleased(isProxyReleased);
-      // FIXME: ES6 Proxy Handler `set` methods are supposed to return a
-      // boolean. To show good will, we return true asynchronously ¯\_(ツ)_/¯
-      const [value, transferables] = toWireValue(rawValue);
-      requestResponseMessage<BFChainComlink.WireValue>(
+      const id = generateUUID();
+
+      const [value, transferables] = toWireValue(id, rawValue);
+      requestResponseMessage(
         ep,
         {
+          id,
           type: MessageType.SET,
           path: [...path, prop].map(p => p.toString()),
           value
         },
+        fromWireValue,
         transferables
-      ).then(fromWireValue);
+      );
       return true;
     },
     apply(_target, _thisArg, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased);
       const last = path[path.length - 1];
       if (last === CREATE_ENDPOINT_SYMBOL) {
-        return requestResponseMessage<BFChainComlink.WireValue>(ep, {
-          type: MessageType.ENDPOINT
-        }).then(fromWireValue);
+        return requestResponseMessage(
+          ep,
+          {
+            id: generateUUID(),
+            type: MessageType.ENDPOINT
+          },
+          fromWireValue
+        );
       }
       // We just pretend that `bind()` didn’t happen.
       if (last === "bind") {
         return createProxy(ep, path.slice(0, -1));
       }
       const [argumentList, transferables] = processArguments(rawArgumentList);
-      return requestResponseMessage<BFChainComlink.WireValue>(
+      return requestResponseMessage(
         ep,
         {
+          id: generateUUID(),
           type: MessageType.APPLY,
           path: path.map(p => p.toString()),
           argumentList
         },
+        fromWireValue,
         transferables
-      ).then(fromWireValue);
+      );
     },
     construct(_target, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased);
       const [argumentList, transferables] = processArguments(rawArgumentList);
-      return requestResponseMessage<BFChainComlink.WireValue>(
+      return requestResponseMessage(
         ep,
         {
+          id: generateUUID(),
           type: MessageType.CONSTRUCT,
           path: path.map(p => p.toString()),
           argumentList
         },
+        fromWireValue,
         transferables
-      ).then(fromWireValue);
+      );
     }
   });
   return proxy as any;

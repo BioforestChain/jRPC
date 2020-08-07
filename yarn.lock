@@ -1713,6 +1713,11 @@ concat-stream@^2.0.0:
     readable-stream "^3.0.2"
     typedarray "^0.0.6"
 
+conditional-type-checks@^1.0.5:
+  version "1.0.5"
+  resolved "http://192.168.250.245:4873/conditional-type-checks/-/conditional-type-checks-1.0.5.tgz#310ecd13c46c3963fbe9a2f8f93511d88cdcc973"
+  integrity sha1-MQ7NE8RsOWP76aL4+TUR2IzcyXM=
+
 config-chain@^1.1.11:
   version "1.1.12"
   resolved "http://192.168.250.245:4873/config-chain/-/config-chain-1.1.12.tgz#0fde8d091200eb5e808caf25fe618c02f48e4efa"

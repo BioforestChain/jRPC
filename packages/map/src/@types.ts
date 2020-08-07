@@ -173,9 +173,7 @@ declare namespace BFChainComlink {
   //#region proto
   namespace TransferProto {
     type Key = TransferKey;
-    interface TransferAbleInstance {
-      [TRANSFER_SYMBOL]: Key;
-    }
+    type TransferAbleInstance<V = unknown> = TransferMarked<Key, V>;
 
     interface SerializeOnly<C = unknown, S = unknown>
       extends Omit<TransferProto<C, S>, "deserialize"> {}

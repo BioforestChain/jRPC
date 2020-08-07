@@ -44,7 +44,11 @@ export class TransferProtoMap extends TransferMap<
     instance: object,
     mode: M = "any" as M
   ) {
-    const name = instance && (instance as any)[TRANSFER_PROTO_SYMBOL];
+    const name =
+      instance &&
+      (instance as BFChainComlink.TransferProto.TransferAbleInstance)[
+        TRANSFER_PROTO_SYMBOL
+      ];
     if (typeof name === "string") {
       const value = this.get(name, mode);
       if (value) {
@@ -52,11 +56,17 @@ export class TransferProtoMap extends TransferMap<
       }
     }
   }
-  setInstance<V extends object>(
-    instance: V,
-    propMarker: BFChainComlink.TransferProtoKeyValue["Key"]
-  ) {
-    (instance as any)[TRANSFER_PROTO_SYMBOL] = propMarker;
-    return instance;
+  setInstance<
+    V extends object,
+    K extends BFChainComlink.TransferProtoKeyValue["Key"]
+  >(instance: V, propMarker: K) {
+    return Object.create(instance, {
+      TRANSFER_PROTO_SYMBOL: {
+        value: propMarker,
+        writable: true,
+        configurable: true,
+        enumerable: false
+      }
+    }) as BFChainComlink.TransferProto.TransferMarked<K, V>;
   }
 }

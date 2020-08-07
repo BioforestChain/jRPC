@@ -82,39 +82,39 @@ declare namespace BFChainComlink {
   type MessageID = number;
 
   interface GetMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.GET;
     path: string[];
   }
 
   interface SetMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.SET;
     path: string[];
     value: WireValue;
   }
 
   interface ApplyMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.APPLY;
     path: string[];
     argumentList: WireValue[];
   }
 
   interface ConstructMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.CONSTRUCT;
     path: string[];
     argumentList: WireValue[];
   }
 
   interface EndpointMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.ENDPOINT;
   }
 
   interface ReleaseMessage {
-    id?: MessageID;
+    id: MessageID;
     type: import("./const").MessageType.RELEASE;
     path: string[];
   }
@@ -137,6 +137,9 @@ declare namespace BFChainComlink {
   namespace TransferProto {
     const TRANSFER_SYMBOL: unique symbol;
     type TransferSymbol = typeof TRANSFER_SYMBOL;
+    type TransferMarked<K, V = unknown> = V & {
+      [TRANSFER_SYMBOL]: K;
+    };
   }
 
   /**
@@ -150,14 +153,11 @@ declare namespace BFChainComlink {
   const THROW_MARKER: "Comlink.throw";
   type ProxyMarker = typeof PROXY_MARKER;
   type ThrowMarker = typeof THROW_MARKER;
-  interface ProxyMarked<V extends object = object> {
-    [TransferProto.TRANSFER_SYMBOL]: ProxyMarker;
-    value: V;
-  }
-  interface ThrowMarked<V = unknown> {
-    [TransferProto.TRANSFER_SYMBOL]: ThrowMarker;
-    value: V;
-  }
+  type ProxyMarked<V extends object = object> = TransferProto.TransferMarked<
+    ProxyMarker,
+    V
+  >;
+  type ThrowMarked<V = unknown> = TransferProto.TransferMarked<ThrowMarker, V>;
 
   const CREATE_ENDPOINT_SYMBOL: unique symbol;
   const RELEASE_PROXY_SYMBOl: unique symbol;
@@ -313,24 +313,24 @@ declare namespace BFChainComlink {
   /**
    * 依赖于原型链的转换
    */
-  interface TransferProto<I = unknown, O = unknown> {
+  interface TransferProto<I = unknown, O = unknown, D = I> {
     // proto: symbol;
     serialize(obj: I): [O, Transferable[]];
-    deserialize(obj: O): I;
+    deserialize(obj: O): D;
   }
   /**
    * 依赖于构造函数的转换
    */
-  interface TransferClass<C extends AnyClass = AnyClass, O = unknown>
-    extends TransferProto<C, O> {
+  interface TransferClass<C extends AnyClass = AnyClass, O = unknown, D = C>
+    extends TransferProto<C, O, D> {
     ctor: C;
   }
   type AnyClass<P = any> = new (...args: any) => P;
   /**
    * 自定义判定转换
    */
-  interface TransferHandler<I = unknown, O = unknown>
-    extends TransferProto<I, O> {
+  interface TransferHandler<I = unknown, O = unknown, D = I>
+    extends TransferProto<I, O, D> {
     canHandle(value: unknown): value is I;
   }
 

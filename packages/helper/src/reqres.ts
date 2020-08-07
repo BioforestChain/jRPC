@@ -26,15 +26,18 @@ const forceGetEndpointRCM = (
   return reqCbMap;
 };
 
-export function requestResponseMessage<R>(
+export function requestResponseMessage<R, O>(
   ep: BFChainComlink.Endpoint,
   msg: BFChainComlink.Message,
+  callback: (res: R) => O,
   transfers?: Transferable[]
 ) {
   const reqCbMap = forceGetEndpointRCM(ep);
-  return new Promise<R>(resolve => {
-    const id = generateUUID();
-    reqCbMap.set(id, resolve);
-    ep.postMessage({ id, ...msg }, transfers);
+  return new Promise<O>(resolve => {
+    const id = msg.id;
+    reqCbMap.set(id, (res: R) => {
+      resolve(callback(res));
+    });
+    ep.postMessage(msg, transfers);
   });
 }

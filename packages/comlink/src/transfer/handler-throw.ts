@@ -4,9 +4,8 @@ export const throwTransferProto: BFChainComlink.TransferProto<
   BFChainComlink.ThrowMarked,
   BFChainComlink.SerializedThrownValue
 > = {
-  serialize(throwMarked) {
+  serialize(error) {
     let serialized: BFChainComlink.SerializedThrownValue;
-    const error = throwMarked.value;
     if (error instanceof Error) {
       serialized = {
         isError: true,

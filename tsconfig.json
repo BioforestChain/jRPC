@@ -3,6 +3,7 @@
   "include": [],
   "references": [
     { "path": "packages/comlink/tsconfig.json" },
+    // { "path": "packages/test/tsconfig.json" },
     // { "path": "packages/nodejs/tsconfig.json" }
   ]
 }

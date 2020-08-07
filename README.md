@@ -1,5 +1,8 @@
 # Comlink
 
+> 本项目是基于 GoogleChromeLabs/Comlink 的项目进行改动的
+> 基本兼容的同时, 做了更严格的项目风格管理, 并提供了更高性能的 API, 以及更低 JS 代码版本(ES5)的支持
+
 Comlink’s goal is to make [WebWorkers][webworker] enjoyable. Comlink removes the mental barrier of thinking about `postMessage` and hides the fact that you are working with workers.
 
 > Note: Comlink’s goal is to be a building-block for higher-level abstraction libraries. For example, take a look at [Clooney].
