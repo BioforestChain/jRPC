@@ -1,5 +1,5 @@
 import { TransferMap } from "./TransferMap";
-import { TRANSFER_SYMBOL } from "./const";
+import { TRANSFER_CLASS_SYMBOL } from "@bfchain/comlink-typings";
 
 export class TransferClassMap extends TransferMap<
   BFChainComlink.TransferClassKeyValue
@@ -16,15 +16,15 @@ export class TransferClassMap extends TransferMap<
     if ("ctor" in transferClass) {
       const ctor = transferClass.ctor;
       /// 如果原来是有注册的名称,那么移除掉原本注册的
-      if (ctor.prototype.hasOwnProperty(TRANSFER_SYMBOL)) {
+      if (ctor.prototype.hasOwnProperty(TRANSFER_CLASS_SYMBOL)) {
         this.delete(
           (ctor as BFChainComlink.TransferClass.CtorWithSymbol).prototype[
-            TRANSFER_SYMBOL
+            TRANSFER_CLASS_SYMBOL
           ]
         );
       }
       /// 保存name到原型链上
-      Object.defineProperty(ctor.prototype, TRANSFER_SYMBOL, {
+      Object.defineProperty(ctor.prototype, TRANSFER_CLASS_SYMBOL, {
         value: name,
         enumerable: false,
         writable: false,
@@ -62,17 +62,12 @@ export class TransferClassMap extends TransferMap<
     instance: unknown,
     mode: M = "any" as M
   ) {
-    if (
-      typeof instance === "object" &&
-      instance &&
-      TRANSFER_SYMBOL in instance
-    ) {
-      return this.get(
-        (instance as BFChainComlink.TransferClass.TransferAbleInstance)[
-          TRANSFER_SYMBOL
-        ],
-        mode
-      );
+    const name = instance && (instance as any)[TRANSFER_CLASS_SYMBOL];
+    if (typeof name === "string") {
+      const value = this.get(name, mode);
+      if (value) {
+        return [name, value] as const;
+      }
     }
   }
   delete(name: BFChainComlink.TransferClassKeyValue["Key"]) {
@@ -80,7 +75,7 @@ export class TransferClassMap extends TransferMap<
     if (type) {
       const transfer = this._map[type].get(name);
       if (transfer && "ctor" in transfer) {
-        delete transfer.ctor.prototype[TRANSFER_SYMBOL];
+        delete transfer.ctor.prototype[TRANSFER_CLASS_SYMBOL];
       }
     }
     return super.delete(name);

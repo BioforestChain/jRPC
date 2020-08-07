@@ -9,16 +9,14 @@
   },
   "references": [
     {
-      "path": "../core/tsconfig.json"
-    },
-    {
       "path": "../typings/tsconfig.json"
     }
   ],
   "files": [
+    "src/closeEp.ts",
     "src/index.ts",
-    "src/transfer/handler-proxy.ts",
-    "src/transfer/handler-throw.ts",
-    "src/windowEndpoint.ts"
+    "src/isObject.ts",
+    "src/reqres.ts",
+    "src/uuid.ts"
   ]
 }

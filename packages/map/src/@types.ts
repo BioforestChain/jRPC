@@ -1,4 +1,5 @@
 declare namespace BFChainComlink {
+  //#region map-key=value
   interface TransferKeyValue<
     K = unknown,
     IVB = unknown,
@@ -31,7 +32,9 @@ declare namespace BFChainComlink {
     };
     type Any<VB, VS, VD> = Both<VB> | SerializeOnly<VS> | DeserializeOnly<VD>;
   }
+  //#endregion
 
+  //#region 通用Map
   interface TransferMap<VK extends TransferKeyValue = TransferKeyValue> {
     set(name: VK["Key"], transfer: VK["Any"]): void;
     get<M extends TransferMap.TypeModel>(
@@ -90,9 +93,12 @@ declare namespace BFChainComlink {
       VK extends TransferKeyValue
     > = MapValueType<TypeTransferMap<VK>[ModelTypes<M>]>;
   }
+  //#endregion
+
+  //#region hanlder
 
   namespace TransferHandler {
-    type Key = string;
+    type Key = TransferKey;
     interface SerializeOnly<C = unknown, S = unknown>
       extends Omit<TransferHandler<C, S>, "deserialize"> {}
     interface DeserializeOnly<C = unknown, S = unknown>
@@ -108,11 +114,12 @@ declare namespace BFChainComlink {
     TransferHandler.SerializeOnly,
     TransferHandler.DeserializeOnly
   >;
+  //#endregion
+
+  //#region class
 
   namespace TransferClass {
-    type Key = string;
-    const TRANSFER_SYMBOL: unique symbol;
-    type TransferSymbol = typeof TRANSFER_SYMBOL;
+    type Key = TransferKey;
 
     type CtorWithSymbol<C extends AnyClass = AnyClass> = C & {
       prototype: InstanceType<C> & TransferAbleInstance;
@@ -161,89 +168,29 @@ declare namespace BFChainComlink {
     TransferClass.SerializeOnly,
     TransferClass.DeserializeOnly
   >;
+  //#endregion
 
-  //   namespace HanlderMap {
-  //     //#region Key Value
-  //     type Name = string; //| number;
-  //     interface Both extends TransferHandler {
-  //       type: "both";
-  //     }
-  //     interface SerializeOnly extends TransferHandler.SerializeOnly {
-  //       type: "serialize";
-  //     }
-  //     interface DeserializeOnly extends TransferHandler.DeserializeOnly {
-  //       type: "deserialize";
-  //     }
-  //     type Any = Both | SerializeOnly | DeserializeOnly;
-  //     //#endregion
+  //#region proto
+  namespace TransferProto {
+    type Key = TransferKey;
+    interface TransferAbleInstance {
+      [TRANSFER_SYMBOL]: Key;
+    }
 
-  //     type TypeTransferHandlersMap = {
-  //       both: Map<Name, Both>;
-  //       serialize: Map<Name, SerializeOnly>;
-  //       deserialize: Map<Name, DeserializeOnly>;
-  //     };
-  //     type NameTypeMap = Map<Name, Type>;
-
-  //     type Type = keyof TypeTransferHandlersMap;
-  //     type TypeModel = keyof typeof import("./const").MODE_TRANSFER_TYPES_MAP;
-
-  //     type TYPES_KEYS<T extends ReadonlyArray<Type>> =
-  //       | T[0]
-  //       | (T[1] extends undefined ? never : T[1])
-  //       | (T[2] extends undefined ? never : T[2]);
-
-  //     type ModelTypes<T extends TypeModel> = T extends TypeModel
-  //       ? TYPES_KEYS<typeof import("./const").MODE_TRANSFER_TYPES_MAP[T]>
-  //       : never;
-
-  //     type MapValueType<M extends Map<any, any>> = M extends Map<any, infer U>
-  //       ? U
-  //       : never;
-  //     type Handler<M extends TypeModel> = MapValueType<
-  //       TypeTransferHandlersMap[ModelTypes<M>]
-  //     >;
-  //   }
-
-  //   namespace ClassMap {
-  //     //#region Key Value
-  //     type Name = string; //| number;
-
-  //     interface Both extends TransferClass {
-  //       type: "both";
-  //     }
-  //     interface SerializeOnly extends TransferClass.SerializeOnly {
-  //       type: "serialize";
-  //     }
-  //     interface DeserializeOnly extends TransferClass.DeserializeOnly {
-  //       type: "deserialize";
-  //     }
-  //     type Any = Both | SerializeOnly | DeserializeOnly;
-  //     //#endregion
-
-  //     type TypeTransferClassesMap = {
-  //       both: Map<Name, Both>;
-  //       serialize: Map<Name, SerializeOnly>;
-  //       deserialize: Map<Name, DeserializeOnly>;
-  //     };
-  //     type NameTypeMap = Map<Name, Type>;
-
-  //     type Type = keyof TypeTransferClassesMap;
-  //     type TypeModel = keyof typeof import("./const").MODE_TRANSFER_TYPES_MAP;
-
-  //     type TYPES_KEYS<T extends ReadonlyArray<Type>> =
-  //       | T[0]
-  //       | (T[1] extends undefined ? never : T[1])
-  //       | (T[2] extends undefined ? never : T[2]);
-
-  //     type ModelTypes<T extends TypeModel> = T extends TypeModel
-  //       ? TYPES_KEYS<typeof import("./const").MODE_TRANSFER_TYPES_MAP[T]>
-  //       : never;
-
-  //     type MapValueType<M extends Map<any, any>> = M extends Map<any, infer U>
-  //       ? U
-  //       : never;
-  //     type Handler<M extends TypeModel> = MapValueType<
-  //       TypeTransferClassesMap[ModelTypes<M>]
-  //     >;
-  //   }
+    interface SerializeOnly<C = unknown, S = unknown>
+      extends Omit<TransferProto<C, S>, "deserialize"> {}
+    interface DeserializeOnly<C = unknown, S = unknown>
+      extends Pick<TransferProto<C, S>, "deserialize"> {}
+    type Any<C = unknown, S = unknown> =
+      | TransferProto<C, S>
+      | SerializeOnly<C, S>
+      | DeserializeOnly<C, S>;
+  }
+  type TransferProtoKeyValue = TransferKeyValue<
+    TransferProto.Key,
+    TransferProto,
+    TransferProto.SerializeOnly,
+    TransferProto.DeserializeOnly
+  >;
+  //#endregion
 }

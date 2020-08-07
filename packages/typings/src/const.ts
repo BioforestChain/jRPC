@@ -1,9 +1,13 @@
 export const enum WireValueType {
   RAW,
+  RAW_ARRAY,
+
   PROXY,
   THROW,
+
   HANDLER,
-  RAW_ARRAY
+  CLASS,
+  PROTO
 }
 export const enum MessageType {
   GET,
@@ -14,29 +18,22 @@ export const enum MessageType {
   RELEASE
 }
 
-export class ProxyMarked<V> {
-  constructor(public readonly value: V) {}
-}
+export const PROXY_MARKER: BFChainComlink.ProxyMarker = "Comlink.proxy" as BFChainComlink.ProxyMarker;
 
-export class ThrowMarker<V> {
-  constructor(public readonly value: V) {}
-}
+export const THROW_MARKER: BFChainComlink.ThrowMarker = "Comlink.throw" as BFChainComlink.ThrowMarker;
 
-// export const proxyMarker = Symbol("Comlink.proxy");
-export const createEndpoint = Symbol("Comlink.endpoint");
-export const releaseProxy = Symbol("Comlink.releaseProxy");
-// export const throwMarker = Symbol("Comlink.throw");
+export const CREATE_ENDPOINT_SYMBOL: BFChainComlink.CreateEndpointSymbol = Symbol.for(
+  "Comlink.endpoint"
+) as BFChainComlink.CreateEndpointSymbol;
 
-// declare namespace BFChainComlink {
-// //   interface ProxyMarked {
-// //     [proxyMarker]: true;
-// //   }
+export const RELEASE_PROXY_SYMBOL: BFChainComlink.ReleaseProxySymbol = Symbol.for(
+  "Comlink.releaseProxy"
+) as BFChainComlink.ReleaseProxySymbol;
 
-// //   interface ThrownValue {
-// //     [throwMarker]: unknown;
-// //     value: unknown;
-// //   }
-//   type SerializedThrownValue =
-//     | { isError: true; value: Error }
-//     | { isError: false; value: unknown };
-// }
+export const TRANSFER_CLASS_SYMBOL: BFChainComlink.TransferClass.TransferSymbol = Symbol.for(
+  "Comlink.Transfer.Class"
+) as BFChainComlink.TransferClass.TransferSymbol;
+
+export const TRANSFER_PROTO_SYMBOL: BFChainComlink.TransferProto.TransferSymbol = Symbol.for(
+  "Comlink.Transfer.Proto"
+) as BFChainComlink.TransferProto.TransferSymbol;

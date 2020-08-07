@@ -9,7 +9,10 @@
   },
   "references": [
     {
-      "path": "../core/tsconfig.esm.json"
+      "path": "../helper/tsconfig.esm.json"
+    },
+    {
+      "path": "../map/tsconfig.esm.json"
     },
     {
       "path": "../typings/tsconfig.esm.json"

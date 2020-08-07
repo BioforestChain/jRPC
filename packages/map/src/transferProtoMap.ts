@@ -1,0 +1,62 @@
+import { TransferMap } from "./TransferMap";
+import { TRANSFER_PROTO_SYMBOL } from "@bfchain/comlink-typings";
+
+export class TransferProtoMap extends TransferMap<
+  BFChainComlink.TransferProtoKeyValue
+> {
+  set(
+    name: BFChainComlink.TransferProtoKeyValue["Key"],
+    transferProto: BFChainComlink.TransferProto.Any
+  ) {
+    /// try remove old one first. ensure transferClass exists in one map only
+    if (this.delete(name)) {
+      console.warn("Registery TransferProto %s again", name);
+    }
+
+    let type: BFChainComlink.TransferMap.Type;
+    if ("serialize" in transferProto) {
+      if ("deserialize" in transferProto) {
+        type = "both";
+        this._map[type].set(name, {
+          type,
+          serialize: transferProto.serialize,
+          deserialize: transferProto.deserialize
+        });
+      } else {
+        type = "serialize";
+        this._map[type].set(name, {
+          type,
+          serialize: transferProto.serialize
+        });
+      }
+    } else {
+      type = "deserialize";
+      this._map[type].set(name, {
+        type,
+        deserialize: transferProto.deserialize
+      });
+    }
+    /// falg the TransferName's TransferType
+    this._nameTypeMap.set(name, type);
+  }
+
+  getByInstance<M extends BFChainComlink.TransferMap.TypeModel>(
+    instance: object,
+    mode: M = "any" as M
+  ) {
+    const name = instance && (instance as any)[TRANSFER_PROTO_SYMBOL];
+    if (typeof name === "string") {
+      const value = this.get(name, mode);
+      if (value) {
+        return [name, value] as const;
+      }
+    }
+  }
+  setInstance<V extends object>(
+    instance: V,
+    propMarker: BFChainComlink.TransferProtoKeyValue["Key"]
+  ) {
+    (instance as any)[TRANSFER_PROTO_SYMBOL] = propMarker;
+    return instance;
+  }
+}

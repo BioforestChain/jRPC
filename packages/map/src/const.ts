@@ -22,7 +22,3 @@ export const MODE_TRANSFER_TYPES_MAP = {
   [MODE_TRANSFER_TYPES_KEY.serializeonly]: SERIALIZEONLY_TRANSFER_TYPES,
   [MODE_TRANSFER_TYPES_KEY.bothonly]: BOTHONLY_TRANSFER_TYPES
 } as const;
-
-export const TRANSFER_SYMBOL: BFChainComlink.TransferClass.TransferSymbol = Symbol(
-  "transfer.class"
-) as BFChainComlink.TransferClass.TransferSymbol;

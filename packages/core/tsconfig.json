@@ -9,16 +9,20 @@
   },
   "references": [
     {
-      "path": "../core/tsconfig.json"
+      "path": "../helper/tsconfig.json"
+    },
+    {
+      "path": "../map/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
     }
   ],
   "files": [
+    "src/expose.ts",
+    "src/fromWireValue.ts",
     "src/index.ts",
-    "src/transfer/handler-proxy.ts",
-    "src/transfer/handler-throw.ts",
-    "src/windowEndpoint.ts"
+    "src/toWireValue.ts",
+    "src/wrap.ts"
   ]
 }
