@@ -62,8 +62,8 @@ const _customTransferCache = new WeakMap<
   object,
   { serialized: object; transfers: Transferable[] }
 >();
-export function customTransfer(
-  obj: object,
+export function customTransfer<T extends object>(
+  obj: T,
   transfers: Transferable[],
   serialized = obj
 ) {

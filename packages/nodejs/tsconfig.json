@@ -2,10 +2,7 @@
   "extends": "../../config/tsconfig_base/base.tsconfig.cjs",
   "compilerOptions": {
     "outDir": "./build/cjs",
-    "rootDir": "./src",
-    "lib": [
-      "node"
-    ]
+    "rootDir": "./src"
   },
   "references": [
     {
@@ -13,6 +10,8 @@
     }
   ],
   "files": [
+    "src/@types.ts",
+    "src/index.ts",
     "src/node-adapter.ts"
   ]
 }

@@ -7,10 +7,16 @@ export {
   transferClasses,
   transferProtos
 } from "@bfchain/comlink-map";
-export { wrap, expose, proxy } from "@bfchain/comlink-core";
+export {
+  wrap,
+  expose,
+  proxy,
+  customTransfer as transfer
+} from "@bfchain/comlink-core";
 export {
   RELEASE_PROXY_SYMBOL as releaseProxy,
   CREATE_ENDPOINT_SYMBOL as createEndpoint,
+  SAFE_TYPE_SYMBOL as safeType,
   PROXY_MARKER as proxyMarker,
   THROW_MARKER as throwMarker,
   TRANSFER_PROTO_SYMBOL as transferProto

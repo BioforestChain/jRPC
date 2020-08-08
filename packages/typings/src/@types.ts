@@ -161,16 +161,19 @@ declare namespace BFChainComlink {
 
   const CREATE_ENDPOINT_SYMBOL: unique symbol;
   const RELEASE_PROXY_SYMBOl: unique symbol;
+  const SAFE_TYPE_SYMBOL: unique symbol;
 
   type CreateEndpointSymbol = typeof CREATE_ENDPOINT_SYMBOL;
   type ReleaseProxySymbol = typeof RELEASE_PROXY_SYMBOl;
+  type SafeTypeSymbol = typeof SAFE_TYPE_SYMBOL;
 
   /**
    * Additional special comlink methods available on each proxy returned by `Comlink.wrap()`.
    */
-  interface ProxyMethods {
+  interface ProxyMethods<T = unknown> {
     [CREATE_ENDPOINT_SYMBOL]: () => Promise<MessagePort>;
     [RELEASE_PROXY_SYMBOl]: () => void;
+    [SAFE_TYPE_SYMBOL]: T;
   }
   //#endregion
 
@@ -271,7 +274,7 @@ declare namespace BFChainComlink {
           }
         : unknown) &
       // Include additional special comlink methods available on the proxy.
-      ProxyMethods;
+      ProxyMethods<T>;
 
   /**
    * Expresses that a type can be either a sync or async.

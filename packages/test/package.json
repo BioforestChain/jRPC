@@ -8,7 +8,10 @@
     "build"
   ],
   "dependencies": {
+    "@bfchain/comlink": "2.0.0-alpha.1",
+    "@bfchain/comlink-nodejs": "2.0.0-alpha.1",
     "@bfchain/comlink-typings": "2.0.0-alpha.1",
+    "ava": "^3.11.1",
     "conditional-type-checks": "^1.0.5"
   }
 }

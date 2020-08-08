@@ -6,7 +6,8 @@ import {
 import {
   MessageType,
   RELEASE_PROXY_SYMBOL,
-  CREATE_ENDPOINT_SYMBOL
+  CREATE_ENDPOINT_SYMBOL,
+  SAFE_TYPE_SYMBOL
 } from "@bfchain/comlink-typings";
 import { fromWireValue } from "./fromWireValue";
 import { toWireValue } from "./toWireValue";
@@ -40,7 +41,7 @@ function createProxy<T>(
   target: object = function () {}
 ): BFChainComlink.Remote<T> {
   let isProxyReleased = false;
-  const proxy = new Proxy(target, {
+  const proxy: object = new Proxy(target, {
     get(_target, prop) {
       throwIfProxyReleased(isProxyReleased);
       if (prop === RELEASE_PROXY_SYMBOL) {
@@ -58,6 +59,9 @@ function createProxy<T>(
             }
           );
         };
+      }
+      if (prop === SAFE_TYPE_SYMBOL) {
+        return proxy;
       }
       if (prop === "then") {
         if (path.length === 0) {

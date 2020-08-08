@@ -2,10 +2,15 @@
   "extends": "../../config/tsconfig_base/base.tsconfig.cjs",
   "compilerOptions": {
     "outDir": "./build/cjs",
-    "rootDir": "./src",
-    "lib": ["dom"]
+    "rootDir": "./src"
   },
   "references": [
+    {
+      "path": "../comlink/tsconfig.json"
+    },
+    {
+      "path": "../nodejs/tsconfig.json"
+    },
     {
       "path": "../typings/tsconfig.json"
     }

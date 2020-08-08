@@ -1,3 +1,4 @@
+/// <reference lib="dom"/>
 import { assert, Has, NotHas, IsAny, IsExact } from "conditional-type-checks";
 
 import {

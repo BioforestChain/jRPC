@@ -30,6 +30,10 @@ export const RELEASE_PROXY_SYMBOL: BFChainComlink.ReleaseProxySymbol = Symbol.fo
   "Comlink.releaseProxy"
 ) as BFChainComlink.ReleaseProxySymbol;
 
+export const SAFE_TYPE_SYMBOL: BFChainComlink.SafeTypeSymbol = Symbol.for(
+  "Comlink.safeType"
+) as BFChainComlink.SafeTypeSymbol;
+
 export const TRANSFER_CLASS_SYMBOL: BFChainComlink.TransferClass.TransferSymbol = Symbol.for(
   "Comlink.Transfer.Class"
 ) as BFChainComlink.TransferClass.TransferSymbol;
