@@ -11,12 +11,14 @@ import {
 } from "@bfchain/comlink-typings";
 import { fromWireValue } from "./fromWireValue";
 import { toWireValue } from "./toWireValue";
+import type { TransferRepo } from "@bfchain/comlink-map";
 
-export function wrap<T>(
-  ep: BFChainComlink.Endpoint,
+export function wrap<T, TA = Transferable>(
+  tp: TransferRepo<TA>,
+  ep: BFChainComlink.Endpoint<TA>,
   target?: any
-): BFChainComlink.Remote<T> {
-  return createProxy<T>(ep, [], target) as any;
+): BFChainComlink.Remote<T, TA> {
+  return createProxy<T, TA>(tp, ep, [], target) as any;
 }
 
 const throwIfProxyReleased = (isReleased: boolean) => {
@@ -28,28 +30,31 @@ const myFlat = <T>(arr: (T | T[])[]): T[] => {
   return Array.prototype.concat.apply([], arr);
 };
 
-const processArguments = (
+const processArguments = <TA = Transferable>(
+  tp: TransferRepo<TA>,
   argumentList: any[]
-): [BFChainComlink.WireValue[], Transferable[]] => {
-  const processed = argumentList.map(toWireValue);
+): [BFChainComlink.WireValue[], TA[]] => {
+  const processed = argumentList.map(arg => toWireValue(tp, arg));
   return [processed.map(v => v[0]), myFlat(processed.map(v => v[1]))];
 };
 
-function createProxy<T>(
-  ep: BFChainComlink.Endpoint,
+function createProxy<T, TA = Transferable>(
+  tp: TransferRepo<TA>,
+
+  ep: BFChainComlink.Endpoint<TA>,
   path: (string | number | symbol)[] = [],
   target: object = function () {}
-): BFChainComlink.Remote<T> {
+): BFChainComlink.Remote<T, TA> {
   let isProxyReleased = false;
+  const _fromWireValue = fromWireValue.bind(null, tp);
   const proxy: object = new Proxy(target, {
     get(_target, prop) {
       throwIfProxyReleased(isProxyReleased);
       if (prop === RELEASE_PROXY_SYMBOL) {
         return () => {
-          return requestResponseMessage(
+          return requestResponseMessage<TA, BFChainComlink.WireValue>(
             ep,
             {
-              id: generateUUID(),
               type: MessageType.RELEASE,
               path: path.map(p => p.toString())
             },
@@ -67,33 +72,30 @@ function createProxy<T>(
         if (path.length === 0) {
           return { then: () => proxy };
         }
-        const r = requestResponseMessage(
+        const r = requestResponseMessage<TA, BFChainComlink.WireValue>(
           ep,
           {
-            id: generateUUID(),
             type: MessageType.GET,
             path: path.map(p => p.toString())
           },
-          fromWireValue
+          _fromWireValue
         );
         return r.then.bind(r);
       }
-      return createProxy(ep, [...path, prop]);
+      return createProxy<unknown, TA>(tp, ep, [...path, prop]);
     },
     set(_target, prop, rawValue) {
       throwIfProxyReleased(isProxyReleased);
-      const id = generateUUID();
 
-      const [value, transferables] = toWireValue(id, rawValue);
-      requestResponseMessage(
+      const [value, transferables] = toWireValue(tp, rawValue);
+      requestResponseMessage<TA, BFChainComlink.WireValue>(
         ep,
         {
-          id,
           type: MessageType.SET,
           path: [...path, prop].map(p => p.toString()),
           value
         },
-        fromWireValue,
+        _fromWireValue,
         transferables
       );
       return true;
@@ -102,44 +104,47 @@ function createProxy<T>(
       throwIfProxyReleased(isProxyReleased);
       const last = path[path.length - 1];
       if (last === CREATE_ENDPOINT_SYMBOL) {
-        return requestResponseMessage(
+        return requestResponseMessage<TA, BFChainComlink.WireValue>(
           ep,
           {
-            id: generateUUID(),
             type: MessageType.ENDPOINT
           },
-          fromWireValue
+          _fromWireValue
         );
       }
       // We just pretend that `bind()` didn’t happen.
       if (last === "bind") {
-        return createProxy(ep, path.slice(0, -1));
+        return createProxy(tp, ep, path.slice(0, -1));
       }
-      const [argumentList, transferables] = processArguments(rawArgumentList);
-      return requestResponseMessage(
+      const [argumentList, transferables] = processArguments(
+        tp,
+        rawArgumentList
+      );
+      return requestResponseMessage<TA, BFChainComlink.WireValue>(
         ep,
         {
-          id: generateUUID(),
           type: MessageType.APPLY,
           path: path.map(p => p.toString()),
           argumentList
         },
-        fromWireValue,
+        _fromWireValue,
         transferables
       );
     },
     construct(_target, rawArgumentList) {
       throwIfProxyReleased(isProxyReleased);
-      const [argumentList, transferables] = processArguments(rawArgumentList);
-      return requestResponseMessage(
+      const [argumentList, transferables] = processArguments(
+        tp,
+        rawArgumentList
+      );
+      return requestResponseMessage<TA, BFChainComlink.WireValue>(
         ep,
         {
-          id: generateUUID(),
           type: MessageType.CONSTRUCT,
           path: path.map(p => p.toString()),
           argumentList
         },
-        fromWireValue,
+        _fromWireValue,
         transferables
       );
     }

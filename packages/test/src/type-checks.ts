@@ -2,16 +2,21 @@
 import { assert, Has, NotHas, IsAny, IsExact } from "conditional-type-checks";
 
 import {
-  wrap as ComlinkWrap,
-  proxy as ComlinkProxy,
-  expose as ComlinkExpose,
-  windowEndpoint as ComlinkWindowEndpoint,
-  releaseProxy as ComlinkReleaseProxy,
-  createEndpoint as ComlinkCreateEndpoint,
-  transferProto as ComlinkTransferProto,
-  proxyMarker as ComlinkProxyMarker,
-  transferHandlers as ComlinkTransferHandlers
+  ComlinkFactory,
+  windowEndpoint as ComlinkWindowEndpoint
 } from "@bfchain/comlink";
+
+// const {
+//   wrap: comlink.wrap,
+//   proxy: comlink.proxy,
+//   expose: comlink.expose,
+//   releaseProxy: comlink.releaseProxy,
+//   createEndpoint: comlink.createEndpoint,
+//   transferProto: comlink.transferProto,
+//   proxyMarker: comlink.proxyMarker,
+//   transferHandlers: comlink.transferHandlers
+// }
+const comlink = new ComlinkFactory();
 
 async function closureSoICanUseAwait() {
   {
@@ -19,7 +24,7 @@ async function closureSoICanUseAwait() {
       return 4;
     }
 
-    const proxy = ComlinkWrap<typeof simpleNumberFunction>(0 as any);
+    const proxy = comlink.wrap<typeof simpleNumberFunction>(0 as any);
     assert<IsAny<typeof proxy>>(false);
     const v = proxy();
     assert<Has<typeof v, Promise<number>>>(true);
@@ -30,7 +35,7 @@ async function closureSoICanUseAwait() {
       return { a: 3 };
     }
 
-    const proxy = ComlinkWrap<typeof simpleObjectFunction>(0 as any);
+    const proxy = comlink.wrap<typeof simpleObjectFunction>(0 as any);
     const v = await proxy();
     assert<Has<typeof v, { a: number }>>(true);
   }
@@ -40,17 +45,17 @@ async function closureSoICanUseAwait() {
       return { a: 3 };
     }
 
-    const proxy = ComlinkWrap<typeof simpleAsyncFunction>(0 as any);
+    const proxy = comlink.wrap<typeof simpleAsyncFunction>(0 as any);
     const v = await proxy();
     assert<Has<typeof v, { a: number }>>(true);
   }
 
   {
     function functionWithProxy() {
-      return ComlinkProxy({ a: 3 });
+      return comlink.proxy({ a: 3 });
     }
 
-    const proxy = ComlinkWrap<typeof functionWithProxy>(0 as any);
+    const proxy = comlink.wrap<typeof functionWithProxy>(0 as any);
     const subproxy = await proxy();
     const prop = subproxy.a;
     assert<Has<typeof prop, Promise<number>>>(true);
@@ -68,7 +73,7 @@ async function closureSoICanUseAwait() {
       }
     }
 
-    const proxy = ComlinkWrap<typeof X>(0 as any);
+    const proxy = comlink.wrap<typeof X>(0 as any);
     assert<Has<typeof proxy, { staticFunc: () => Promise<number> }>>(true);
     const instance = await new proxy();
     assert<Has<typeof instance, { sayHi: () => Promise<string> }>>(true);
@@ -88,7 +93,7 @@ async function closureSoICanUseAwait() {
       }
     };
 
-    const proxy = ComlinkWrap<typeof x>(0 as any);
+    const proxy = comlink.wrap<typeof x>(0 as any);
     assert<IsAny<typeof proxy>>(false);
     const a = proxy.a;
     assert<Has<typeof a, Promise<number>>>(true);
@@ -104,8 +109,8 @@ async function closureSoICanUseAwait() {
   }
 
   {
-    ComlinkWrap(new MessageChannel().port1);
-    ComlinkExpose({}, new MessageChannel().port2);
+    comlink.wrap(new MessageChannel().port1);
+    comlink.expose({}, new MessageChannel().port2);
 
     interface Baz {
       baz: number;
@@ -120,12 +125,12 @@ async function closureSoICanUseAwait() {
         );
       }
       prop1: string = "abc";
-      proxyProp = ComlinkProxy(new Bar());
+      proxyProp = comlink.proxy(new Bar());
       methodWithTupleParams(...args: [string] | [number, string]): number {
         return 123;
       }
       methodWithProxiedReturnValue(): Baz & BFChainComlink.ProxyMarked {
-        return ComlinkProxy({ baz: 123, method: () => 123 });
+        return comlink.proxy({ baz: 123, method: () => 123 });
       }
       methodWithProxyParameter(param: Baz & BFChainComlink.ProxyMarked): void {}
     }
@@ -136,15 +141,15 @@ async function closureSoICanUseAwait() {
         return 123;
       }
       methodWithProxiedReturnValue(): Baz & BFChainComlink.ProxyMarked {
-        return ComlinkProxy({ baz: 123, method: () => 123 });
+        return comlink.proxy({ baz: 123, method: () => 123 });
       }
     }
-    const proxy = ComlinkWrap<Foo>(ComlinkWindowEndpoint(self));
+    const proxy = comlink.wrap<Foo>(ComlinkWindowEndpoint(self));
     assert<IsExact<typeof proxy, BFChainComlink.Remote<Foo>>>(true);
 
-    proxy[ComlinkReleaseProxy]();
-    const endp = proxy[ComlinkCreateEndpoint]();
-    assert<IsExact<typeof endp, Promise<MessagePort>>>(true);
+    proxy[comlink.releaseProxy]();
+    const endp = proxy[comlink.createEndpoint]();
+    assert<IsExact<typeof endp, Promise<BFChainComlink.MessagePort>>>(true);
 
     assert<IsAny<typeof proxy.prop1>>(false);
     assert<Has<typeof proxy.prop1, Promise<string>>>(true);
@@ -201,13 +206,13 @@ async function closureSoICanUseAwait() {
     assert<IsAny<typeof r7>>(false);
     assert<Has<typeof r7, Promise<number>>>(true);
 
-    const ProxiedFooClass = ComlinkWrap<typeof Foo>(
+    const ProxiedFooClass = comlink.wrap<typeof Foo>(
       ComlinkWindowEndpoint(self)
     );
     const inst1 = await new ProxiedFooClass("test");
     assert<IsExact<typeof inst1, BFChainComlink.Remote<Foo>>>(true);
-    inst1[ComlinkReleaseProxy]();
-    inst1[ComlinkCreateEndpoint]();
+    inst1[comlink.releaseProxy]();
+    inst1[comlink.createEndpoint]();
 
     // @ts-expect-error
     await new ProxiedFooClass(123);
@@ -275,7 +280,7 @@ async function closureSoICanUseAwait() {
         const result = await resultPromise;
 
         const subscriptionPromise = result.subscribe({
-          [ComlinkTransferProto]: ComlinkProxyMarker,
+          [comlink.transferProto]: comlink.proxyMarker,
           next: value => {
             assert<IsExact<typeof value, string>>(true);
           }
@@ -288,7 +293,7 @@ async function closureSoICanUseAwait() {
             >
           >
         >(true);
-        const subscriber = ComlinkProxy({
+        const subscriber = comlink.proxy({
           next: (value: string) => console.log(value)
         });
         result.subscribe(subscriber);
@@ -297,12 +302,12 @@ async function closureSoICanUseAwait() {
         assert<IsExact<typeof r1, Promise<void>>>(true);
       }
     }
-    const proxy2 = ComlinkWrap<Registry>(ComlinkWindowEndpoint(self));
+    const proxy2 = comlink.wrap<Registry>(ComlinkWindowEndpoint(self));
 
     proxy2.registerProvider(
       // Synchronous callback
-      ComlinkProxy(({ textDocument }: Params) => {
-        const subscribable = ComlinkProxy({
+      comlink.proxy(({ textDocument }: Params) => {
+        const subscribable = comlink.proxy({
           subscribe(
             subscriber: BFChainComlink.Remote<
               Subscriber<string> & BFChainComlink.ProxyMarked
@@ -342,7 +347,7 @@ async function closureSoICanUseAwait() {
               subscriber.next("abc");
             }
 
-            return ComlinkProxy({ unsubscribe() {} });
+            return comlink.proxy({ unsubscribe() {} });
           }
         });
         assert<Has<typeof subscribable, BFChainComlink.ProxyMarked>>(true);
@@ -351,8 +356,8 @@ async function closureSoICanUseAwait() {
     );
     proxy2.registerProvider(
       // Async callback
-      ComlinkProxy(async ({ textDocument }: Params) => {
-        const subscribable = ComlinkProxy({
+      comlink.proxy(async ({ textDocument }: Params) => {
+        const subscribable = comlink.proxy({
           subscribe(
             subscriber: BFChainComlink.Remote<
               Subscriber<string> & BFChainComlink.ProxyMarked
@@ -372,7 +377,7 @@ async function closureSoICanUseAwait() {
             if (typeof subscriber.next === "function") {
               subscriber.next("abc");
             }
-            return ComlinkProxy({ unsubscribe() {} });
+            return comlink.proxy({ unsubscribe() {} });
           }
         });
         return subscribable;
@@ -396,6 +401,6 @@ async function closureSoICanUseAwait() {
         return new URL(str);
       }
     };
-    ComlinkTransferHandlers.set("URL", urlTransferHandler);
+    comlink.transferHandlers.set("URL", urlTransferHandler);
   }
 }

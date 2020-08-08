@@ -13,4 +13,6 @@ declare namespace BFChainComlink {
     ): void;
     start?: () => void;
   }
+  type NodejsTransferable = ArrayBuffer | import("worker_threads").MessagePort;
 }
+// declare

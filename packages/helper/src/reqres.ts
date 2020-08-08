@@ -1,11 +1,11 @@
 import { generateUUID } from "./uuid";
 
 const requestCallbackMapCacher = new WeakMap<
-  BFChainComlink.Endpoint,
+  BFChainComlink.Endpoint<unknown>,
   Map<BFChainComlink.MessageID, Function>
 >();
-const forceGetEndpointRCM = (
-  ep: BFChainComlink.Endpoint
+const forceGetEndpointRCM = <TA>(
+  ep: BFChainComlink.Endpoint<TA>
 ): Map<BFChainComlink.MessageID, Function> => {
   let reqCbMap = requestCallbackMapCacher.get(ep);
   if (!reqCbMap) {
@@ -26,18 +26,27 @@ const forceGetEndpointRCM = (
   return reqCbMap;
 };
 
-export function requestResponseMessage<R, O>(
-  ep: BFChainComlink.Endpoint,
-  msg: BFChainComlink.Message,
+export function requestResponseMessage<
+  TA = Transferable,
+  R = unknown,
+  O = unknown
+>(
+  ep: BFChainComlink.Endpoint<TA>,
+  msg: BFChainComlink.MessageArg,
   callback: (res: R) => O,
-  transfers?: Transferable[]
+  transfers?: TA[]
 ) {
   const reqCbMap = forceGetEndpointRCM(ep);
-  return new Promise<O>(resolve => {
-    const id = msg.id;
+  return new Promise<O>((resolve, reject) => {
+    const id = generateUUID();
     reqCbMap.set(id, (res: R) => {
-      resolve(callback(res));
+      try {
+        resolve(callback(res));
+      } catch (err) {
+        reject(err);
+      }
     });
+    ((msg as unknown) as BFChainComlink.Message).id = id;
     ep.postMessage(msg, transfers);
   });
 }

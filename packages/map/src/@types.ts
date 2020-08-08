@@ -85,9 +85,13 @@ declare namespace BFChainComlink {
       ? TYPES_KEYS<typeof import("./const").MODE_TRANSFER_TYPES_MAP[T]>
       : never;
 
-    type MapValueType<M extends Map<any, any>> = M extends Map<any, infer U>
+    type MapValueType<M extends Map<unknown, unknown>> = M extends Map<
+      unknown,
+      infer U
+    >
       ? U
       : never;
+
     type Transfer<
       M extends TypeModel,
       VK extends TransferKeyValue
@@ -99,20 +103,24 @@ declare namespace BFChainComlink {
 
   namespace TransferHandler {
     type Key = TransferKey;
-    interface SerializeOnly<C = unknown, S = unknown>
-      extends Omit<TransferHandler<C, S>, "deserialize"> {}
-    interface DeserializeOnly<C = unknown, S = unknown>
-      extends Pick<TransferHandler<C, S>, "deserialize"> {}
-    type Any<C = unknown, S = unknown> =
-      | TransferHandler<C, S>
-      | SerializeOnly<C, S>
-      | DeserializeOnly<C, S>;
+    interface SerializeOnly<I = unknown, S = unknown, TA = Transferable>
+      extends Omit<TransferHandler<I, S, I, TA>, "deserialize"> {}
+    interface DeserializeOnly<I = unknown, S = unknown, TA = Transferable>
+      extends Pick<TransferHandler<I, S, I, TA>, "deserialize"> {}
+    type Any<I = unknown, S = unknown, TA = Transferable> =
+      | TransferHandler<I, S, I, TA>
+      | SerializeOnly<I, S, TA>
+      | DeserializeOnly<I, S, TA>;
   }
-  type TransferHanlderKeyValue = TransferKeyValue<
+  type TransferHanlderKeyValue<
+    I = unknown,
+    S = unknown,
+    TA = Transferable
+  > = TransferKeyValue<
     TransferHandler.Key,
-    TransferHandler,
-    TransferHandler.SerializeOnly,
-    TransferHandler.DeserializeOnly
+    TransferHandler<I, S, I, TA>,
+    TransferHandler.SerializeOnly<I, S, TA>,
+    TransferHandler.DeserializeOnly<I, S, TA>
   >;
   //#endregion
 
@@ -129,44 +137,66 @@ declare namespace BFChainComlink {
     }
 
     //#region In
-    interface IBoth<C extends AnyClass = AnyClass, S = unknown>
-      extends TransferClass<C, S> {}
-    interface ISerializeOnly<C extends AnyClass = AnyClass, S = unknown>
-      extends Omit<TransferClass<C, S>, "deserialize"> {}
-    interface IDeserializeOnly<C extends AnyClass = AnyClass, S = unknown>
-      extends Pick<TransferClass<C, S>, "deserialize"> {}
-    type IAny<C extends AnyClass = AnyClass, S = unknown> =
-      | IBoth<C, S>
-      | ISerializeOnly<C, S>
-      | IDeserializeOnly<C, S>;
+    interface IBoth<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends TransferClass<C, S, C, TA> {}
+    interface ISerializeOnly<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends Omit<TransferClass<C, S, C, TA>, "deserialize"> {}
+    interface IDeserializeOnly<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends Pick<TransferClass<C, S, C, TA>, "deserialize"> {}
+    type IAny<C extends AnyClass = AnyClass, S = unknown, TA = Transferable> =
+      | IBoth<C, S, TA>
+      | ISerializeOnly<C, S, TA>
+      | IDeserializeOnly<C, S, TA>;
     //#endregion
 
     //#region Out
-    interface Both<C extends AnyClass = AnyClass, S = unknown>
-      extends IBoth<C, S> {
+    interface Both<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends IBoth<C, S, TA> {
       ctor: CtorWithSymbol<C>;
     }
-    interface SerializeOnly<C extends AnyClass = AnyClass, S = unknown>
-      extends ISerializeOnly<C, S> {
+    interface SerializeOnly<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends ISerializeOnly<C, S, TA> {
       ctor: CtorWithSymbol<C>;
     }
-    interface DeserializeOnly<C extends AnyClass = AnyClass, S = unknown>
-      extends IDeserializeOnly<C, S> {}
+    interface DeserializeOnly<
+      C extends AnyClass = AnyClass,
+      S = unknown,
+      TA = Transferable
+    > extends IDeserializeOnly<C, S, TA> {}
 
-    type Any<C extends AnyClass = AnyClass, S = unknown> =
-      | Both<C, S>
-      | SerializeOnly<C, S>
-      | DeserializeOnly<C, S>;
+    type Any<C extends AnyClass = AnyClass, S = unknown, TA = Transferable> =
+      | Both<C, S, TA>
+      | SerializeOnly<C, S, TA>
+      | DeserializeOnly<C, S, TA>;
     //#endregion
   }
-  type TransferClassKeyValue = TransferKeyValue<
+  type TransferClassKeyValue<
+    C extends AnyClass = AnyClass,
+    S = unknown,
+    TA = Transferable
+  > = TransferKeyValue<
     TransferClass.Key,
-    TransferClass.IBoth,
-    TransferClass.ISerializeOnly,
-    TransferClass.IDeserializeOnly,
-    TransferClass.Both,
-    TransferClass.SerializeOnly,
-    TransferClass.DeserializeOnly
+    TransferClass.IBoth<C, S, TA>,
+    TransferClass.ISerializeOnly<C, S, TA>,
+    TransferClass.IDeserializeOnly<C, S, TA>,
+    TransferClass.Both<C, S, TA>,
+    TransferClass.SerializeOnly<C, S, TA>,
+    TransferClass.DeserializeOnly<C, S, TA>
   >;
   //#endregion
 
@@ -175,20 +205,24 @@ declare namespace BFChainComlink {
     type Key = TransferKey;
     type TransferAbleInstance<V = unknown> = TransferMarked<Key, V>;
 
-    interface SerializeOnly<C = unknown, S = unknown>
-      extends Omit<TransferProto<C, S>, "deserialize"> {}
-    interface DeserializeOnly<C = unknown, S = unknown>
-      extends Pick<TransferProto<C, S>, "deserialize"> {}
-    type Any<C = unknown, S = unknown> =
-      | TransferProto<C, S>
-      | SerializeOnly<C, S>
-      | DeserializeOnly<C, S>;
+    interface SerializeOnly<I = unknown, S = unknown, TA = Transferable>
+      extends Omit<TransferProto<I, S, I, TA>, "deserialize"> {}
+    interface DeserializeOnly<I = unknown, S = unknown, TA = Transferable>
+      extends Pick<TransferProto<I, S, I, TA>, "deserialize"> {}
+    type Any<I = unknown, S = unknown, TA = Transferable> =
+      | TransferProto<I, S, I, TA>
+      | SerializeOnly<I, S, TA>
+      | DeserializeOnly<I, S, TA>;
   }
-  type TransferProtoKeyValue = TransferKeyValue<
+  type TransferProtoKeyValue<
+    I = unknown,
+    S = unknown,
+    TA = Transferable
+  > = TransferKeyValue<
     TransferProto.Key,
-    TransferProto,
-    TransferProto.SerializeOnly,
-    TransferProto.DeserializeOnly
+    TransferProto<I, S, I, TA>,
+    TransferProto.SerializeOnly<I, S, TA>,
+    TransferProto.DeserializeOnly<I, S, TA>
   >;
   //#endregion
 }

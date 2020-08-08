@@ -16,9 +16,8 @@
     }
   ],
   "files": [
+    "src/factory.ts",
     "src/index.ts",
-    "src/transfer/handler-proxy.ts",
-    "src/transfer/handler-throw.ts",
     "src/windowEndpoint.ts"
   ]
 }

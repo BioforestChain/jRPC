@@ -1,36 +1,32 @@
-import {
-  transferHandlers,
-  transferClasses,
-  transferProtos
-} from "@bfchain/comlink-map";
+import type { TransferRepo } from "@bfchain/comlink-map";
 import { WireValueType } from "@bfchain/comlink-typings";
 
-export function toWireValue(
-  id: BFChainComlink.WireId,
+export function toWireValue<TA = Transferable>(
+  tp: TransferRepo<TA>,
   value: any
-): [BFChainComlink.WireValue, Transferable[]] {
+): [BFChainComlink.WireValue, TA[]] {
   const customTransfer = _customTransferCache.get(value);
   if (customTransfer) {
     return [
-      { id, type: WireValueType.RAW, value: customTransfer.serialized },
-      customTransfer.transfers
+      { type: WireValueType.RAW, value: customTransfer.serialized },
+      customTransfer.transfers as TA[]
     ];
   }
 
   let serializeTransfer:
     | readonly [
         BFChainComlink.TransferKey,
-        BFChainComlink.TransferProto.SerializeOnly
+        BFChainComlink.TransferProto.SerializeOnly<unknown, unknown, TA>
       ]
     | undefined;
   let wireType: BFChainComlink.DeserializableWireType = WireValueType.PROTO;
   /// 寻找 serializeTransfer
-  serializeTransfer = transferProtos.getByInstance(value, "serializable");
+  serializeTransfer = tp.protos.getByInstance(value, "serializable");
   if (!serializeTransfer) {
-    serializeTransfer = transferClasses.getByInstance(value, "serializable");
+    serializeTransfer = tp.classes.getByInstance(value, "serializable");
     wireType = WireValueType.CLASS;
     if (!serializeTransfer) {
-      for (const handlerTransfer of transferHandlers.entries("serializable")) {
+      for (const handlerTransfer of tp.handlers.entries("serializable")) {
         if (handlerTransfer[1].canHandle(value)) {
           serializeTransfer = handlerTransfer;
           wireType = WireValueType.HANDLER;
@@ -46,25 +42,24 @@ export function toWireValue(
     );
     return [
       {
-        id,
         type: wireType,
         name: serializeTransfer[0],
         value: serializedValue
       },
-      transferables
+      transferables as TA[]
     ];
   }
 
   /// 否则直接返回原始对象
-  return [{ id, type: WireValueType.RAW, value }, []];
+  return [{ type: WireValueType.RAW, value }, []];
 }
 const _customTransferCache = new WeakMap<
   object,
-  { serialized: object; transfers: Transferable[] }
+  { serialized: object; transfers: unknown[] }
 >();
-export function customTransfer<T extends object>(
+export function customTransfer<T extends object, TA = Transferable>(
   obj: T,
-  transfers: Transferable[],
+  transfers: TA[],
   serialized = obj
 ) {
   _customTransferCache.set(obj, { serialized, transfers });

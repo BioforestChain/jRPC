@@ -1,10 +1,11 @@
 /// <reference lib="dom"/>
-import type {} from "@bfchain/comlink-typings";
+import { ComlinkFactory, $expose, $wrap } from "@bfchain/comlink";
 import "./@types";
+import { MessageChannel, MessagePort } from "worker_threads";
 
 export function nodeEndpointTransfer(
   nep: BFChainComlink.NodeEndpoint
-): BFChainComlink.Endpoint {
+): BFChainComlink.Endpoint<BFChainComlink.NodejsTransferable> {
   const listeners = new WeakMap();
   return {
     postMessage: nep.postMessage.bind(nep),
@@ -29,4 +30,40 @@ export function nodeEndpointTransfer(
     },
     start: nep.start && nep.start.bind(nep)
   };
+}
+
+export class NodejsComlinkFactory extends ComlinkFactory<
+  BFChainComlink.NodejsTransferable
+> {
+  protected $initProxyTransferProto() {
+    const proxyTransferProto: BFChainComlink.TransferProto<
+      BFChainComlink.ProxyMarked,
+      MessagePort,
+      BFChainComlink.Remote<unknown, BFChainComlink.NodejsTransferable>,
+      BFChainComlink.NodejsTransferable
+    > = {
+      serialize: obj => {
+        const { port1, port2 } = new MessageChannel();
+        this.expose(
+          obj,
+          (port1 as unknown) as BFChainComlink.Endpoint<
+            BFChainComlink.NodejsTransferable
+          >
+        );
+        return [
+          port2,
+          [(port2 as unknown) as BFChainComlink.NodejsTransferable]
+        ];
+      },
+      deserialize: (port: MessagePort) => {
+        port.start();
+        return this.wrap(
+          (port as unknown) as BFChainComlink.Endpoint<
+            BFChainComlink.NodejsTransferable
+          >
+        );
+      }
+    };
+    this.$tp.protos.set(this.proxyMarker, proxyTransferProto);
+  }
 }

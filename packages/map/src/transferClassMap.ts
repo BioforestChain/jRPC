@@ -1,12 +1,14 @@
 import { TransferMap } from "./TransferMap";
 import { TRANSFER_CLASS_SYMBOL } from "@bfchain/comlink-typings";
 
-export class TransferClassMap extends TransferMap<
-  BFChainComlink.TransferClassKeyValue
-> {
+export class TransferClassMap<
+  TA = Transferable,
+  C extends BFChainComlink.AnyClass = BFChainComlink.AnyClass,
+  S = unknown
+> extends TransferMap<BFChainComlink.TransferClassKeyValue<C, S, TA>> {
   set(
     name: BFChainComlink.TransferClassKeyValue["Key"],
-    transferClass: BFChainComlink.TransferClass.IAny
+    transferClass: BFChainComlink.TransferClass.IAny<C, S, TA>
   ) {
     /// try remove old one first. ensure transferClass exists in one map only
     if (this.delete(name)) {

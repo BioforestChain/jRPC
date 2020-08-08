@@ -1,12 +1,14 @@
 import { TransferMap } from "./TransferMap";
 import { TRANSFER_PROTO_SYMBOL } from "@bfchain/comlink-typings";
 
-export class TransferProtoMap extends TransferMap<
-  BFChainComlink.TransferProtoKeyValue
-> {
+export class TransferProtoMap<
+  TA = Transferable,
+  I = unknown,
+  S = unknown
+> extends TransferMap<BFChainComlink.TransferProtoKeyValue<I, S, TA>> {
   set(
     name: BFChainComlink.TransferProtoKeyValue["Key"],
-    transferProto: BFChainComlink.TransferProto.Any
+    transferProto: BFChainComlink.TransferProto.Any<I, S, TA>
   ) {
     /// try remove old one first. ensure transferClass exists in one map only
     if (this.delete(name)) {

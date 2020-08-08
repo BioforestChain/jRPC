@@ -6,7 +6,7 @@ import {
 import { fromWireValue } from "./fromWireValue";
 import { toWireValue, customTransfer } from "./toWireValue";
 import { closeEndPoint } from "@bfchain/comlink-helper";
-import { transferProtos } from "@bfchain/comlink-map";
+import type { TransferRepo } from "@bfchain/comlink-map";
 
 const getParent = (rootObj: any, path: string[]) =>
   path.slice(0, -1).reduce((obj, prop) => obj[prop], rootObj);
@@ -14,7 +14,11 @@ const getParent = (rootObj: any, path: string[]) =>
 const getRawValue = (rootObj: any, path: string[]) =>
   path.reduce((obj, prop) => obj[prop], rootObj);
 
-export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
+export function expose<TA = Transferable>(
+  tp: TransferRepo<TA>,
+  obj: any,
+  ep: BFChainComlink.Endpoint<TA> = self as any
+) {
   ep.addEventListener("message", async function callback(ev: MessageEvent) {
     if (
       !ev ||
@@ -40,6 +44,7 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
           {
             const parent = getParent(obj, message.path);
             parent[message.path[message.path.length - 1]] = fromWireValue(
+              tp,
               ev.data.value
             );
             returnValue = true;
@@ -48,7 +53,9 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
         case MessageType.APPLY:
           {
             const parent = getParent(obj, message.path);
-            const argumentList = message.argumentList.map(fromWireValue);
+            const argumentList = message.argumentList.map(arg =>
+              fromWireValue(tp, arg)
+            );
             returnValue = await parent[
               message.path[message.path.length - 1]
             ].apply(parent, argumentList);
@@ -57,9 +64,11 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
         case MessageType.CONSTRUCT:
           {
             const RawCtor = getRawValue(obj, message.path);
-            const argumentList = message.argumentList.map(fromWireValue);
+            const argumentList = message.argumentList.map(arg =>
+              fromWireValue(tp, arg)
+            );
             const value = await new RawCtor(...argumentList);
-            returnValue = proxy(value);
+            returnValue = proxy(tp, value);
           }
           break;
         case MessageType.ENDPOINT:
@@ -78,13 +87,14 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
           return;
       }
     } catch (value) {
-      returnValue = transferProtos.setInstance(
+      returnValue = tp.setPropMarker(
         value as BFChainComlink.ThrowMarked,
         THROW_MARKER
       );
     }
 
-    const [wireValue, transferables] = toWireValue(message.id, returnValue);
+    const [wireValue, transferables] = toWireValue(tp, returnValue);
+    wireValue.id = message.id;
     ep.postMessage(wireValue, transferables);
     if (message.type === MessageType.RELEASE) {
       // detach and deactive after sending release response above.
@@ -98,9 +108,9 @@ export function expose(obj: any, ep: BFChainComlink.Endpoint = self as any) {
   }
 }
 
-export function proxy<T extends object>(obj: T) {
-  return transferProtos.setInstance(
-    obj ,
-    PROXY_MARKER
-  );
+export function proxy<T extends object, TA = Transferable>(
+  tp: TransferRepo<TA>,
+  obj: T
+) {
+  return tp.setPropMarker(obj, PROXY_MARKER);
 }

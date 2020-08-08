@@ -1,11 +1,13 @@
 import { TransferMap } from "./TransferMap";
 
-export class TransferHandlerMap extends TransferMap<
-  BFChainComlink.TransferHanlderKeyValue
-> {
+export class TransferHandlerMap<
+  TA = Transferable,
+  I = unknown,
+  S = unknown
+> extends TransferMap<BFChainComlink.TransferHanlderKeyValue<I, S, TA>> {
   set(
     name: BFChainComlink.TransferHanlderKeyValue["Key"],
-    transferHandler: BFChainComlink.TransferHandler.Any
+    transferHandler: BFChainComlink.TransferHandler.Any<I, S, TA>
   ) {
     /// try remove old one first. ensure transferHandler exists in one map only
     this.delete(name);

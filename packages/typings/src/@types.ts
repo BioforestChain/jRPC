@@ -32,18 +32,20 @@ declare namespace BFChainComlink {
     ): void;
   }
 
-  interface Endpoint extends EventSource {
-    postMessage(message: any, transfer?: Transferable[]): void;
+  interface Endpoint<TA = Transferable> extends EventSource {
+    postMessage(message: any, transfer?: TA[]): void;
     start?: () => void;
   }
 
-  interface PostMessageWithOrigin {
-    postMessage(
-      message: any,
-      targetOrigin: string,
-      transfer?: Transferable[]
-    ): void;
+  interface PostMessageWithOrigin<TA = Transferable> {
+    postMessage(message: any, targetOrigin: string, transfer?: TA[]): void;
   }
+
+  interface MessageChannel<TA = Transferable> {
+    port1: Endpoint<TA>;
+    port2: Endpoint<TA>;
+  }
+  interface MessagePort<TA = Transferable> extends Endpoint<TA> {}
   //#endregion
 
   //#region Wire
@@ -52,13 +54,13 @@ declare namespace BFChainComlink {
   // type WireValueType = import("./const").WireValueType;
 
   interface RawWireValue {
-    id: WireId;
+    id?: WireId;
     type: import("./const").WireValueType.RAW;
     value: {};
   }
 
   interface RawListWireValue {
-    id: WireId;
+    id?: WireId;
     type: import("./const").WireValueType.RAW_ARRAY;
     value: WireValue[];
   }
@@ -68,7 +70,7 @@ declare namespace BFChainComlink {
     | import("./const").WireValueType.CLASS
     | import("./const").WireValueType.PROTO;
   interface DeserializableWireValue {
-    id: WireId;
+    id?: WireId;
     type: DeserializableWireType;
     name: TransferKey;
     value: unknown;
@@ -80,44 +82,58 @@ declare namespace BFChainComlink {
   //#region Message
 
   type MessageID = number;
-
-  interface GetMessage {
-    id: MessageID;
+  interface GetMessageArg {
     type: import("./const").MessageType.GET;
     path: string[];
   }
-
-  interface SetMessage {
+  interface GetMessage extends GetMessageArg {
     id: MessageID;
+  }
+  interface SetMessageArg {
     type: import("./const").MessageType.SET;
     path: string[];
     value: WireValue;
   }
-
-  interface ApplyMessage {
+  interface SetMessage extends SetMessageArg {
     id: MessageID;
+  }
+  interface ApplyMessageArg {
     type: import("./const").MessageType.APPLY;
     path: string[];
     argumentList: WireValue[];
   }
-
-  interface ConstructMessage {
+  interface ApplyMessage extends ApplyMessageArg {
     id: MessageID;
+  }
+  interface ConstructMessageArg {
     type: import("./const").MessageType.CONSTRUCT;
     path: string[];
     argumentList: WireValue[];
   }
-
-  interface EndpointMessage {
+  interface ConstructMessage extends ConstructMessageArg {
     id: MessageID;
+  }
+  interface EndpointMessageArg {
     type: import("./const").MessageType.ENDPOINT;
   }
-
-  interface ReleaseMessage {
+  interface EndpointMessage extends EndpointMessageArg {
     id: MessageID;
+  }
+  interface ReleaseMessageArg {
     type: import("./const").MessageType.RELEASE;
     path: string[];
   }
+  interface ReleaseMessage extends ReleaseMessageArg {
+    id: MessageID;
+  }
+
+  type MessageArg =
+    | GetMessageArg
+    | SetMessageArg
+    | ApplyMessageArg
+    | ConstructMessageArg
+    | EndpointMessageArg
+    | ReleaseMessageArg;
 
   type Message =
     | GetMessage
@@ -160,19 +176,19 @@ declare namespace BFChainComlink {
   type ThrowMarked<V = unknown> = TransferProto.TransferMarked<ThrowMarker, V>;
 
   const CREATE_ENDPOINT_SYMBOL: unique symbol;
-  const RELEASE_PROXY_SYMBOl: unique symbol;
+  const RELEASE_PROXY_SYMBOL: unique symbol;
   const SAFE_TYPE_SYMBOL: unique symbol;
 
   type CreateEndpointSymbol = typeof CREATE_ENDPOINT_SYMBOL;
-  type ReleaseProxySymbol = typeof RELEASE_PROXY_SYMBOl;
+  type ReleaseProxySymbol = typeof RELEASE_PROXY_SYMBOL;
   type SafeTypeSymbol = typeof SAFE_TYPE_SYMBOL;
 
   /**
    * Additional special comlink methods available on each proxy returned by `Comlink.wrap()`.
    */
-  interface ProxyMethods<T = unknown> {
-    [CREATE_ENDPOINT_SYMBOL]: () => Promise<MessagePort>;
-    [RELEASE_PROXY_SYMBOl]: () => void;
+  interface ProxyMethods<T = unknown,TA=Transferable> {
+    [CREATE_ENDPOINT_SYMBOL]: () => Promise<MessagePort<TA>>;
+    [RELEASE_PROXY_SYMBOL]: () => void;
     [SAFE_TYPE_SYMBOL]: T;
   }
   //#endregion
@@ -253,7 +269,7 @@ declare namespace BFChainComlink {
    * Takes the raw type of a remote object, function or class in the other thread and returns the type as it is visible to
    * the local thread from the proxy return value of `Comlink.wrap()` or `Comlink.proxy()`.
    */
-  type Remote<T> =
+  type Remote<T,TA=Transferable> =
     // Handle properties
     RemoteObject<T> &
       // Handle call signature (if present)
@@ -274,7 +290,7 @@ declare namespace BFChainComlink {
           }
         : unknown) &
       // Include additional special comlink methods available on the proxy.
-      ProxyMethods<T>;
+      ProxyMethods<T,TA>;
 
   /**
    * Expresses that a type can be either a sync or async.
@@ -316,24 +332,28 @@ declare namespace BFChainComlink {
   /**
    * 依赖于原型链的转换
    */
-  interface TransferProto<I = unknown, O = unknown, D = I> {
+  interface TransferProto<I = unknown, O = unknown, D = I, TA = Transferable> {
     // proto: symbol;
-    serialize(obj: I): [O, Transferable[]];
+    serialize(obj: I): [O, TA[]];
     deserialize(obj: O): D;
   }
   /**
    * 依赖于构造函数的转换
    */
-  interface TransferClass<C extends AnyClass = AnyClass, O = unknown, D = C>
-    extends TransferProto<C, O, D> {
+  interface TransferClass<
+    C extends AnyClass = AnyClass,
+    O = unknown,
+    D = C,
+    TA = Transferable
+  > extends TransferProto<C, O, D, TA> {
     ctor: C;
   }
   type AnyClass<P = any> = new (...args: any) => P;
   /**
    * 自定义判定转换
    */
-  interface TransferHandler<I = unknown, O = unknown, D = I>
-    extends TransferProto<I, O, D> {
+  interface TransferHandler<I = unknown, O = unknown, D = I, TA = Transferable>
+    extends TransferProto<I, O, D, TA> {
     canHandle(value: unknown): value is I;
   }
 

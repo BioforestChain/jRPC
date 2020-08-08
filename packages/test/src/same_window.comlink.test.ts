@@ -12,10 +12,11 @@
  * limitations under the License.
  */
 
-import * as Comlink from "@bfchain/comlink";
-import { nodeEndpointTransfer } from "@bfchain/comlink-nodejs";
+import {ComlinkFactory} from "@bfchain/comlink";
+import { nodeEndpointTransfer ,NodejsComlinkFactory} from "@bfchain/comlink-nodejs";
 import ava, { ExecutionContext, TestInterface } from "ava";
 import { MessagePort, MessageChannel } from "worker_threads";
+const Comlink = new NodejsComlinkFactory()
 
 class SampleClass {
   public _promise = Promise.resolve(4);
@@ -67,8 +68,8 @@ class SampleClass {
   }
 }
 type Context = {
-  port1: BFChainComlink.Endpoint;
-  port2: BFChainComlink.Endpoint;
+  port1: BFChainComlink.Endpoint<BFChainComlink.NodejsTransferable>;
+  port2: BFChainComlink.Endpoint<BFChainComlink.NodejsTransferable>;
 };
 const test = ava as TestInterface<Context>;
 
@@ -390,8 +391,9 @@ test("Comlink in the same realm", t => {
   });
 
   guardedIt(isNotSafari11_1)("will copy nested TypedArrays", async () => {
-    const thing = Comlink.wrap<typeof source>(t.context.port1);
-    Comlink.expose(b => b, t.context.port2);
+    const source =<T> (b:T) => b
+    const thing = Comlink.wrap<typeof source>(t.context.port1)[Comlink.safeType];
+    Comlink.expose(source, t.context.port2);
     const array = new Uint8Array([1, 2, 3]);
     const receive = await thing({
       v: 1,
@@ -405,39 +407,42 @@ test("Comlink in the same realm", t => {
   guardedIt(isNotSafari11_1)(
     "will transfer deeply nested buffers",
     async () => {
+      const source = (a:{ b: { c: { d: ArrayBufferLike } } }) => a.b.c.d.byteLength
       const thing = Comlink.wrap<typeof source>(t.context.port1);
-      Comlink.expose(a => a.b.c.d.byteLength, t.context.port2);
+      Comlink.expose(source, t.context.port2);
       const buffer = new Uint8Array([1, 2, 3]).buffer;
-      expect(
+    
+      t.is(
         await thing(Comlink.transfer({ b: { c: { d: buffer } } }, [buffer]))
-      t.is);
+      ,3);
+
       t.is(buffer.byteLength,0);
     }
   );
 
   test("will transfer a message port", async () => {
+    const source =(a:MessagePort) => a.postMessage("ohai") 
     const thing = Comlink.wrap<typeof source>(t.context.port1);
-    Comlink.expose(a => a.postMessage("ohai"), t.context.port2);
+    Comlink.expose(source, t.context.port2);
     const { port1, port2 } = new MessageChannel();
     await thing(Comlink.transfer(port2, [port2]));
-    return new Promise(resolve => {
-      port1.onmessage = event => {
-        t.is(event.data,"ohai");
-        resolve();
-      };
+    const returnMsg =await new Promise<unknown>(resolve => {
+      port1.on("message",resolve)
     });
+    t.is(returnMsg,"ohai")
   });
 
   test("will wrap marked return values", async () => {
+    const source = () =>
+    Comlink.proxy({
+      counter: 0,
+      inc() {
+        this.counter += 1;
+      }
+    })
     const thing = Comlink.wrap<typeof source>(t.context.port1);
     Comlink.expose(
-      () =>
-        Comlink.proxy({
-          counter: 0,
-          inc() {
-            this.counter += 1;
-          }
-        }),
+      source,
       t.context.port2
     );
     const obj = await thing();

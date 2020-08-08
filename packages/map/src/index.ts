@@ -9,6 +9,15 @@ import { TransferHandlerMap } from "./transferHandlerMap";
 import { TransferClassMap } from "./transferClassMap";
 import { TransferProtoMap } from "./transferProtoMap";
 
-export const transferHandlers = new TransferHandlerMap();
-export const transferClasses = new TransferClassMap();
-export const transferProtos = new TransferProtoMap();
+export class TransferRepo<TA = Transferable> {
+  readonly handlers = new TransferHandlerMap<TA>();
+  readonly classes = new TransferClassMap<TA>();
+  readonly protos = new TransferProtoMap<TA>();
+
+  setPropMarker<
+    V extends object,
+    K extends BFChainComlink.TransferProtoKeyValue["Key"]
+  >(obj: V, propMarker: K) {
+    return this.protos.setInstance(obj, propMarker);
+  }
+}
