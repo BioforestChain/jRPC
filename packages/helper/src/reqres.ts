@@ -10,11 +10,12 @@ const forceGetEndpointRCM = <TA>(
   let reqCbMap = requestCallbackMapCacher.get(ep);
   if (!reqCbMap) {
     const map = (reqCbMap = new Map());
-    ep.addEventListener("message", (ev: MessageEvent) => {
-      if (ev.data && ev.data.id) {
-        const cb = map.get(ev.data.id);
+    ep.addEventListener("message", (ev: BFChainComlink.MessageEvent) => {
+      const message = ev.data as any;
+      if (message && message.id) {
+        const cb = map.get(message.id);
         if (cb) {
-          map.delete(ev.data.id);
+          map.delete(message.id);
           cb(ev.data);
         }
       }

@@ -20,7 +20,7 @@
     "publ": "lerna publish",
     "publ:force": "lerna publish --force-publish",
     "lsts": "bdk-lsts --path tsconfig.json",
-    "clear": "bdk-clear -p ./build",
+    "clear": "node ./script/rmBuild.js",
     "build": "npm run clear & npm run build:cjs & npm run build:esm",
     "build:cjs": "tsc",
     "build:esm": "tsc -p tsconfig-esm.json"
