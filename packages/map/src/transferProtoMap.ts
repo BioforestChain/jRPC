@@ -62,13 +62,12 @@ export class TransferProtoMap<
     V extends object,
     K extends BFChainComlink.TransferProtoKeyValue["Key"]
   >(instance: V, propMarker: K) {
-    return Object.create(instance, {
-      TRANSFER_PROTO_SYMBOL: {
-        value: propMarker,
-        writable: true,
-        configurable: true,
-        enumerable: false
-      }
-    }) as BFChainComlink.TransferProto.TransferMarked<K, V>;
+    Object.defineProperty(instance, TRANSFER_PROTO_SYMBOL, {
+      value: propMarker,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
+    return instance as BFChainComlink.TransferProto.TransferMarked<K, V>;
   }
 }

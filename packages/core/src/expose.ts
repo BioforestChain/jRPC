@@ -17,14 +17,17 @@ const getRawValue = (rootObj: any, path: string[]) =>
 export function expose<TA = Transferable>(
   tp: TransferRepo<TA>,
   obj: any,
-  ep: BFChainComlink.Endpoint<TA> = self as any
+  ep: BFChainComlink.Endpoint<TA>,
+  mcCreator: BFChainComlink.MessageChannelCreater<TA>
 ) {
-  ep.addEventListener("message", async function callback(ev: MessageEvent) {
+  ep.addEventListener("message", async function callback(
+    ev: BFChainComlink.MessageEvent
+  ) {
     if (
       !ev ||
       !ev.data ||
-      typeof ev.data.id !== "number" ||
-      typeof ev.data.type !== "number"
+      typeof (ev.data as any).id !== "number" ||
+      typeof (ev.data as any).type !== "number"
     ) {
       return;
     }
@@ -42,23 +45,23 @@ export function expose<TA = Transferable>(
           break;
         case MessageType.SET:
           {
-            const parent = getParent(obj, message.path);
-            parent[message.path[message.path.length - 1]] = fromWireValue(
-              tp,
-              ev.data.value
-            );
+            const path = message.path;
+            const parent = getParent(obj, path);
+            parent[path[path.length - 1]] = fromWireValue(tp, message.value);
             returnValue = true;
           }
           break;
         case MessageType.APPLY:
           {
-            const parent = getParent(obj, message.path);
+            const path = message.path;
+            const parent = getParent(obj, path);
             const argumentList = message.argumentList.map(arg =>
               fromWireValue(tp, arg)
             );
-            returnValue = await parent[
-              message.path[message.path.length - 1]
-            ].apply(parent, argumentList);
+            returnValue = await (path.length
+              ? parent[path[path.length - 1]]
+              : parent
+            ).apply(parent, argumentList);
           }
           break;
         case MessageType.CONSTRUCT:
@@ -73,9 +76,10 @@ export function expose<TA = Transferable>(
           break;
         case MessageType.ENDPOINT:
           {
-            const { port1, port2 } = new MessageChannel();
-            expose(obj, port2);
-            returnValue = customTransfer(port1, [port1]);
+            const { port1, port2, transferablePort1 } = mcCreator();
+            expose(tp, obj, port2, mcCreator);
+
+            returnValue = port1;
           }
           break;
         case MessageType.RELEASE:
@@ -88,7 +92,7 @@ export function expose<TA = Transferable>(
       }
     } catch (value) {
       returnValue = tp.setPropMarker(
-        value as BFChainComlink.ThrowMarked,
+        { value } as BFChainComlink.ThrowMarked,
         THROW_MARKER
       );
     }

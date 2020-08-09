@@ -4,10 +4,18 @@ import {
   SAFE_TYPE_SYMBOL,
   PROXY_MARKER,
   THROW_MARKER,
-  TRANSFER_PROTO_SYMBOL
+  TRANSFER_PROTO_SYMBOL,
+  WireValueType
 } from "@bfchain/comlink-typings";
 import { TransferRepo } from "@bfchain/comlink-map";
-import { wrap, proxy, expose, customTransfer } from "@bfchain/comlink-core";
+import {
+  wrap,
+  proxy,
+  expose,
+  customTransfer,
+  toWireValue
+} from "@bfchain/comlink-core";
+import { fromWireValue } from "@bfchain/comlink-core/build/cjs/fromWireValue";
 
 export class ComlinkFactory<TA = Transferable> {
   get releaseProxy(): BFChainComlink.ReleaseProxySymbol {
@@ -41,19 +49,47 @@ export class ComlinkFactory<TA = Transferable> {
   wrap<T>(ep: BFChainComlink.Endpoint<TA>, target?: any) {
     return wrap<T, TA>(this.$tp, ep, target);
   }
-  expose(obj: any, ep?: BFChainComlink.Endpoint<TA>) {
-    return expose<TA>(this.$tp, obj, ep);
+  expose(obj: any, ep: BFChainComlink.Endpoint<TA> = self as any) {
+    return expose<TA>(this.$tp, obj, ep, this.$createMessageChannel);
   }
   proxy<T extends object>(obj: T) {
     return proxy<T, TA>(this.$tp, obj);
   }
-  transfer<T extends object>(obj: T, transfers: TA[], serialized?: T) {
-    return customTransfer(obj, transfers, serialized);
+  transfer<T extends object>(obj: T, transfers: TA[]) {
+    return customTransfer(obj, transfers);
   }
 
   constructor() {
+    this.$initMessagePortTransferProto();
     this.$initProxyTransferProto();
     this.$initThrowTransferProto();
+  }
+
+  protected $createMessageChannel() {
+    const { port1, port2 } = new MessageChannel();
+    return {
+      port1,
+      port2,
+      transferablePort1: port1 as unknown,
+      transferablePort2: port2 as unknown
+    } as BFChainComlink.MessageChannelCreaterReturn<TA>;
+  }
+
+  protected $initMessagePortTransferProto() {
+    const proxyTransferProto: BFChainComlink.TransferProto<
+      MessagePort,
+      MessagePort,
+      MessagePort,
+      TA
+    > = {
+      serialize(port) {
+        return [port, [(port as unknown) as TA]];
+      },
+      deserialize(port) {
+        return port;
+      }
+    };
+    this.$tp.protos.set("Comlink.MessagePort", proxyTransferProto);
   }
 
   protected $initProxyTransferProto() {
@@ -79,11 +115,27 @@ export class ComlinkFactory<TA = Transferable> {
   protected $initThrowTransferProto() {
     const throwTransferProto: BFChainComlink.TransferProto<
       BFChainComlink.ThrowMarked,
-      BFChainComlink.SerializedThrownValue
+      BFChainComlink.SerializedThrownValue,
+      never,
+      TA
     > = {
-      serialize(error) {
+      serialize: throwed => {
+        const error = throwed.value;
         let serialized: BFChainComlink.SerializedThrownValue;
-        if (error instanceof Error) {
+        let transferable: TA[] | undefined;
+
+        const wireValue = toWireValue(this.$tp, error);
+        transferable = wireValue[1];
+        serialized = {
+          isError: false,
+          value: wireValue[0]
+        };
+
+        /**如果没有对Error进行自定义解析，那么使用默认方案进行解析 */
+        if (
+          serialized.value.type === WireValueType.RAW &&
+          error instanceof Error
+        ) {
           serialized = {
             isError: true,
             value: {
@@ -92,22 +144,17 @@ export class ComlinkFactory<TA = Transferable> {
               stack: error.stack
             }
           };
-        } else {
-          serialized = {
-            isError: false,
-            value: error
-          };
         }
-        return [serialized, []];
+        return [serialized, transferable || []];
       },
-      deserialize(serialized) {
+      deserialize: serialized => {
         if (serialized.isError) {
           throw Object.assign(
             new Error(serialized.value.message),
             serialized.value
           );
         } else {
-          throw serialized.value;
+          throw fromWireValue(this.$tp, serialized.value);
         }
       }
     };

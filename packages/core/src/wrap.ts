@@ -1,8 +1,4 @@
-import {
-  requestResponseMessage,
-  closeEndPoint,
-  generateUUID
-} from "@bfchain/comlink-helper";
+import { requestResponseMessage, closeEndPoint } from "@bfchain/comlink-helper";
 import {
   MessageType,
   RELEASE_PROXY_SYMBOL,

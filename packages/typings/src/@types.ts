@@ -5,9 +5,18 @@ declare namespace BFChainComlink {
     message: MessageEvent;
   }
 
+  interface Event {
+    type: string;
+  }
+  interface MessageEvent<T = unknown> extends Event {
+    data: T;
+  }
   type EndpointEventListenerOrEventListenerObject =
     | ((ev: MessageEvent) => unknown)
     | { handleEvent(evt: MessageEvent): unknown };
+  type EventListenerOrEventListenerObject =
+    | ((ev: Event) => unknown)
+    | { handleEvent(evt: Event): unknown };
 
   interface EventSource {
     addEventListener<K extends keyof EndpointEventMap>(
@@ -33,8 +42,9 @@ declare namespace BFChainComlink {
   }
 
   interface Endpoint<TA = Transferable> extends EventSource {
-    postMessage(message: any, transfer?: TA[]): void;
-    start?: () => void;
+    postMessage(message: any, transfer?: TA[]): unknown;
+    start?: () => unknown;
+    close?: () => unknown;
   }
 
   interface PostMessageWithOrigin<TA = Transferable> {
@@ -46,6 +56,16 @@ declare namespace BFChainComlink {
     port2: Endpoint<TA>;
   }
   interface MessagePort<TA = Transferable> extends Endpoint<TA> {}
+
+  type MessageChannelCreaterReturn<TA = Transferable> = {
+    port1: BFChainComlink.Endpoint<TA>;
+    port2: BFChainComlink.Endpoint<TA>;
+    transferablePort1: TA;
+    transferablePort2: TA;
+  };
+  type MessageChannelCreater<
+    TA = Transferable
+  > = () => MessageChannelCreaterReturn<TA>;
   //#endregion
 
   //#region Wire
@@ -56,7 +76,7 @@ declare namespace BFChainComlink {
   interface RawWireValue {
     id?: WireId;
     type: import("./const").WireValueType.RAW;
-    value: {};
+    value: unknown;
   }
 
   interface RawListWireValue {
@@ -163,7 +183,7 @@ declare namespace BFChainComlink {
    */
   type SerializedThrownValue =
     | { isError: true; value: Error }
-    | { isError: false; value: unknown };
+    | { isError: false; value: WireValue };
 
   const PROXY_MARKER: "Comlink.proxy";
   const THROW_MARKER: "Comlink.throw";
@@ -173,7 +193,10 @@ declare namespace BFChainComlink {
     ProxyMarker,
     V
   >;
-  type ThrowMarked<V = unknown> = TransferProto.TransferMarked<ThrowMarker, V>;
+  type ThrowMarked<V = unknown> = TransferProto.TransferMarked<
+    ThrowMarker,
+    { value: V }
+  >;
 
   const CREATE_ENDPOINT_SYMBOL: unique symbol;
   const RELEASE_PROXY_SYMBOL: unique symbol;
@@ -186,7 +209,7 @@ declare namespace BFChainComlink {
   /**
    * Additional special comlink methods available on each proxy returned by `Comlink.wrap()`.
    */
-  interface ProxyMethods<T = unknown,TA=Transferable> {
+  interface ProxyMethods<T = unknown, TA = Transferable> {
     [CREATE_ENDPOINT_SYMBOL]: () => Promise<MessagePort<TA>>;
     [RELEASE_PROXY_SYMBOL]: () => void;
     [SAFE_TYPE_SYMBOL]: T;
@@ -269,7 +292,7 @@ declare namespace BFChainComlink {
    * Takes the raw type of a remote object, function or class in the other thread and returns the type as it is visible to
    * the local thread from the proxy return value of `Comlink.wrap()` or `Comlink.proxy()`.
    */
-  type Remote<T,TA=Transferable> =
+  type Remote<T, TA = Transferable> =
     // Handle properties
     RemoteObject<T> &
       // Handle call signature (if present)
@@ -290,7 +313,7 @@ declare namespace BFChainComlink {
           }
         : unknown) &
       // Include additional special comlink methods available on the proxy.
-      ProxyMethods<T,TA>;
+      ProxyMethods<T, TA>;
 
   /**
    * Expresses that a type can be either a sync or async.
@@ -343,9 +366,10 @@ declare namespace BFChainComlink {
   interface TransferClass<
     C extends AnyClass = AnyClass,
     O = unknown,
-    D = C,
-    TA = Transferable
-  > extends TransferProto<C, O, D, TA> {
+    TA = Transferable,
+    /// var
+    I extends InstanceType<C> = InstanceType<C>
+  > extends TransferProto<I, O, I, TA> {
     ctor: C;
   }
   type AnyClass<P = any> = new (...args: any) => P;
@@ -358,4 +382,8 @@ declare namespace BFChainComlink {
   }
 
   //#endregion
+}
+
+interface SymbolConstructor {
+  comlinkSafeType: BFChainComlink.SafeTypeSymbol;
 }

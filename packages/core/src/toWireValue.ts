@@ -7,10 +7,7 @@ export function toWireValue<TA = Transferable>(
 ): [BFChainComlink.WireValue, TA[]] {
   const customTransfer = _customTransferCache.get(value);
   if (customTransfer) {
-    return [
-      { type: WireValueType.RAW, value: customTransfer.serialized },
-      customTransfer.transfers as TA[]
-    ];
+    return [customTransfer.serialized, customTransfer.transfers as TA[]];
   }
 
   let serializeTransfer:
@@ -55,13 +52,16 @@ export function toWireValue<TA = Transferable>(
 }
 const _customTransferCache = new WeakMap<
   object,
-  { serialized: object; transfers: unknown[] }
+  { serialized: BFChainComlink.WireValue; transfers: unknown[] }
 >();
 export function customTransfer<T extends object, TA = Transferable>(
   obj: T,
   transfers: TA[],
-  serialized = obj
+  serialized?: BFChainComlink.WireValue
 ) {
-  _customTransferCache.set(obj, { serialized, transfers });
+  _customTransferCache.set(obj, {
+    serialized: serialized || { type: WireValueType.RAW, value: obj },
+    transfers
+  });
   return obj;
 }

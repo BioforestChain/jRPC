@@ -59,6 +59,36 @@ export class TransferClassMap<
     /// falg the TransferName's TransferType
     this._nameTypeMap.set(name, type);
   }
+  registryClass<CC extends C = C, SS extends S = S>(
+    name: BFChainComlink.TransferClassKeyValue["Key"],
+    ctor?: CC,
+    serialize?: BFChainComlink.TransferClass.SerializeOnly<
+      CC,
+      SS,
+      TA
+    >["serialize"],
+    deserialize?: BFChainComlink.TransferClass.DeserializeOnly<
+      CC,
+      SS,
+      TA
+    >["deserialize"]
+  ) {
+    let ai: BFChainComlink.TransferClass.IAny<CC, SS, TA> | undefined;
+    if (ctor && serialize) {
+      if (deserialize) {
+        ai = { ctor, serialize, deserialize };
+      } else {
+        ai = { ctor, serialize };
+      }
+    } else if (deserialize) {
+      ai = { deserialize };
+    }
+    if (ai) {
+      this.set(name, ai);
+      return true;
+    }
+    return false;
+  }
 
   getByInstance<M extends BFChainComlink.TransferMap.TypeModel>(
     instance: unknown,

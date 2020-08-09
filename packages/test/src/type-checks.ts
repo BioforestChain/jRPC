@@ -6,16 +6,6 @@ import {
   windowEndpoint as ComlinkWindowEndpoint
 } from "@bfchain/comlink";
 
-// const {
-//   wrap: comlink.wrap,
-//   proxy: comlink.proxy,
-//   expose: comlink.expose,
-//   releaseProxy: comlink.releaseProxy,
-//   createEndpoint: comlink.createEndpoint,
-//   transferProto: comlink.transferProto,
-//   proxyMarker: comlink.proxyMarker,
-//   transferHandlers: comlink.transferHandlers
-// }
 const comlink = new ComlinkFactory();
 
 async function closureSoICanUseAwait() {
@@ -404,3 +394,8 @@ async function closureSoICanUseAwait() {
     comlink.transferHandlers.set("URL", urlTransferHandler);
   }
 }
+import test from "ava";
+
+test("type check not need test", t => {
+  t.pass();
+});

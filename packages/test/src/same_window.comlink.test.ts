@@ -134,6 +134,35 @@ test("can keep the stack and message of thrown errors", async t => {
   }
 });
 
+test("can custom the stack and message of thrown errors", async t => {
+  /// 注册自定义异常类
+  class MyError extends Error {}
+  Comlink.transferClasses.registryClass(
+    "MyError",
+    MyError,
+    err => {
+      return [err.message, []];
+    },
+    message => {
+      const myError = new MyError("qaq:" + message);
+      return myError;
+    }
+  );
+  const source = () => {
+    const error = new MyError("OMG");
+    throw error;
+  };
+  const thing = Comlink.wrap<typeof source>(t.context.port1);
+  Comlink.expose(source, t.context.port2);
+  try {
+    await thing();
+    throw "Should have thrown";
+  } catch (err) {
+    t.not(err, "Should have thrown");
+    t.is(err.message, "qaq:OMG");
+  }
+});
+
 test("can forward an async function error", async t => {
   const source = {
     async throwError() {
@@ -270,7 +299,9 @@ test("can handle throwing class instance methods", async t => {
   return instance
     .throwsAnError()
     .then(_ => Promise.reject())
-    .catch(err => {});
+    .catch(err => {
+      t.pass();
+    });
 });
 
 test("can work with class instance methods multiple times", async t => {
@@ -469,21 +500,29 @@ test("will wrap marked parameter values", async t => {
   t.is(await local.counter, 1);
 });
 
-test("will wrap marked assignments", function (t) {
+test("will wrap marked assignments", async t => {
+  t.plan(1);
+
   const thing = Comlink.wrap<typeof obj>(t.context.port1);
   const obj = {
     onready: null as null | (() => unknown),
     call() {
-      this.onready?.();
+      this.onready!();
     }
   };
   Comlink.expose(obj, t.context.port2);
-
-  thing[Comlink.safeType].onready = Comlink.proxy(() => t.pass());
+  const task = new Promise(resolve => {
+    thing[Comlink.safeType].onready = Comlink.proxy(() => {
+      t.pass();
+      resolve();
+    });
+  });
   thing.call();
+  await task;
 });
 
 test("will wrap marked parameter values, simple function", async t => {
+  t.plan(1);
   const source = async function (f: () => unknown) {
     await f();
   };
@@ -491,7 +530,12 @@ test("will wrap marked parameter values, simple function", async t => {
   Comlink.expose(source, t.context.port2);
   // Weird code because Mocha
   await new Promise(async resolve => {
-    thing(Comlink.proxy(() => resolve()));
+    thing(
+      Comlink.proxy(() => {
+        t.pass();
+        resolve();
+      })
+    );
   });
 });
 
@@ -559,7 +603,7 @@ test("can handle destructuring", async t => {
   t.is(await c(), 6);
 });
 
-test("lets users define transfer handlers", function (t) {
+test("lets users define transfer handlers", async t => {
   class EventData {
     constructor(public data: unknown) {}
   }
@@ -579,21 +623,20 @@ test("lets users define transfer handlers", function (t) {
   };
   Comlink.transferHandlers.set("error", errorTransferHandler);
 
-  const source = (ev: EventData) => {
-    t.true(ev instanceof EventData);
-    t.deepEqual(ev.data, { a: 1 });
-    t.pass();
-  };
+  const task = new Promise(resolve => {
+    const source = (ev: EventData) => {
+      t.true(ev instanceof EventData);
+      t.deepEqual(ev.data, { a: 1 });
+      t.pass();
+      resolve();
+    };
 
-  Comlink.expose(source, t.context.port1);
-  const thing = Comlink.wrap<typeof source>(t.context.port2);
+    Comlink.expose(source, t.context.port1);
+    const thing = Comlink.wrap<typeof source>(t.context.port2);
 
-  const { port1, port2 } = new MessageChannel();
-  port1.on("message", data => {
-    thing(data);
+    thing(new EventData({ a: 1 }));
   });
-  port1.start();
-  port2.postMessage(new EventData({ a: 1 }));
+  await task;
 });
 
 test("can tunnels a new endpoint with createEndpoint", async t => {
@@ -605,6 +648,7 @@ test("can tunnels a new endpoint with createEndpoint", async t => {
   };
   Comlink.expose(source, t.context.port2);
   const proxy = Comlink.wrap<typeof source>(t.context.port1);
+  debugger;
   const otherEp = await proxy[Comlink.createEndpoint]();
   const otherProxy = Comlink.wrap<typeof source>(otherEp);
   t.is(await otherProxy.a, 4);

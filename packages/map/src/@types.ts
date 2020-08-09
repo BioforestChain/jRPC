@@ -141,17 +141,17 @@ declare namespace BFChainComlink {
       C extends AnyClass = AnyClass,
       S = unknown,
       TA = Transferable
-    > extends TransferClass<C, S, C, TA> {}
+    > extends TransferClass<C, S, TA> {}
     interface ISerializeOnly<
       C extends AnyClass = AnyClass,
       S = unknown,
       TA = Transferable
-    > extends Omit<TransferClass<C, S, C, TA>, "deserialize"> {}
+    > extends Omit<TransferClass<C, S, TA>, "deserialize"> {}
     interface IDeserializeOnly<
       C extends AnyClass = AnyClass,
       S = unknown,
       TA = Transferable
-    > extends Pick<TransferClass<C, S, C, TA>, "deserialize"> {}
+    > extends Pick<TransferClass<C, S, TA>, "deserialize"> {}
     type IAny<C extends AnyClass = AnyClass, S = unknown, TA = Transferable> =
       | IBoth<C, S, TA>
       | ISerializeOnly<C, S, TA>

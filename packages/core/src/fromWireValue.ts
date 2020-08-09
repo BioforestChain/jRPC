@@ -26,5 +26,5 @@ export function fromWireValue<TA = Transferable>(
   if (!deserializeTransfer) {
     throw new ReferenceError(`could not found wire name:"${wire.name}".`);
   }
-  deserializeTransfer.deserialize(wire.value);
+  return deserializeTransfer.deserialize(wire.value);
 }
