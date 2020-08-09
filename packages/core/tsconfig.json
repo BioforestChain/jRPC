@@ -1,0 +1,28 @@
+{
+  "extends": "../../config/tsconfig_base/base.tsconfig.cjs",
+  "compilerOptions": {
+    "outDir": "./build/cjs",
+    "rootDir": "./src",
+    "lib": [
+      "dom"
+    ]
+  },
+  "references": [
+    {
+      "path": "../helper/tsconfig.json"
+    },
+    {
+      "path": "../map/tsconfig.json"
+    },
+    {
+      "path": "../typings/tsconfig.json"
+    }
+  ],
+  "files": [
+    "src/expose.ts",
+    "src/fromWireValue.ts",
+    "src/index.ts",
+    "src/toWireValue.ts",
+    "src/wrap.ts"
+  ]
+}
