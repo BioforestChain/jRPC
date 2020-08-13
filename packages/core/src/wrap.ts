@@ -5,8 +5,6 @@ import {
   CREATE_ENDPOINT_SYMBOL,
   SAFE_TYPE_SYMBOL
 } from "@bfchain/comlink-typings";
-import { fromWireValue } from "./fromWireValue";
-import { toWireValue } from "./toWireValue";
 import type { TransferRepo } from "@bfchain/comlink-map";
 
 export function wrap<T, TA = Transferable>(
@@ -30,7 +28,7 @@ const processArguments = <TA = Transferable>(
   tp: TransferRepo<TA>,
   argumentList: any[]
 ): [BFChainComlink.WireValue[], TA[]] => {
-  const processed = argumentList.map(arg => toWireValue(tp, arg));
+  const processed = argumentList.map(arg => tp.toWireValue(arg));
   return [processed.map(v => v[0]), myFlat(processed.map(v => v[1]))];
 };
 
@@ -42,7 +40,7 @@ function createProxy<T, TA = Transferable>(
   target: object = function () {}
 ): BFChainComlink.Remote<T, TA> {
   let isProxyReleased = false;
-  const _fromWireValue = fromWireValue.bind(null, tp);
+  const _fromWireValue = tp.fromWireValue.bind(tp);
   const proxy: object = new Proxy(target, {
     get(_target, prop) {
       throwIfProxyReleased(isProxyReleased);
@@ -83,7 +81,7 @@ function createProxy<T, TA = Transferable>(
     set(_target, prop, rawValue) {
       throwIfProxyReleased(isProxyReleased);
 
-      const [value, transferables] = toWireValue(tp, rawValue);
+      const [value, transferables] = tp.toWireValue(rawValue);
       requestResponseMessage<TA, BFChainComlink.WireValue>(
         ep,
         {

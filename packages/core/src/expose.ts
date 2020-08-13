@@ -3,8 +3,6 @@ import {
   THROW_MARKER,
   PROXY_MARKER
 } from "@bfchain/comlink-typings";
-import { fromWireValue } from "./fromWireValue";
-import { toWireValue, customTransfer } from "./toWireValue";
 import { closeEndPoint } from "@bfchain/comlink-helper";
 import type { TransferRepo } from "@bfchain/comlink-map";
 
@@ -47,7 +45,7 @@ export function expose<TA = Transferable>(
           {
             const path = message.path;
             const parent = getParent(obj, path);
-            parent[path[path.length - 1]] = fromWireValue(tp, message.value);
+            parent[path[path.length - 1]] = tp.fromWireValue(message.value);
             returnValue = true;
           }
           break;
@@ -56,7 +54,7 @@ export function expose<TA = Transferable>(
             const path = message.path;
             const parent = getParent(obj, path);
             const argumentList = message.argumentList.map(arg =>
-              fromWireValue(tp, arg)
+              tp.fromWireValue(arg)
             );
             returnValue = await (path.length
               ? parent[path[path.length - 1]]
@@ -68,7 +66,7 @@ export function expose<TA = Transferable>(
           {
             const RawCtor = getRawValue(obj, message.path);
             const argumentList = message.argumentList.map(arg =>
-              fromWireValue(tp, arg)
+              tp.fromWireValue(arg)
             );
             const value = await new RawCtor(...argumentList);
             returnValue = proxy(tp, value);
@@ -97,7 +95,7 @@ export function expose<TA = Transferable>(
       );
     }
 
-    const [wireValue, transferables] = toWireValue(tp, returnValue);
+    const [wireValue, transferables] = tp.toWireValue(returnValue);
     wireValue.id = message.id;
     ep.postMessage(wireValue, transferables);
     if (message.type === MessageType.RELEASE) {
