@@ -1,3 +1,4 @@
 [submodule "src/lib/comlink"]
 	path = src/lib/comlink
-	url = ssh://bnqkl.dev:22/CoreProductCollection/BlockchainCore/_git/comlink
+	url = http://192.168.250.2:8081/mirrorcode/gaubee-comlink.git
+	branch = TransferHandlerMap

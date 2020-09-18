@@ -7,13 +7,13 @@
   "typings": "./build/src/index.d.ts",
   "scripts": {
     "up": "yarn upgrade-interactive --latest",
-    "dev": "tsc -w",
+    "dev": "bdk-tsc -w",
     "p1": "bdk-p1 & npm publ",
     "publ": "bdk-upv -p ./ & npm publ",
     "clear": "bdk-clear -p ./build",
     "build": "npm run clear & npm run build:cjs & npm run build:esm",
-    "build:cjs": "tsc",
-    "build:esm": "tsc -p tsconfig-esm.json"
+    "build:cjs": "bdk-tsc",
+    "build:esm": "bdk-tsc -p tsconfig-esm.json"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,6 @@
     "build"
   ],
   "devDependencies": {
-    "@bfchain/devkit": "^0.7.10"
+    "@bfchain/devkit": "^0.8.22"
   }
 }
