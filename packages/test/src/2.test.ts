@@ -15,6 +15,9 @@ class TestService {
   zz(cb: (arg: { k: string; v: string }) => number) {
     console.log(cb({ k: "xxx", v: "zzz" }));
   }
+  think(ms: number) {
+    return new Promise((cb) => setTimeout(cb, ms));
+  }
 }
 setInterval(() => {
   console.log("tick", threadId);
@@ -92,6 +95,9 @@ if (isMainThread) {
       /// test prototype
       console.assert(ctxA instanceof Function === false);
       console.assert(ctxA instanceof ctxA.constructor === true);
+
+      /// test promise
+      await ctxA.think(2000);
 
       console.log("all passed!");
       process.exit();
