@@ -1,389 +1,97 @@
 declare namespace BFChainComlink {
-  //#region Endpoint
-
-  interface EndpointEventMap {
-    message: MessageEvent;
-  }
-
-  interface Event {
-    type: string;
-  }
-  interface MessageEvent<T = unknown> extends Event {
-    data: T;
-  }
-  type EndpointEventListenerOrEventListenerObject =
-    | ((ev: MessageEvent) => unknown)
-    | { handleEvent(evt: MessageEvent): unknown };
-  type EventListenerOrEventListenerObject =
-    | ((ev: Event) => unknown)
-    | { handleEvent(evt: Event): unknown };
-
-  interface EventSource {
-    addEventListener<K extends keyof EndpointEventMap>(
-      type: K,
-      listener: EndpointEventListenerOrEventListenerObject,
-      options?: {}
-    ): void;
-    addEventListener(
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: {}
-    ): void;
-    removeEventListener<K extends keyof EndpointEventMap>(
-      type: K,
-      listener: EndpointEventListenerOrEventListenerObject,
-      options?: {}
-    ): void;
-    removeEventListener(
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: {}
-    ): void;
-  }
-
-  interface Endpoint<TA = Transferable> extends EventSource {
-    postMessage(message: any, transfer?: TA[]): unknown;
-    start?: () => unknown;
-    close?: () => unknown;
-  }
-
-  interface PostMessageWithOrigin<TA = Transferable> {
-    postMessage(message: any, targetOrigin: string, transfer?: TA[]): void;
-  }
-
-  interface MessageChannel<TA = Transferable> {
-    port1: Endpoint<TA>;
-    port2: Endpoint<TA>;
-  }
-  interface MessagePort<TA = Transferable> extends Endpoint<TA> {}
-
-  type MessageChannelCreaterReturn<TA = Transferable> = {
-    port1: BFChainComlink.Endpoint<TA>;
-    port2: BFChainComlink.Endpoint<TA>;
-    transferablePort1: TA;
-    transferablePort2: TA;
-  };
-  type MessageChannelCreater<
-    TA = Transferable
-  > = () => MessageChannelCreaterReturn<TA>;
-  //#endregion
-
-  //#region Wire
-  type WireId = number;
-
-  // type WireValueType = import("./const").WireValueType;
-
-  interface RawWireValue {
-    id?: WireId;
-    type: import("./const").WireValueType.RAW;
-    value: unknown;
-  }
-
-  interface RawListWireValue {
-    id?: WireId;
-    type: import("./const").WireValueType.RAW_ARRAY;
-    value: WireValue[];
-  }
-
-  type DeserializableWireType =
-    | import("./const").WireValueType.HANDLER
-    | import("./const").WireValueType.CLASS
-    | import("./const").WireValueType.PROTO;
-  interface DeserializableWireValue {
-    id?: WireId;
-    type: DeserializableWireType;
-    name: TransferKey;
-    value: unknown;
-  }
-
-  type WireValue = RawWireValue | RawListWireValue | DeserializableWireValue;
-  //#endregion
-
-  //#region Message
-
-  type MessageID = number;
-  interface GetMessageArg {
-    type: import("./const").MessageType.GET;
-    path: string[];
-  }
-  interface GetMessage extends GetMessageArg {
-    id: MessageID;
-  }
-  interface SetMessageArg {
-    type: import("./const").MessageType.SET;
-    path: string[];
-    value: WireValue;
-  }
-  interface SetMessage extends SetMessageArg {
-    id: MessageID;
-  }
-  interface ApplyMessageArg {
-    type: import("./const").MessageType.APPLY;
-    path: string[];
-    argumentList: WireValue[];
-  }
-  interface ApplyMessage extends ApplyMessageArg {
-    id: MessageID;
-  }
-  interface ConstructMessageArg {
-    type: import("./const").MessageType.CONSTRUCT;
-    path: string[];
-    argumentList: WireValue[];
-  }
-  interface ConstructMessage extends ConstructMessageArg {
-    id: MessageID;
-  }
-  interface EndpointMessageArg {
-    type: import("./const").MessageType.ENDPOINT;
-  }
-  interface EndpointMessage extends EndpointMessageArg {
-    id: MessageID;
-  }
-  interface ReleaseMessageArg {
-    type: import("./const").MessageType.RELEASE;
-    path: string[];
-  }
-  interface ReleaseMessage extends ReleaseMessageArg {
-    id: MessageID;
-  }
-
-  type MessageArg =
-    | GetMessageArg
-    | SetMessageArg
-    | ApplyMessageArg
-    | ConstructMessageArg
-    | EndpointMessageArg
-    | ReleaseMessageArg;
-
-  type Message =
-    | GetMessage
-    | SetMessage
-    | ApplyMessage
-    | ConstructMessage
-    | EndpointMessage
-    | ReleaseMessage;
-  //#endregion
-
-  //#region Const
-  type TransferKey = string;
-  namespace TransferClass {
-    const TRANSFER_SYMBOL: unique symbol;
-    type TransferSymbol = typeof TRANSFER_SYMBOL;
-  }
-  namespace TransferProto {
-    const TRANSFER_SYMBOL: unique symbol;
-    type TransferSymbol = typeof TRANSFER_SYMBOL;
-    type TransferMarked<K, V = unknown> = V & {
-      [TRANSFER_SYMBOL]: K;
-    };
-  }
-
   /**
-   * 通用的异常传输
+   * IOB : InOutBinary
+   * TB : TransferableBinary
    */
-  type SerializedThrownValue =
-    | { isError: true; value: Error }
-    | { isError: false; value: WireValue };
+  interface ComlinkCore<IOB, TB> {
+    //#region 传输的模型转换
 
-  const PROXY_MARKER: "Comlink.proxy";
-  const THROW_MARKER: "Comlink.throw";
-  type ProxyMarker = typeof PROXY_MARKER;
-  type ThrowMarker = typeof THROW_MARKER;
-  type ProxyMarked<V extends object = object> = TransferProto.TransferMarked<
-    ProxyMarker,
-    V
-  >;
-  type ThrowMarked<V = unknown> = TransferProto.TransferMarked<
-    ThrowMarker,
-    { value: V }
+    /**任意类型的对象 转换到 IOB */
+    Any2InOutBinary(obj: unknown): IOB;
+    /**IOB 转换到 任意类型的对象 */
+    InOutBinary2Any(port: BinaryPort<TB>, bin: IOB): unknown;
+
+    /**IO指令 转成 可传输的模型 */
+    linkObj2TransferableBinary(obj: LinkObj<IOB>): TB;
+    /**可传输的模型 转成 IO指令 */
+    transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
+
+    // /**判断一个对象是否可以克隆，或者只能引用传输 */
+    // canClone(obj: unknown): boolean;
+
+    //#endregion
+
+    //#region 导入导出
+    /**导出
+     * 同语法：
+     * export default target
+     * export const key = target
+     */
+    export(target: object, key?: string): void;
+    /**取消导出 */
+    recycle(target: object): boolean;
+    /**导入
+     * 同语法：
+     * import ? from port
+     * import { key } from port
+     */
+    import<T extends object>(
+      port: BinaryPort<TB>,
+      key?: string
+    ): PromiseLike<Remote<T>>;
+    //#endregion
+
+    //#region
+
+    //#endregion
+
+    /**绑定一条通道 */
+    listen(port: BinaryPort<TB>): Promise<unknown /* 握手信息 */>;
+    /**释放一个绑定的通道 */
+    close(port: BinaryPort<TB>): boolean;
+  }
+
+  /**定义数据管道的双工规范
+   * 这里使用pipe的风格进行定义，而不是MessagePort那样的监听
+   * 从而可以同时适用于 同步 与 异步 的风格
+   */
+  interface BinaryPort<TB, RTB = TB> {
+    // readStream: AsyncIterator<TB>;
+    onMessage: (cb: (bin: TB) => TB | undefined) => void;
+    // write(bin: TB): void;
+    // close(): void;
+    req(bin: TB): TB;
+    // res(bin: TB): void;
+  }
+
+  type Remote<T> = T;
+
+  interface LinkInObj<IOB> {
+    type: import("./const").LinkObjType.In;
+    // reqId: number;
+    targetId: number;
+    in: IOB[];
+    hasOut: boolean;
+  }
+  interface LinkOutObj<IOB> {
+    type: import("./const").LinkObjType.Out;
+    // resId: number;
+    out: IOB[];
+    isThrow: boolean;
+  }
+  type LinkObj<IOB> = LinkInObj<IOB> | LinkOutObj<IOB>;
+
+  type EmscriptionProxyHanlder<T extends object> = Required<
+    Omit<ProxyHandler<T>, "enumerate">
   >;
 
-  const CREATE_ENDPOINT_SYMBOL: unique symbol;
-  const RELEASE_PROXY_SYMBOL: unique symbol;
-  const SAFE_TYPE_SYMBOL: unique symbol;
-
-  type CreateEndpointSymbol = typeof CREATE_ENDPOINT_SYMBOL;
-  type ReleaseProxySymbol = typeof RELEASE_PROXY_SYMBOL;
-  type SafeTypeSymbol = typeof SAFE_TYPE_SYMBOL;
-
-  /**
-   * Additional special comlink methods available on each proxy returned by `Comlink.wrap()`.
-   */
-  interface ProxyMethods<T = unknown, TA = Transferable> {
-    [CREATE_ENDPOINT_SYMBOL]: () => Promise<MessagePort<TA>>;
-    [RELEASE_PROXY_SYMBOL]: () => void;
-    [SAFE_TYPE_SYMBOL]: T;
-  }
-  //#endregion
-
-  //#region Remote
-
-  /**
-   * Takes a type and wraps it in a Promise, if it not already is one.
-   * This is to avoid `Promise<Promise<T>>`.
-   *
-   * This is the inverse of `Unpromisify<T>`.
-   */
-  type Promisify<T> = T extends PromiseLike<unknown> ? T : Promise<T>;
-  /**
-   * Takes a type that may be Promise and unwraps the Promise type.
-   * If `P` is not a Promise, it returns `P`.
-   *
-   * This is the inverse of `Promisify<T>`.
-   */
-  type Unpromisify<P> = P extends PromiseLike<infer T> ? T : P;
-
-  /**
-   * Takes the raw type of a remote property and returns the type that is visible to the local thread on the proxy.
-   *
-   * Note: This needs to be its own type alias, otherwise it will not distribute over unions.
-   * See https://www.typescriptlang.org/docs/handbook/advanced-types.html#distributive-conditional-types
-   */
-  type RemoteProperty<T> =
-    // If the value is a method, comlink will proxy it automatically.
-    // Objects are only proxied if they are marked to be proxied.
-    // Otherwise, the property is converted to a Promise that resolves the cloned value.
-    T extends Function | ProxyMarked ? Remote<T> : Promisify<T>;
-
-  /**
-   * Takes the raw type of a property as a remote thread would see it through a proxy (e.g. when passed in as a function
-   * argument) and returns the type that the local thread has to supply.
-   *
-   * This is the inverse of `RemoteProperty<T>`.
-   *
-   * Note: This needs to be its own type alias, otherwise it will not distribute over unions. See
-   * https://www.typescriptlang.org/docs/handbook/advanced-types.html#distributive-conditional-types
-   */
-  type LocalProperty<T> = T extends Function | ProxyMarked
-    ? Local<T>
-    : Unpromisify<T>;
-
-  /**
-   * Proxies `T` if it is a `ProxyMarked`, clones it otherwise (as handled by structured cloning and transfer handlers).
-   */
-  type ProxyOrClone<T> = T extends ProxyMarked ? Remote<T> : T;
-  /**
-   * Inverse of `ProxyOrClone<T>`.
-   */
-  type UnproxyOrClone<T> = T extends RemoteObject<ProxyMarked> ? Local<T> : T;
-
-  /**
-   * Takes the raw type of a remote object in the other thread and returns the type as it is visible to the local thread
-   * when proxied with `Comlink.proxy()`.
-   *
-   * This does not handle call signatures, which is handled by the more general `Remote<T>` type.
-   *
-   * @template T The raw type of a remote object as seen in the other thread.
-   */
-  type RemoteObject<T> = { [P in keyof T]: RemoteProperty<T[P]> };
-  /**
-   * Takes the type of an object as a remote thread would see it through a proxy (e.g. when passed in as a function
-   * argument) and returns the type that the local thread has to supply.
-   *
-   * This does not handle call signatures, which is handled by the more general `Local<T>` type.
-   *
-   * This is the inverse of `RemoteObject<T>`.
-   *
-   * @template T The type of a proxied object.
-   */
-  type LocalObject<T> = { [P in keyof T]: LocalProperty<T[P]> };
-
-  /**
-   * Takes the raw type of a remote object, function or class in the other thread and returns the type as it is visible to
-   * the local thread from the proxy return value of `Comlink.wrap()` or `Comlink.proxy()`.
-   */
-  type Remote<T, TA = Transferable> =
-    // Handle properties
-    RemoteObject<T> &
-      // Handle call signature (if present)
-      (T extends (...args: infer TArguments) => infer TReturn
-        ? (
-            ...args: { [I in keyof TArguments]: UnproxyOrClone<TArguments[I]> }
-          ) => Promisify<ProxyOrClone<Unpromisify<TReturn>>>
-        : unknown) &
-      // Handle construct signature (if present)
-      // The return of construct signatures is always proxied (whether marked or not)
-      (T extends { new (...args: infer TArguments): infer TInstance }
-        ? {
-            new (
-              ...args: {
-                [I in keyof TArguments]: UnproxyOrClone<TArguments[I]>;
-              }
-            ): Promisify<Remote<TInstance>>;
-          }
-        : unknown) &
-      // Include additional special comlink methods available on the proxy.
-      ProxyMethods<T, TA>;
-
-  /**
-   * Expresses that a type can be either a sync or async.
-   */
-  type MaybePromise<T> = Promise<T> | T;
-
-  /**
-   * Takes the raw type of a remote object, function or class as a remote thread would see it through a proxy (e.g. when
-   * passed in as a function argument) and returns the type the local thread has to supply.
-   *
-   * This is the inverse of `Remote<T>`. It takes a `Remote<T>` and returns its original input `T`.
-   */
-  type Local<T> =
-    // Omit the special proxy methods (they don't need to be supplied, comlink adds them)
-    Omit<LocalObject<T>, keyof ProxyMethods> &
-      // Handle call signatures (if present)
-      (T extends (...args: infer TArguments) => infer TReturn
-        ? (
-            ...args: { [I in keyof TArguments]: ProxyOrClone<TArguments[I]> }
-          ) => // The raw function could either be sync or async, but is always proxied automatically
-          MaybePromise<UnproxyOrClone<Unpromisify<TReturn>>>
-        : unknown) &
-      // Handle construct signature (if present)
-      // The return of construct signatures is always proxied (whether marked or not)
-      (T extends { new (...args: infer TArguments): infer TInstance }
-        ? {
-            new (
-              ...args: {
-                [I in keyof TArguments]: ProxyOrClone<TArguments[I]>;
-              }
-            ): // The raw constructor could either be sync or async, but is always proxied automatically
-            MaybePromise<Local<Unpromisify<TInstance>>>;
-          }
-        : unknown);
-
-  //#endregion
-
-  //#region Transfer
-  /**
-   * 依赖于原型链的转换
-   */
-  interface TransferProto<I = unknown, O = unknown, D = I, TA = Transferable> {
-    // proto: symbol;
-    serialize(obj: I): [O, TA[]];
-    deserialize(obj: O): D;
-  }
-  /**
-   * 依赖于构造函数的转换
-   */
-  interface TransferClass<
-    C extends AnyClass = AnyClass,
-    O = unknown,
-    TA = Transferable,
-    /// var
-    I extends InstanceType<C> = InstanceType<C>
-  > extends TransferProto<I, O, I, TA> {
-    ctor: C;
-  }
-  type AnyClass<P = any> = new (...args: any) => P;
-  /**
-   * 自定义判定转换
-   */
-  interface TransferHandler<I = unknown, O = unknown, D = I, TA = Transferable>
-    extends TransferProto<I, O, D, TA> {
-    canHandle(value: unknown): value is I;
-  }
-
-  //#endregion
-}
-
-interface SymbolConstructor {
-  comlinkSafeType: BFChainComlink.SafeTypeSymbol;
+  type ImportRefHook<T> = T extends object
+    ? {
+        getSource: () => T;
+        getProxyHanlder?: () => BFChainComlink.EmscriptionProxyHanlder<T>;
+      }
+    : {
+        getSource: () => T;
+        getProxyHanlder?: undefined;
+      };
 }

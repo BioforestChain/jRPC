@@ -2,10 +2,7 @@
   "extends": "../../config/tsconfig_base/base.tsconfig.cjs",
   "compilerOptions": {
     "outDir": "./build/cjs",
-    "rootDir": "./src",
-    "lib": [
-      "dom"
-    ]
+    "rootDir": "./src"
   },
   "files": [
     "src/@types.ts",

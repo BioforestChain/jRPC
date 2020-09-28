@@ -1,3 +1,4 @@
-export * from "./expose";
-export * from "./wrap";
-export * from "./toWireValue";
+import "@bfchain/comlink-typings";
+export * from "./ComlinkCore";
+export * from "./ImportStore";
+export * from "./ExportStore";

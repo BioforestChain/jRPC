@@ -2,10 +2,7 @@
   "extends": "../../config/tsconfig_base/base.tsconfig.cjs",
   "compilerOptions": {
     "outDir": "./build/cjs",
-    "rootDir": "./src",
-    "lib": [
-      "dom"
-    ]
+    "rootDir": "./src"
   },
   "references": [
     {
@@ -15,9 +12,5 @@
       "path": "../typings/tsconfig.json"
     }
   ],
-  "files": [
-    "src/factory.ts",
-    "src/index.ts",
-    "src/windowEndpoint.ts"
-  ]
+  "files": []
 }

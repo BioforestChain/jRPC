@@ -9,12 +9,6 @@
   },
   "references": [
     {
-      "path": "../helper/tsconfig.esm-es6.json"
-    },
-    {
-      "path": "../map/tsconfig.esm-es6.json"
-    },
-    {
       "path": "../typings/tsconfig.esm-es6.json"
     }
   ]

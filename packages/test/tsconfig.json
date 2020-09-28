@@ -4,12 +4,17 @@
     "outDir": "./build/cjs",
     "rootDir": "./src"
   },
+  "files": [
+    "src/1.test.ts",
+    "src/@types.ts",
+    "src/const.ts",
+    "src/index.ts",
+    "src/InnerComlink.ts",
+    "src/SimpleBinaryChannel.ts"
+  ],
   "references": [
     {
-      "path": "../comlink/tsconfig.json"
-    },
-    {
-      "path": "../nodejs/tsconfig.json"
+      "path": "../core/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
