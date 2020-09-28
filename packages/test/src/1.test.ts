@@ -46,4 +46,14 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 
   // 执行
   console.log(ctxA.say("qaq"));
-})();
+  console.log(ctxA.constructor.toString());
+  console.log(typeof ctxA.constructor);
+  ctxA.zz((arg) => {
+    return arg.k.length + arg.v.length;
+  });
+  console.log(ctxA instanceof Function);
+  debugger
+  console.log(ctxA instanceof ctxA.constructor);
+})().catch((err) => {
+  console.error("???", err.message);
+});

@@ -1,7 +1,7 @@
 declare namespace InnerComlink {
   type IOB = EmscriptionLinkRefExtends.InOutObj;
+  type IOB_E = EmscriptionLinkRefExtends.IOB_Extends;
   type TB = BFChainComlink.LinkObj<IOB>;
-  type REF_E = EmscriptionLinkRefExtends.RefItemExtends;
   type LinkObj = TB;
   type BinaryPort = BFChainComlink.BinaryPort<TB>;
   //   type LinkRefItem = BFChainComlink.LinkRefItem<REF_E>;
@@ -22,27 +22,39 @@ declare namespace EmscriptionLinkRefExtends {
         type: "object";
         /**针对 PromiseLike，then使用本地 */
         hasThen: boolean;
-      }
-    | {
-        type: "symbol";
-        unique: boolean;
-        description: string;
       };
+  type RemoteSymbolItemExtends = {
+    type: "symbol";
+    unique: boolean;
+    description: string;
+  };
+  type IOB_Extends = RefItemExtends | RemoteSymbolItemExtends;
+
+  type CloneItem = {
+    type: import("./const").IOB_Type.Clone;
+    data: unknown;
+  };
   type RefItem = {
     type: import("./const").IOB_Type.Ref;
     refId: number;
     extends: RefItemExtends;
   };
-  type CloneItem = {
-    type: import("./const").IOB_Type.Clone;
-    data: unknown;
+  type RemoteSymbolItem = {
+    type: import("./const").IOB_Type.RemoteSymbol;
+    refId: number;
+    extends: RemoteSymbolItemExtends;
   };
-  type LocalItem = {
+  type LocaleItem = {
     type: import("./const").IOB_Type.Locale;
     locId: number;
   };
+  // type LocalSymbolItem = {
+  //   type: import("./const").IOB_Type.LocalSymbol;
+  //   lsId: number;
+  // };
 
-  type InOutObj = CloneItem | RefItem | LocalItem;
+  type InOutObj = CloneItem | RefItem | LocaleItem | RemoteSymbolItem;
+  // | LocalSymbolItem;
 
   //#endregion
 }

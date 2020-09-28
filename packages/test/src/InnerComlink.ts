@@ -1,6 +1,8 @@
 import { ComlinkCore, ImportStore } from "@bfchain/comlink-core";
 import { IOB_Type } from "./const";
 
+const OBJECT_PROPERTY: object = Object.prototype;
+
 export class InnerComlink extends ComlinkCore<
   InnerComlink.IOB,
   InnerComlink.TB
@@ -8,6 +10,7 @@ export class InnerComlink extends ComlinkCore<
   constructor(private name: string) {
     super();
   }
+
   Any2InOutBinary(obj: unknown): InnerComlink.IOB {
     const needClone = this.canClone(obj);
     let item: InnerComlink.IOB | undefined;
@@ -19,19 +22,30 @@ export class InnerComlink extends ComlinkCore<
       };
     } else {
       /// 对象是否是导入进来的
-      const imp = this.importStore.objIdStore.get(obj as object);
+      const imp = this.importStore.proxyIdStore.get(obj as object);
       if (imp) {
         item = {
           type: IOB_Type.Locale,
           locId: imp.id,
         };
       }
+      /// 符号对象需要在远端做一个克隆备份
+      else if (typeof obj === "symbol") {
+        item = {
+          type: IOB_Type.RemoteSymbol,
+          refId: this._exportSymbol(obj),
+          extends: this._getRemoteSymbolItemExtends(obj),
+        };
+      }
       /// 本地无法克隆的对象，直接提供引用
-      else if (obj instanceof Object) {
+      else if (
+        /* object|function */ obj instanceof Object ||
+        OBJECT_PROPERTY === obj
+      ) {
         item = {
           type: IOB_Type.Ref,
-          refId: this.export(obj),
-          extends: this.getRefItemExtends(obj),
+          refId: this._exportObject(obj),
+          extends: this._getRefItemExtends(obj),
         };
       }
     }
@@ -41,7 +55,7 @@ export class InnerComlink extends ComlinkCore<
 
     return item;
   }
-  protected importStore = new ImportStore<InnerComlink.REF_E>();
+  protected importStore = new ImportStore<InnerComlink.IOB_E>();
   InOutBinary2Any(
     port: InnerComlink.BinaryPort,
     bin: InnerComlink.IOB
@@ -56,8 +70,9 @@ export class InnerComlink extends ComlinkCore<
         }
         return exported.obj;
       case IOB_Type.Ref:
+      case IOB_Type.RemoteSymbol:
         /// 读取缓存中的应用对象
-        let refCache = this.importStore.objIdStore.get(bin.refId);
+        let refCache = this.importStore.proxyIdStore.get(bin.refId);
         if (!refCache) {
           // 保存引用信息
           this.importStore.idExtendsStore.set(bin.refId, bin.extends);
@@ -65,13 +80,13 @@ export class InnerComlink extends ComlinkCore<
           const ref = this._importByRefId<symbol | Object>(port, bin.refId);
           refCache = {
             id: bin.refId,
-            ref,
+            proxy: ref,
           };
           /// 缓存对象
-          this.importStore.objIdStore.set(refCache.id, refCache);
-          this.importStore.objIdStore.set(refCache.ref, refCache);
+          this.importStore.proxyIdStore.set(refCache.id, refCache);
+          this.importStore.proxyIdStore.set(refCache.proxy, refCache);
         }
-        return refCache.ref;
+        return refCache.proxy;
       case IOB_Type.Clone:
         return bin.data;
     }
@@ -85,16 +100,9 @@ export class InnerComlink extends ComlinkCore<
     return bin as InnerComlink.LinkObj;
   }
 
-  private getRefItemExtends(obj: unknown): InnerComlink.REF_E {
-    if (typeof obj === "symbol") {
-      return {
-        type: "symbol",
-        description:
-          Object.getOwnPropertyDescriptor(obj, "description")?.value ??
-          obj.toString().slice(7, -1),
-        unique: Symbol.keyFor(obj) !== undefined,
-      };
-    }
+  private _getRefItemExtends(
+    obj: object | Function
+  ): EmscriptionLinkRefExtends.RefItemExtends {
     if (typeof obj === "object") {
       return {
         type: "object",
@@ -110,6 +118,17 @@ export class InnerComlink extends ComlinkCore<
       };
     }
     throw new TypeError();
+  }
+  private _getRemoteSymbolItemExtends(
+    sym: symbol
+  ): EmscriptionLinkRefExtends.RemoteSymbolItemExtends {
+    return {
+      type: "symbol",
+      description:
+        Object.getOwnPropertyDescriptor(sym, "description")?.value ??
+        sym.toString().slice(7, -1),
+      unique: Symbol.keyFor(sym) !== undefined,
+    };
   }
 
   private _isAsyncFunction(fun: Function): boolean {
@@ -225,11 +244,11 @@ export class InnerComlink extends ComlinkCore<
       };
       ref = (objRef as unknown) as BFChainComlink.ImportRefHook<T>;
     } else if (refExtends.type === "symbol") {
-      const sym = refExtends.unique
+      const sourceSym = refExtends.unique
         ? Symbol.for(refExtends.description)
         : Symbol(refExtends.description);
       const symRef: BFChainComlink.ImportRefHook<symbol> = {
-        getSource: () => sym,
+        getSource: () => sourceSym,
       };
       ref = (symRef as unknown) as BFChainComlink.ImportRefHook<T>;
     }

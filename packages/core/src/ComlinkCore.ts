@@ -31,19 +31,52 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     refId: number
   ): BFChainComlink.ImportRefHook<T>;
 
-  export(source: object, key = "default"): number {
+  protected _exportSymbol(source: symbol) {
+    let cache = this.exportStore.symIdStore.get(source);
+    if (!cache) {
+      cache = {
+        sym: source,
+        id: this.exportStore.accId++,
+      };
+      this.exportStore.symIdStore.set(cache.id, cache);
+      this.exportStore.symIdStore.set(source, cache);
+    }
+    return cache.id;
+  }
+  protected _exportObject(source: object) {
     let cache = this.exportStore.objIdStore.get(source);
     if (!cache) {
       cache = {
         obj: source,
-        key,
-        id: this.exportStore.refIdAcc++,
+        id: this.exportStore.accId++,
       };
       this.exportStore.objIdStore.set(cache.id, cache);
-      this.exportStore.objIdStore.set(cache.key, cache);
       this.exportStore.objIdStore.set(source, cache);
     }
     return cache.id;
+  }
+  private _exportWithName(name: string, type: "sym" | "obj", id: number) {
+    if (this.exportStore.nameStore.has(name)) {
+      throw new SyntaxError(`could not re-export '${name}'`);
+    }
+    const exportInfo = {
+      type,
+      name,
+      id,
+    };
+    this.exportStore.nameStore.set(name, exportInfo);
+    this.exportStore.nameStore.set(id, exportInfo);
+  }
+  export(source: object | symbol, name = "default"): number {
+    let id: number;
+    if (typeof source === "symbol") {
+      id = this._exportSymbol(source);
+      this._exportWithName(name, "sym", id);
+    } else {
+      id = this._exportObject(source);
+      this._exportWithName(name, "obj", id);
+    }
+    return id;
   }
   async listen(port: BFChainComlink.BinaryPort<TB>) {
     port.onMessage((bin) => {
@@ -197,9 +230,9 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     refId: number
   ) {
     /// 尝试从缓存中获取引用对象
-    const imp = this.importStore.objIdStore.get(refId);
+    const imp = this.importStore.proxyIdStore.get(refId);
     if (imp) {
-      return imp.ref as T;
+      return imp.proxy as T;
     }
 
     /// 主动生成引用代理
