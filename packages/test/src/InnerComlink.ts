@@ -1,8 +1,6 @@
 import { ComlinkCore, ImportStore } from "@bfchain/comlink-core";
 import { IOB_Type } from "./const";
 
-const OBJECT_PROPERTY: object = Object.prototype;
-
 export class InnerComlink extends ComlinkCore<
   InnerComlink.IOB,
   InnerComlink.TB
@@ -30,23 +28,25 @@ export class InnerComlink extends ComlinkCore<
         };
       }
       /// 符号对象需要在远端做一个克隆备份
-      else if (typeof obj === "symbol") {
-        item = {
-          type: IOB_Type.RemoteSymbol,
-          refId: this._exportSymbol(obj),
-          extends: this._getRemoteSymbolItemExtends(obj),
-        };
-      }
-      /// 本地无法克隆的对象，直接提供引用
-      else if (
-        /* object|function */ obj instanceof Object ||
-        OBJECT_PROPERTY === obj
-      ) {
-        item = {
-          type: IOB_Type.Ref,
-          refId: this._exportObject(obj),
-          extends: this._getRefItemExtends(obj),
-        };
+      else {
+        switch (typeof obj) {
+          case "symbol":
+            item = {
+              type: IOB_Type.RemoteSymbol,
+              refId: this._exportSymbol(obj),
+              extends: this._getRemoteSymbolItemExtends(obj),
+            };
+            break;
+          case "function":
+          case "object":
+            if (obj !== null) {
+              item = {
+                type: IOB_Type.Ref,
+                refId: this._exportObject(obj),
+                extends: this._getRefItemExtends(obj),
+              };
+            }
+        }
       }
     }
     if (!item) {
