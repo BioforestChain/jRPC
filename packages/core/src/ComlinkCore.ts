@@ -50,28 +50,30 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     }
     return id;
   }
-  private _exportWithName(name: string, type: "sym" | "obj", id: number) {
-    if (this.exportStore.nameStore.has(name)) {
-      throw new SyntaxError(`could not re-export '${name}'`);
+
+  /**用于存储导出的域 */
+  private _exportModule = { scope: {}, isExported: false };
+  export(source: unknown, name = "default") {
+    const { _exportModule } = this;
+    if (_exportModule.isExported === false) {
+      _exportModule.isExported = true;
+      this._exportObject(_exportModule.scope);
     }
-    const exportInfo = {
-      type,
-      name,
-      id,
-    };
-    this.exportStore.nameStore.set(name, exportInfo);
-    this.exportStore.nameStore.set(id, exportInfo);
-  }
-  export(source: object | symbol, name = "default"): number {
-    let id: number;
-    if (typeof source === "symbol") {
-      id = this._exportSymbol(source);
-      this._exportWithName(name, "sym", id);
-    } else {
-      id = this._exportObject(source);
-      this._exportWithName(name, "obj", id);
-    }
-    return id;
+    Object.defineProperty(_exportModule.scope, name, {
+      value: source,
+      configurable: true,
+      enumerable: true,
+      writable: true,
+    });
+    // let id: number;
+    // if (typeof source === "symbol") {
+    //   id = this._exportSymbol(source);
+    //   this._exportWithName(name, "sym", id);
+    // } else {
+    //   id = this._exportObject(source);
+    //   this._exportWithName(name, "obj", id);
+    // }
+    // return id;
   }
   async listen(port: BFChainComlink.BinaryPort<TB>) {
     port.onMessage((bin) => {
@@ -124,24 +126,24 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
 
   //#region 进口
 
-  import<T extends object>(
-    port: BFChainComlink.BinaryPort<TB>,
-    key = "default"
-  ) {
-    /// 进行协商握手，取得对应的 refId
-    // const ref: BFChainComlink.LinkRefItem<REF_E> = {
-    //   type: LinkItemType.Ref,
-    //   refId: 0,
-    //   extends: this.getRefItemExtends({}),
-    // };
-    const refId = 0;
-    /// 握手完成，转成代理对象
+  /**用于存储导入的域 */
+  private _importModule?: object;
 
-    const cachedProxy = this.importStore.getProxyById<T>(refId);
-    if (cachedProxy === undefined) {
-      throw new ReferenceError();
+  import<T>(port: BFChainComlink.BinaryPort<TB>, key = "default") {
+    /**
+     * @TODO 进行协商握手，取得对应的 refId
+     * 目前这里是InnerComlink在做模拟
+     */
+    if (this._importModule === undefined) {
+      const refId = 0;
+      /// 握手完成，转成代理对象
+      const cachedProxy = this.importStore.getProxyById<object>(refId);
+      if (cachedProxy === undefined) {
+        throw new ReferenceError();
+      }
+      this._importModule = cachedProxy;
     }
-    return cachedProxy;
+    return Reflect.get(this._importModule, key) as T;
   }
 
   // private _reqIdAcc = 0;

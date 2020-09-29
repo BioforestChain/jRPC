@@ -23,12 +23,15 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 
   /**生成服务 */
   const ctxA = new TestService();
-
+  /**随便一个常量 */
+  const a = 1;
   /**
    * 导出服务
-   * 同语法： export ctxA
+   * 同语法： export default ctxA
+   * 同语法： export const a = 1
    */
   moduleA.export(ctxA);
+  moduleA.export(a, "a");
 })();
 
 /// 模拟B模块作为调用模块
@@ -41,10 +44,13 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
    * 导入服务
    * 同语法：
    * import ctx from port
+   * import {a} from port
    */
   const ctxA = moduleB.import<TestService>(portB);
+  const a = moduleB.import<number>(portB, "a");
 
   // 执行
+  console.log("a:", a);
   console.log(ctxA.say("qaq"));
   console.log(ctxA.constructor.toString());
   console.log(typeof ctxA.constructor);
@@ -52,7 +58,7 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
     return arg.k.length + arg.v.length;
   });
   console.log(ctxA instanceof Function);
-  debugger
+  debugger;
   console.log(ctxA instanceof ctxA.constructor);
 })().catch((err) => {
   console.error("???", err.message);

@@ -77,7 +77,10 @@ export class InnerComlink extends ComlinkCore<
           // 保存引用信息
           this.importStore.idExtendsStore.set(bin.refId, bin.extends);
           /// 使用导入功能生成对象
-          cachedProxy = this._createImportByRefId<symbol | Object>(port, bin.refId);
+          cachedProxy = this._createImportByRefId<symbol | Object>(
+            port,
+            bin.refId
+          );
           /// 缓存对象
           this.importStore.saveProxyId(cachedProxy, bin.refId);
         }
@@ -253,7 +256,7 @@ export class InnerComlink extends ComlinkCore<
     return ref;
   }
 
-  import<T extends object>(port: InnerComlink.BinaryPort, key?: string) {
+  import<T>(port: InnerComlink.BinaryPort, key?: string) {
     /**模拟收到头部的数据交换了 */
     this.InOutBinary2Any(port, {
       type: IOB_Type.Ref,

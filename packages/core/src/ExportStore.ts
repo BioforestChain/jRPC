@@ -56,12 +56,4 @@ export class ExportStore {
     this.objIdWM.set(obj, id);
     return id;
   }
-  /**导出的命名 */
-  nameStore = new Map<
-    string | number,
-    { type: "sym" | "obj"; name: string; id: number }
-  >();
-  // /**传输管道引用了多少的对象 */
-  // portStore = new Map<BFChainComlink.BinaryPort<unknown, unknown>, number>();
 }
-// export const exportStore = new ExportStore();
