@@ -6,7 +6,9 @@
   },
   "files": [
     "src/@types.ts",
+    "src/@weakref.ts",
     "src/const.ts",
-    "src/index.ts"
+    "src/index.ts",
+    "src/weakref.shim.ts"
   ]
 }
