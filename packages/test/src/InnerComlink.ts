@@ -3,12 +3,9 @@ import { IOB_Type, globalSymbolStore } from "./const";
 
 export class InnerComlink extends ComlinkCore<
   InnerComlink.IOB,
-  InnerComlink.TB
+  InnerComlink.TB,
+  InnerComlink.IOB_E
 > {
-  constructor(private name: string) {
-    super();
-  }
-
   Any2InOutBinary(obj: unknown): InnerComlink.IOB {
     const needClone = this.canClone(obj);
     let item: InnerComlink.IOB | undefined;
@@ -55,7 +52,6 @@ export class InnerComlink extends ComlinkCore<
 
     return item;
   }
-  protected importStore = new ImportStore<InnerComlink.IOB_E>();
   InOutBinary2Any(
     port: InnerComlink.BinaryPort,
     bin: InnerComlink.IOB

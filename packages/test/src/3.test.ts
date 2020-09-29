@@ -29,9 +29,8 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 /// 模拟A模块作为服务模块
 (async () => {
   /**模块控制器 */
-  const moduleA = new InnerComlink("A");
-  console.log("moduleA", ((global as any).moduleA = moduleA));
-  moduleA.listen(portA);
+  const moduleA = new InnerComlink(portA, "A");
+  (global as any).moduleA = moduleA;
 
   /**生成服务 */
   const ctxA = new CGService();
@@ -46,10 +45,10 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 /// 模拟B模块作为调用模块
 (async function () {
   /**模块控制器 */
-  const moduleB = new InnerComlink("B");
-  console.log("moduleB", ((global as any).moduleB = moduleB));
-  moduleB.listen(portB);
+  const moduleB = new InnerComlink(portB, "B");
+  (global as any).moduleB = moduleB;
 
+  const sleep = (ms: number) => new Promise((cb) => setTimeout(cb, ms));
   /**
    * 导入服务
    * 同语法：
@@ -58,14 +57,30 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
    */
   const ctxA = moduleB.import<CGService>(portB);
 
-  // 执行
+  let myItem = ctxA.getList(1)[0];
+  ctxA.clear();
+
+  /// 测试A能回收
   for (let i = 0; i < 10; i++) {
-    console.log(ctxA.getList(100).reduce((r, item) => r + item.value, 0));
+    ctxA.getList(10000).reduce((r, item) => r + item.value, 0);
     ctxA.clear();
+    const mem = process.memoryUsage();
     /// 尝试释放内存
-    global.gc?.();
-    await new Promise((cb) => setTimeout(cb, 100));
+    global.gc();
+    await sleep(100);
+    const mem2 = process.memoryUsage();
+    const diff = mem2.heapUsed - mem.heapUsed;
+    console.log(
+      "%s 内存使用：从 %d => %d (%d)",
+      diff < 0 ? "✅" : `❌`,
+      mem.heapUsed,
+      mem2.heapUsed,
+      diff
+    );
   }
+  /// 测试B能阻止A回收
+  debugger;
+  console.log(myItem.value);
 })().catch((err) => {
   console.error("???", err.message);
 });

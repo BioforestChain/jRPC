@@ -37,8 +37,7 @@ if (isMainThread) {
   /// 模拟A模块作为服务模块
   (async () => {
     /**模块控制器 */
-    const moduleA = new InnerComlink("A");
-    moduleA.listen(portA);
+    const moduleA = new InnerComlink(portA, "A");
 
     /**生成服务 */
     const ctxA = new TestService();
@@ -66,8 +65,7 @@ if (isMainThread) {
     /// 模拟B模块作为调用模块
     (async function () {
       /**模块控制器 */
-      const moduleB = new InnerComlink("B");
-      moduleB.listen(portB);
+      const moduleB = new InnerComlink(portB, "B");
 
       /**
        * 导入服务

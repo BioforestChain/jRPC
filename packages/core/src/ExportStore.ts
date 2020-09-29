@@ -1,72 +1,62 @@
+const enum STORE_TYPE {
+  Object,
+  Symbol,
+}
+type ObjectStoreItem = {
+  id: number;
+  type: STORE_TYPE.Object;
+  obj: object;
+};
+type SymbolStoreItem = {
+  id: number;
+  type: STORE_TYPE.Symbol;
+  sym: symbol;
+};
+type StoreItem = ObjectStoreItem | SymbolStoreItem;
+
 export class ExportStore {
-  /**提供给远端的 refId|symId
-   * 远端可以使用 locId 来进行访问
+  constructor(private name: string) {}
+  /**
+   * 提供给远端的 refId|symId
+   * 远端可以使用 locId 来进行访问本地
    */
   accId = 0;
-  /**我所导出的符号 */
-  symIdStore = new Map<
-    number | symbol,
-    {
-      id: number;
-      sym: symbol;
-    }
-  >();
-  /**我所导出的引用对象 */
-  private objIdStore = new Map<
-    number,
-    // /**key */
-    // | number
-    // /**obj */
-    // | object,
-    {
-      id: number;
-      // obj: object;
-      wr: WeakRef<object>;
-    }
-  >();
-  private objIdWM = new WeakMap<object, number>();
+  /**我所导出的引用对象与符号 */
+  private objIdStore = new Map<number | object | symbol, StoreItem>();
   getObjById(id: number) {
     const cache = this.objIdStore.get(id);
-    if (cache) {
-      const obj = cache.wr.deref();
-      if (obj !== undefined) {
-        return obj;
-      }
-      // 如果obj已经不存在了，那么主动进行释放
-      this.releaseById(id);
+    if (cache && cache.type === STORE_TYPE.Object) {
+      return cache.obj;
     }
   }
   getSymById(id: number) {
-    const symCache = this.symIdStore.get(id);
-    return symCache?.sym;
+    const cache = this.objIdStore.get(id);
+    if (cache && cache.type === STORE_TYPE.Symbol) {
+      return cache.sym;
+    }
   }
 
-  getIdByObj(obj: object) {
-    return this.objIdWM.get(obj);
-  }
-  getIdBySym(sym: symbol) {
-    return this.symIdStore.get(sym)?.id;
+  getId(obj: object | symbol) {
+    const cache = this.objIdStore.get(obj);
+    return cache?.id;
   }
 
-  private _fr = new FinalizationRegistry((id) =>
-    this.releaseById(id as number)
-  );
   /**
    * 保存对象的引用
    */
   saveObjId(obj: object, id = this.accId++) {
-    /// 保存到map中
-    const wr = new WeakRef(obj);
-    this.objIdStore.set(id, { id, wr });
-    this.objIdWM.set(obj, id);
-    /// 注册释放回调
-    this._fr.register(obj, id, wr);
+    const cache: ObjectStoreItem = { type: STORE_TYPE.Object, obj, id };
+    this.objIdStore.set(id, cache);
+    this.objIdStore.set(obj, cache);
     return id;
   }
+  /**
+   * 保存符号
+   */
   saveSymId(sym: symbol, id = this.accId++) {
-    const cache = { sym, id };
-    this.symIdStore.set(id, cache);
-    this.symIdStore.set(sym, cache);
+    const cache: SymbolStoreItem = { type: STORE_TYPE.Symbol, sym, id };
+    this.objIdStore.set(id, cache);
+    this.objIdStore.set(sym, cache);
     return id;
   }
   /**
@@ -74,35 +64,18 @@ export class ExportStore {
    * @param id
    */
   releaseById(id: number) {
-    let success = false;
+    // console.log("release", this.name, id);
     const cache = this.objIdStore.get(id);
     if (cache) {
-      success = true;
+      if (cache.type === STORE_TYPE.Object) {
+        this.objIdStore.delete(cache.obj);
+      } else {
+        this.objIdStore.delete(cache.sym);
+      }
+
       this.objIdStore.delete(id);
-      const obj = cache.wr.deref();
-      if (obj !== undefined) {
-        this._fr.unregister(cache.wr);
-      }
-    } else {
-      const sym = this.symIdStore.get(id);
-      if (sym) {
-        success = true;
-        this.symIdStore.delete(id);
-        this.symIdStore.delete(sym.sym);
-      }
+      return true;
     }
-
-    /// 触发回调
-    if (success) {
-      this._onReleaseCallback(id);
-    }
-  }
-
-  private _onReleaseCallback(id: number): unknown {
-    return;
-  }
-  /**监听一个引用被释放 */
-  onRelease(cb: (id: number) => unknown) {
-    this._onReleaseCallback = cb;
+    return false;
   }
 }

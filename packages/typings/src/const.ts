@@ -7,7 +7,7 @@ export const enum LinkObjType {
   In,
   /**响应In */
   Out,
-  /**通知释放 */
+  /**通知释放，由import（使用方）通知export（供给方）释放 */
   Release,
 }
 

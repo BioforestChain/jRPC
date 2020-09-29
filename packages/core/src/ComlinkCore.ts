@@ -6,17 +6,26 @@ import {
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
 
-export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
-  implements BFChainComlink.ComlinkCore<IOB, TB> {
+export abstract class ComlinkCore<
+  IOB /*  = unknown */,
+  TB /*  = unknown */,
+  IMP_EXTENDS
+> implements BFChainComlink.ComlinkCore<IOB, TB> {
+  constructor(
+    private port: BFChainComlink.BinaryPort<TB>,
+    public readonly name: string
+  ) {
+    this._listen(port);
+  }
   close(port: BFChainComlink.BinaryPort<TB>): boolean {
     throw new Error("Method not implemented.");
   }
-  recycle(target: object): boolean {
-    throw new Error("Method not implemented.");
-  }
+  // recycle(target: object): boolean {
+  //   throw new Error("Method not implemented.");
+  // }
 
-  protected exportStore = new ExportStore();
-  protected importStore = new ImportStore<unknown>();
+  protected exportStore = new ExportStore(this.name);
+  protected importStore = new ImportStore<IMP_EXTENDS>(this.name);
 
   abstract Any2InOutBinary(obj: unknown): IOB;
   abstract InOutBinary2Any(
@@ -32,14 +41,10 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
   ): BFChainComlink.ImportRefHook<T>;
 
   protected _exportSymbol(source: symbol) {
-    return (
-      this.exportStore.getIdBySym(source) ?? this.exportStore.saveSymId(source)
-    );
+    return this.exportStore.getId(source) ?? this.exportStore.saveSymId(source);
   }
   protected _exportObject(source: object) {
-    return (
-      this.exportStore.getIdByObj(source) ?? this.exportStore.saveObjId(source)
-    );
+    return this.exportStore.getId(source) ?? this.exportStore.saveObjId(source);
   }
 
   /**用于存储导出的域 */
@@ -69,13 +74,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     // }
     // return id;
   }
-  async listen(port: BFChainComlink.BinaryPort<TB>) {
+  private async _listen(port: BFChainComlink.BinaryPort<TB>) {
     port.onMessage((bin) => {
       const linkObj = this.transferableBinary2LinkObj(bin);
 
       if (linkObj.type === LinkObjType.In) {
         const obj = this.exportStore.getObjById(linkObj.targetId);
-        if (obj===undefined) {
+        if (obj === undefined) {
           throw new ReferenceError("no found");
         }
         /**预备好结果 */
@@ -121,12 +126,16 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
           module: this.Any2InOutBinary(scope),
         });
       } else if (linkObj.type === LinkObjType.Release) {
-        this.importStore.releaseProxyId(linkObj.refId);
+        this.exportStore.releaseById(linkObj.locId);
       }
     });
-    this.exportStore.onRelease((refId) => {
+    this.importStore.onRelease((refId) => {
+      // console.log("send release", refId);
       port.send(
-        this.linkObj2TransferableBinary({ type: LinkObjType.Release, refId })
+        this.linkObj2TransferableBinary({
+          type: LinkObjType.Release,
+          locId: refId,
+        })
       );
     });
   }

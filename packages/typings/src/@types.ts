@@ -28,8 +28,8 @@ declare namespace BFChainComlink {
      * export const key = target
      */
     export(target: object, key?: string): void;
-    /**取消导出 */
-    recycle(target: object): boolean;
+    // /**取消导出 */
+    // recycle(target: object): boolean;
     /**导入
      * 同语法：
      * import ? from port
@@ -45,9 +45,9 @@ declare namespace BFChainComlink {
 
     //#endregion
 
-    /**绑定一条通道 */
-    listen(port: BinaryPort<TB>): Promise<unknown /* 握手信息 */>;
-    /**释放一个绑定的通道 */
+    // /**绑定一条通道 */
+    // listen(port: BinaryPort<TB>): Promise<unknown /* 握手信息 */>;
+    /**释放绑定的通道 */
     close(port: BinaryPort<TB>): boolean;
   }
 
@@ -87,7 +87,7 @@ declare namespace BFChainComlink {
   }
   interface LinkReleaseObj {
     type: import("./const").LinkObjType.Release;
-    refId: number;
+    locId: number;
   }
   type LinkObj<IOB> =
     | LinkImportObj

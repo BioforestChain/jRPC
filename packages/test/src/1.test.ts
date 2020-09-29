@@ -34,9 +34,8 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 /// 模拟A模块作为服务模块
 (async () => {
   /**模块控制器 */
-  const moduleA = new InnerComlink("A");
-  console.log("moduleA", ((global as any).moduleA = moduleA));
-  moduleA.listen(portA);
+  const moduleA = new InnerComlink(portA, "A");
+  (global as any).moduleA = moduleA;
 
   /**生成服务 */
   const ctxA = new TestService();
@@ -54,9 +53,8 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 /// 模拟B模块作为调用模块
 (async function () {
   /**模块控制器 */
-  const moduleB = new InnerComlink("B");
-  console.log("moduleB", ((global as any).moduleB = moduleB));
-  moduleB.listen(portB);
+  const moduleB = new InnerComlink(portB, "B");
+  (global as any).moduleB = moduleB;
 
   /**
    * 导入服务
