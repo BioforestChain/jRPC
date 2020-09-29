@@ -66,6 +66,13 @@ declare namespace BFChainComlink {
 
   type Remote<T> = T;
 
+  interface LinkImportObj {
+    type: import("./const").LinkObjType.Import;
+  }
+  interface LinkExportObj<IOB> {
+    type: import("./const").LinkObjType.Export;
+    module: IOB;
+  }
   interface LinkInObj<IOB> {
     type: import("./const").LinkObjType.In;
     // reqId: number;
@@ -79,7 +86,11 @@ declare namespace BFChainComlink {
     out: IOB[];
     isThrow: boolean;
   }
-  type LinkObj<IOB> = LinkInObj<IOB> | LinkOutObj<IOB>;
+  type LinkObj<IOB> =
+    | LinkImportObj
+    | LinkExportObj<IOB>
+    | LinkInObj<IOB>
+    | LinkOutObj<IOB>;
 
   type EmscriptionProxyHanlder<T extends object> = Required<
     Omit<ProxyHandler<T>, "enumerate">

@@ -20,8 +20,8 @@ class TestService {
   }
 }
 setInterval(() => {
-  console.log("tick", threadId);
-}, 1000);
+  console.log(`thread[${threadId}] tick...`);
+}, 100);
 
 if (isMainThread) {
   console.log("main started");
@@ -97,7 +97,7 @@ if (isMainThread) {
       console.assert(ctxA instanceof ctxA.constructor === true);
 
       /// test promise
-      await ctxA.think(2000);
+      await ctxA.think(210);
 
       console.log("all passed!");
       process.exit();

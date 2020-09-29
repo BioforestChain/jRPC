@@ -53,13 +53,16 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
 
   /**用于存储导出的域 */
   private _exportModule = { scope: {}, isExported: false };
-  export(source: unknown, name = "default") {
+  private _getInitedExportScope() {
     const { _exportModule } = this;
     if (_exportModule.isExported === false) {
       _exportModule.isExported = true;
       this._exportObject(_exportModule.scope);
     }
-    Object.defineProperty(_exportModule.scope, name, {
+    return _exportModule.scope;
+  }
+  export(source: unknown, name = "default") {
+    Object.defineProperty(this._getInitedExportScope(), name, {
       value: source,
       configurable: true,
       enumerable: true,
@@ -78,12 +81,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
   async listen(port: BFChainComlink.BinaryPort<TB>) {
     port.onMessage((bin) => {
       const linkObj = this.transferableBinary2LinkObj(bin);
-      /**预备好结果 */
+
       if (linkObj.type === LinkObjType.In) {
         const obj = this.exportStore.getObjById(linkObj.targetId);
         if (!obj) {
           throw new ReferenceError("no found");
         }
+        /**预备好结果 */
         const linkOut: BFChainComlink.LinkOutObj<IOB> = {
           type: LinkObjType.Out,
           // resId: linkObj.reqId,
@@ -119,6 +123,12 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
           linkOut.out.push(this.Any2InOutBinary(err));
         }
         return this.linkObj2TransferableBinary(linkOut);
+      } else if (linkObj.type === LinkObjType.Import) {
+        const scope = this._getInitedExportScope();
+        return this.linkObj2TransferableBinary({
+          type: LinkObjType.Export,
+          module: this.Any2InOutBinary(scope),
+        });
       }
     });
   }
@@ -131,17 +141,18 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
 
   import<T>(port: BFChainComlink.BinaryPort<TB>, key = "default") {
     /**
-     * @TODO 进行协商握手，取得对应的 refId
-     * 目前这里是InnerComlink在做模拟
+     * 进行协商握手，取得对应的 refId
+     * @TODO 这里将会扩展出各类语言的传输协议
      */
     if (this._importModule === undefined) {
-      const refId = 0;
-      /// 握手完成，转成代理对象
-      const cachedProxy = this.importStore.getProxyById<object>(refId);
-      if (cachedProxy === undefined) {
-        throw new ReferenceError();
+      const res = this.transferableBinary2LinkObj(
+        port.req(this.linkObj2TransferableBinary({ type: LinkObjType.Import }))
+      );
+      if (res.type !== LinkObjType.Export) {
+        throw new TypeError();
       }
-      this._importModule = cachedProxy;
+      /// 握手完成，转成代理对象
+      this._importModule = this.InOutBinary2Any(port, res.module) as object;
     }
     return Reflect.get(this._importModule, key) as T;
   }
@@ -166,7 +177,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
         })
       )
     );
-    if (linkObj.type === LinkObjType.In) {
+    if (linkObj.type !== LinkObjType.Out) {
       throw new TypeError();
     }
 

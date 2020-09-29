@@ -1,4 +1,6 @@
 export const enum LinkObjType {
+  Import,
+  Export,
   In,
   Out,
 }
