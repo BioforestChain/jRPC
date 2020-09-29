@@ -1,3 +1,4 @@
+//# node --harmony-weak-refs --expose-gc
 import { InnerComlink, SimpleBinaryChannel } from "./index";
 
 class MyItem {
@@ -58,10 +59,13 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
   const ctxA = moduleB.import<CGService>(portB);
 
   // 执行
-  setInterval(() => {
+  for (let i = 0; i < 10; i++) {
     console.log(ctxA.getList(100).reduce((r, item) => r + item.value, 0));
     ctxA.clear();
-  }, 100);
+    /// 尝试释放内存
+    global.gc?.();
+    await new Promise((cb) => setTimeout(cb, 100));
+  }
 })().catch((err) => {
   console.error("???", err.message);
 });
