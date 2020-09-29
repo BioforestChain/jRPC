@@ -25,7 +25,10 @@ declare namespace EmscriptionLinkRefExtends {
       };
   type RemoteSymbolItemExtends = {
     type: "symbol";
+    /**是否是使用Symbol.keyFor生成的 */
     unique: boolean;
+    /**是否是全局的，绑定在Symbol对象本身上面 */
+    global: boolean;
     description: string;
   };
   type IOB_Extends = RefItemExtends | RemoteSymbolItemExtends;

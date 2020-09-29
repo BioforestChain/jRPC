@@ -1,5 +1,5 @@
 import { ComlinkCore, ImportStore } from "@bfchain/comlink-core";
-import { IOB_Type } from "./const";
+import { IOB_Type, globalSymbolStore } from "./const";
 
 export class InnerComlink extends ComlinkCore<
   InnerComlink.IOB,
@@ -64,11 +64,13 @@ export class InnerComlink extends ComlinkCore<
       //   case LinkItemType.Default:
       //     return defaultCtx;
       case IOB_Type.Locale:
-        const obj = this.exportStore.getObjById(bin.locId);
-        if (!obj) {
+        const loc =
+          this.exportStore.getObjById(bin.locId) ||
+          this.exportStore.getSymById(bin.locId);
+        if (!loc) {
           throw new ReferenceError();
         }
-        return obj;
+        return loc;
       case IOB_Type.Ref:
       case IOB_Type.RemoteSymbol:
         /// 读取缓存中的应用对象
@@ -117,11 +119,22 @@ export class InnerComlink extends ComlinkCore<
     }
     throw new TypeError();
   }
+
   private _getRemoteSymbolItemExtends(
     sym: symbol
   ): EmscriptionLinkRefExtends.RemoteSymbolItemExtends {
+    const globalSymInfo = globalSymbolStore.get(sym);
+    if (globalSymInfo) {
+      return {
+        type: "symbol",
+        global: true,
+        description: globalSymInfo.name,
+        unique: false,
+      };
+    }
     return {
       type: "symbol",
+      global: false,
       description:
         Object.getOwnPropertyDescriptor(sym, "description")?.value ??
         sym.toString().slice(7, -1),
@@ -171,14 +184,21 @@ export class InnerComlink extends ComlinkCore<
     }
     let ref: BFChainComlink.ImportRefHook<T> | undefined;
     if (refExtends.type === "function") {
-      const sourceFun = Function(
-        `return ${
-          refExtends.isAsync ? "async" /* 这里要确保引擎级别是匹配的 */ : ""
-        } function ${refExtends.name}(${Array.from(
-          { length: refExtends.length },
-          (_, i) => `_${i}`
-        )}){}`
-      )();
+      const code_funName = refExtends.name;
+      const code_asyncPrefix = refExtends.isAsync
+        ? "async " /* 这里要确保引擎级别是匹配的 */
+        : "";
+      const code_paramList = Array.from(
+        { length: refExtends.length },
+        (_, i) => `_${i}`
+      );
+
+      const sourceCode = code_funName
+        ? `const funContainer={${code_asyncPrefix}${code_funName}(${code_paramList}) {}};
+      for(const key in funContainer){return funContainer[key]};
+      return funContainer[Object.getOwnPropertySymbols(funContainer)[0]]`
+        : `return ${code_asyncPrefix}function (${code_paramList}){}`;
+      const sourceFun = Function(sourceCode)();
       const funRef: BFChainComlink.ImportRefHook<Function> = {
         getSource: () => sourceFun,
         getProxyHanlder: () => {
@@ -242,9 +262,18 @@ export class InnerComlink extends ComlinkCore<
       };
       ref = (objRef as unknown) as BFChainComlink.ImportRefHook<T>;
     } else if (refExtends.type === "symbol") {
-      const sourceSym = refExtends.unique
-        ? Symbol.for(refExtends.description)
-        : Symbol(refExtends.description);
+      let sourceSym: symbol;
+      if (refExtends.global) {
+        const globalSymInfo = globalSymbolStore.get(refExtends.description);
+        if (!globalSymInfo) {
+          throw new TypeError();
+        }
+        sourceSym = globalSymInfo.sym;
+      } else {
+        sourceSym = refExtends.unique
+          ? Symbol.for(refExtends.description)
+          : Symbol(refExtends.description);
+      }
       const symRef: BFChainComlink.ImportRefHook<symbol> = {
         getSource: () => sourceSym,
       };

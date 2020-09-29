@@ -16,3 +16,33 @@ export const enum IOB_Type {
   //   /**默认引用 */
   //   Default,
 }
+export const globalSymbolStore = new Map<
+  string | symbol,
+  { name: string; sym: symbol }
+>();
+
+[
+  "asyncIterator",
+  "hasInstance",
+  "isConcatSpreadable",
+  "iterator",
+  "match",
+  "matchAll",
+  "replace",
+  "search",
+  "species",
+  "split",
+  "toPrimitive",
+  "toStringTag",
+  "unscopables",
+].forEach((name) => {
+  const sym = Reflect.get(Symbol, name);
+  if (typeof sym === "symbol") {
+    const cache = {
+      sym,
+      name,
+    };
+    globalSymbolStore.set(sym, cache);
+    globalSymbolStore.set(name, cache);
+  }
+});

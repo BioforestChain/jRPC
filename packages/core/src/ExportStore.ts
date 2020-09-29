@@ -32,11 +32,20 @@ export class ExportStore {
       if (obj !== undefined) {
         return obj;
       }
+      // 如果obj已经不存在了，那么主动进行释放
       this.releaseById(id);
     }
   }
+  getSymById(id: number) {
+    const symCache = this.symIdStore.get(id);
+    return symCache?.sym;
+  }
+
   getIdByObj(obj: object) {
     return this.objIdWM.get(obj);
+  }
+  getIdBySym(sym: symbol) {
+    return this.symIdStore.get(sym)?.id;
   }
 
   private _fr = new FinalizationRegistry((id) =>
@@ -52,6 +61,12 @@ export class ExportStore {
     this.objIdWM.set(obj, id);
     /// 注册释放回调
     this._fr.register(obj, id, wr);
+    return id;
+  }
+  saveSymId(sym: symbol, id = this.accId++) {
+    const cache = { sym, id };
+    this.symIdStore.set(id, cache);
+    this.symIdStore.set(sym, cache);
     return id;
   }
   /**

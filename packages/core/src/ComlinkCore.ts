@@ -32,23 +32,14 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
   ): BFChainComlink.ImportRefHook<T>;
 
   protected _exportSymbol(source: symbol) {
-    let cache = this.exportStore.symIdStore.get(source);
-    if (!cache) {
-      cache = {
-        sym: source,
-        id: this.exportStore.accId++,
-      };
-      this.exportStore.symIdStore.set(cache.id, cache);
-      this.exportStore.symIdStore.set(source, cache);
-    }
-    return cache.id;
+    return (
+      this.exportStore.getIdBySym(source) ?? this.exportStore.saveSymId(source)
+    );
   }
   protected _exportObject(source: object) {
-    let id = this.exportStore.getIdByObj(source);
-    if (!id) {
-      id = this.exportStore.saveObjId(source);
-    }
-    return id;
+    return (
+      this.exportStore.getIdByObj(source) ?? this.exportStore.saveObjId(source)
+    );
   }
 
   /**用于存储导出的域 */
@@ -84,7 +75,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
 
       if (linkObj.type === LinkObjType.In) {
         const obj = this.exportStore.getObjById(linkObj.targetId);
-        if (!obj) {
+        if (obj===undefined) {
           throw new ReferenceError("no found");
         }
         /**预备好结果 */
@@ -224,6 +215,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
         send<boolean>([EmscriptenReflect.Has], true),
       /**导入子模块 */
       get: (_target, prop, _reciver) =>
+        // console.log("get", prop),
         send<boolean>([EmscriptenReflect.Get, prop], true),
       /**发送 set 操作 */
       set: (_target, prop: PropertyKey, value: any, receiver: any) => (

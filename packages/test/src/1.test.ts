@@ -8,6 +8,22 @@ class TestService {
   zz(cb: (arg: { k: string; v: string }) => number) {
     console.log(cb({ k: "xxx", v: "zzz" }));
   }
+  concat(arr1: unknown[], arr2: unknown[]) {
+    return arr1.concat(arr2);
+  }
+  toPrimitive(obj: unknown, type: "number" | "string") {
+    if (type === "number") {
+      return Number(obj);
+    }
+    return String(obj);
+  }
+  private _e?: Error;
+  throwLocalError(message: string) {
+    throw (this._e = new Error(message));
+  }
+  throwRemoteError(err: Error) {
+    throw err;
+  }
 }
 
 /**
@@ -19,6 +35,7 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 (async () => {
   /**模块控制器 */
   const moduleA = new InnerComlink("A");
+  console.log("moduleA", ((global as any).moduleA = moduleA));
   moduleA.listen(portA);
 
   /**生成服务 */
@@ -38,6 +55,7 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
 (async function () {
   /**模块控制器 */
   const moduleB = new InnerComlink("B");
+  console.log("moduleB", ((global as any).moduleB = moduleB));
   moduleB.listen(portB);
 
   /**
@@ -52,14 +70,49 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
   // 执行
   console.log("a:", a);
   console.log(ctxA.say("qaq"));
-  console.log(ctxA.constructor.toString());
+  console.log(ctxA.constructor.toString().split("\n", 1)[0]);
   console.log(typeof ctxA.constructor);
   ctxA.zz((arg) => {
     return arg.k.length + arg.v.length;
   });
   console.log(ctxA instanceof Function);
-  debugger;
   console.log(ctxA instanceof ctxA.constructor);
+
+  /// test symbol
+  const arr = [1];
+  console.log(ctxA.concat(arr, [2]));
+  Object.defineProperty(arr, Symbol.isConcatSpreadable, { value: false });
+  console.log(ctxA.concat(arr, [2]));
+
+  const obj = {
+    [Symbol.toPrimitive](hint: string) {
+      console.log("GET toPrimitive!!!", hint);
+      if (hint === "number") {
+        return 123;
+      }
+      if (hint === "string") {
+        return "qaq";
+      }
+      return null;
+    },
+  };
+  const obj2 = Object.create(obj);
+  console.log(Number(obj));
+  console.log(String(obj2));
+  console.log(ctxA.toPrimitive(obj, "number"));
+  console.log(ctxA.toPrimitive(obj, "string"));
+  try {
+    ctxA.throwLocalError("qaq1");
+  } catch (err) {
+    console.log(String(err).startsWith("Error: qaq1"));
+  }
+  let err = new SyntaxError("qaq2");
+  try {
+    debugger;
+    ctxA.throwRemoteError(err);
+  } catch (err) {
+    console.log(String(err).startsWith("SyntaxError: qaq2"));
+  }
 })().catch((err) => {
-  console.error("???", err.message);
+  console.error("TEST FAIL:", err.stack);
 });
