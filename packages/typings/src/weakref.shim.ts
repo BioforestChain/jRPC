@@ -5,13 +5,23 @@ if (typeof WeakRef === "undefined") {
       (targetType === "object" || targetType === "function") && obj !== null
     );
   };
+  const checkUnregisterToken = (unregisterToken: object) => {
+    if (!isObj(unregisterToken)) {
+      throw new TypeError(
+        `unregisterToken ('${unregisterToken}') must be an object`
+      );
+    }
+  };
+  const checkTarget = (target: object) => {
+    if (!isObj(target)) {
+      throw new TypeError("target must be an object");
+    }
+  };
 
   const wr = new WeakMap();
   class WeakRef<T extends object> {
     constructor(target: T) {
-      if (!isObj(target)) {
-        throw new TypeError("target must be an object");
-      }
+      checkTarget(target);
       wr.set(this, target);
     }
     deref() {
@@ -24,19 +34,13 @@ if (typeof WeakRef === "undefined") {
   class FinalizationRegistry {
     constructor(cleanupCallback: (heldValue: unknown) => unknown) {}
     register(target: object, heldValue: unknown, unregisterToken?: object) {
+      checkTarget(target);
       if (unregisterToken !== undefined) {
-        this._checkUnregisterToken(unregisterToken);
+        checkUnregisterToken(unregisterToken);
       }
     }
     unregister(unregisterToken: object) {
-      this._checkUnregisterToken(unregisterToken);
-    }
-    private _checkUnregisterToken(unregisterToken: object) {
-      if (!isObj(unregisterToken)) {
-        throw new TypeError(
-          `unregisterToken ('${unregisterToken}') must be an object`
-        );
-      }
+      checkUnregisterToken(unregisterToken);
     }
   }
   Object.defineProperty(globalThis, "FinalizationRegistry", {
