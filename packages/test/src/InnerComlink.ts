@@ -64,11 +64,11 @@ export class InnerComlink extends ComlinkCore<
       //   case LinkItemType.Default:
       //     return defaultCtx;
       case IOB_Type.Locale:
-        const exported = this.exportStore.objIdStore.get(bin.locId);
-        if (!exported) {
+        const obj = this.exportStore.getObjById(bin.locId);
+        if (!obj) {
           throw new ReferenceError();
         }
-        return exported.obj;
+        return obj;
       case IOB_Type.Ref:
       case IOB_Type.RemoteSymbol:
         /// 读取缓存中的应用对象

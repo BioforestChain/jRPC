@@ -44,16 +44,11 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     return cache.id;
   }
   protected _exportObject(source: object) {
-    let cache = this.exportStore.objIdStore.get(source);
-    if (!cache) {
-      cache = {
-        obj: source,
-        id: this.exportStore.accId++,
-      };
-      this.exportStore.objIdStore.set(cache.id, cache);
-      this.exportStore.objIdStore.set(source, cache);
+    let id = this.exportStore.getIdByObj(source);
+    if (!id) {
+      id = this.exportStore.saveObjId(source);
     }
-    return cache.id;
+    return id;
   }
   private _exportWithName(name: string, type: "sym" | "obj", id: number) {
     if (this.exportStore.nameStore.has(name)) {
@@ -83,8 +78,8 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
       const linkObj = this.transferableBinary2LinkObj(bin);
       /**预备好结果 */
       if (linkObj.type === LinkObjType.In) {
-        const target = this.exportStore.objIdStore.get(linkObj.targetId);
-        if (!target) {
+        const obj = this.exportStore.getObjById(linkObj.targetId);
+        if (!obj) {
           throw new ReferenceError("no found");
         }
         const linkOut: BFChainComlink.LinkOutObj<IOB> = {
@@ -110,7 +105,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
             .slice(1)
             .map((iob) => this.InOutBinary2Any(port, iob));
 
-          const res = handler(target.obj, paramList);
+          const res = handler(obj, paramList);
 
           /// 如果有返回结果的需要，那么就尝试进行返回
           if (linkObj.hasOut) {

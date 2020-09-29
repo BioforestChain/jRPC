@@ -15,7 +15,7 @@
     "dev": "bdk-tsc --build -w",
     "dev:all": "bdk-tsc --build tsconfig.all.json -w",
     "test": "node --harmony-weak-refs ./node_modules/ava/cli.js",
-    "test:debug": "ndb --harmony-weak-refs ./node_modules/ava/cli.js",
+    "test:debug": "ndb --harmony-weak-refs --expose-gc ./node_modules/ava/cli.js",
     "p1": "bdk-p1 & npm publ",
     "publ": "lerna publish",
     "publ:force": "lerna publish --force-publish",

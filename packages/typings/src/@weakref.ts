@@ -1,4 +1,4 @@
-interface WeakRef<T extends object> {
+interface WeakRef<T extends object = object> {
   readonly [Symbol.toStringTag]: "WeakRef";
 
   /**
@@ -12,7 +12,7 @@ interface WeakRefConstructor {
   /**
    * 创建实例
    */
-  new <T extends object>(target: T): WeakRef<T>;
+  new <T extends object = object>(target: T): WeakRef<T>;
 }
 
 declare const WeakRef: WeakRefConstructor;
