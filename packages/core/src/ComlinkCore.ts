@@ -136,7 +136,12 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     // };
     const refId = 0;
     /// 握手完成，转成代理对象
-    return this._importByRefId<T>(port, refId);
+
+    const cachedProxy = this.importStore.getProxyById<T>(refId);
+    if (cachedProxy === undefined) {
+      throw new ReferenceError();
+    }
+    return cachedProxy;
   }
 
   // private _reqIdAcc = 0;
@@ -220,17 +225,15 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
     };
     return proxyHandler;
   }
-  protected _importByRefId<T>(
+  /**
+   * 主动生成引用代理
+   * @param port
+   * @param refId
+   */
+  protected _createImportByRefId<T>(
     port: BFChainComlink.BinaryPort<TB>,
     refId: number
   ) {
-    /// 尝试从缓存中获取引用对象
-    const imp = this.importStore.proxyIdStore.get(refId);
-    if (imp) {
-      return imp.proxy as T;
-    }
-
-    /// 主动生成引用代理
     const ref = this._beforeImportRef<T>(port, refId);
     const source = ref.getSource();
     const proxyHanlder = ref.getProxyHanlder?.();

@@ -20,7 +20,7 @@ export class InnerComlink extends ComlinkCore<
       };
     } else {
       /// 对象是否是导入进来的
-      const imp = this.importStore.proxyIdStore.get(obj as object);
+      const imp = this.importStore.getProxy(obj as object);
       if (imp) {
         item = {
           type: IOB_Type.Locale,
@@ -72,21 +72,16 @@ export class InnerComlink extends ComlinkCore<
       case IOB_Type.Ref:
       case IOB_Type.RemoteSymbol:
         /// 读取缓存中的应用对象
-        let refCache = this.importStore.proxyIdStore.get(bin.refId);
-        if (!refCache) {
+        let cachedProxy = this.importStore.getProxyById(bin.refId);
+        if (cachedProxy === undefined) {
           // 保存引用信息
           this.importStore.idExtendsStore.set(bin.refId, bin.extends);
           /// 使用导入功能生成对象
-          const ref = this._importByRefId<symbol | Object>(port, bin.refId);
-          refCache = {
-            id: bin.refId,
-            proxy: ref,
-          };
+          cachedProxy = this._createImportByRefId<symbol | Object>(port, bin.refId);
           /// 缓存对象
-          this.importStore.proxyIdStore.set(refCache.id, refCache);
-          this.importStore.proxyIdStore.set(refCache.proxy, refCache);
+          this.importStore.saveProxyId(cachedProxy, bin.refId);
         }
-        return refCache.proxy;
+        return cachedProxy;
       case IOB_Type.Clone:
         return bin.data;
     }

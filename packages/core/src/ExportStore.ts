@@ -35,21 +35,21 @@ export class ExportStore {
       this.objIdStore.delete(id);
     }
   }
-  getObjIdById(id: number) {
-    const obj = this.getObjById(id);
-    if (obj) {
-      return { obj, id };
-    }
-  }
+  // getObjIdById(id: number) {
+  //   const obj = this.getObjById(id);
+  //   if (obj) {
+  //     return { obj, id };
+  //   }
+  // }
   getIdByObj(obj: object) {
     return this.objIdWM.get(obj);
   }
-  getObjIdByObj(obj: object) {
-    const id = this.getIdByObj(obj);
-    if (id !== undefined) {
-      return { id, obj };
-    }
-  }
+  // getObjIdByObj(obj: object) {
+  //   const id = this.getIdByObj(obj);
+  //   if (id !== undefined) {
+  //     return { id, obj };
+  //   }
+  // }
   saveObjId(obj: object, id = this.accId++) {
     const wr = new WeakRef(obj);
     this.objIdStore.set(id, { id, wr });
@@ -61,7 +61,7 @@ export class ExportStore {
     string | number,
     { type: "sym" | "obj"; name: string; id: number }
   >();
-  /**传输管道引用了多少的对象 */
-  portStore = new Map<BFChainComlink.BinaryPort<unknown, unknown>, number>();
+  // /**传输管道引用了多少的对象 */
+  // portStore = new Map<BFChainComlink.BinaryPort<unknown, unknown>, number>();
 }
 // export const exportStore = new ExportStore();
