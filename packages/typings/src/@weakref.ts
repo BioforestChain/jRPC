@@ -42,3 +42,17 @@ interface FinalizationRegistryConstructor {
   new (cleanupCallback: (heldValue: unknown) => unknown): FinalizationRegistry;
 }
 declare const FinalizationRegistry: FinalizationRegistryConstructor;
+
+type FinalizationGroup = FinalizationRegistry;
+interface FinalizationGroupConstructor {
+  readonly prototype: FinalizationGroup;
+
+  /**
+   * 创建一个回收前的回调
+   * heldValue: 保留值
+   */
+  new (
+    cleanupCallback: (cleanupIterator: Iterable<unknown>) => unknown
+  ): FinalizationGroup;
+}
+declare const FinalizationGroup: FinalizationGroupConstructor;

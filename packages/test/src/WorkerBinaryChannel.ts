@@ -68,6 +68,13 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   }
   private _U8_DATA_BEGIN = Int32Array.BYTES_PER_ELEMENT * 2;
   req(bin: TB): TB {
+    const resBin = this.send(bin);
+    if (!resBin) {
+      throw new TypeError();
+    }
+    return resBin;
+  }
+  send(bin: TB): TB | undefined {
     /// 预备发起请求，将任务堆栈+1，并将请求内容写入缓冲区中
     log("pre req", [this.si32[0], this.si32[1]]);
     const stackLen = (this.si32[0] += 1);
@@ -91,12 +98,11 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       /// 对方唤醒我们，检查堆栈数，如果回到了发出前的数量，那么就是返回响应了
       if (this.si32[0] === stackLen - 1) {
         const len = this.si32[1];
-        if (len === 0) {
-          throw new TypeError();
+        if (len !== 0) {
+          return deserialize(
+            this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN)
+          );
         }
-        return deserialize(
-          this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN)
-        );
       }
 
       // 否则就是对方在响应我们之前发起了其它请求，那么我们需要先处理请求

@@ -25,6 +25,9 @@ class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     }
     return resBin;
   }
+  send(bin: TB): TB | undefined {
+    return this.remoteTurn.postMessage(bin);
+  }
   //   readStream: AsyncIterator<TB>;
   //   write(bin: TB) {
   //     if (this.remoteQuene.quene) {

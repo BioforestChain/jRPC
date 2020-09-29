@@ -1,23 +1,21 @@
-if (typeof WeakRef === "undefined") {
-  const isObj = (obj: unknown): obj is object => {
-    const targetType = typeof obj;
-    return (
-      (targetType === "object" || targetType === "function") && obj !== null
-    );
-  };
-  const checkUnregisterToken = (unregisterToken: object) => {
-    if (!isObj(unregisterToken)) {
-      throw new TypeError(
-        `unregisterToken ('${unregisterToken}') must be an object`
-      );
-    }
-  };
-  const checkTarget = (target: object) => {
-    if (!isObj(target)) {
-      throw new TypeError("target must be an object");
-    }
-  };
+const isObj = (obj: unknown): obj is object => {
+  const targetType = typeof obj;
+  return (targetType === "object" || targetType === "function") && obj !== null;
+};
 
+const checkUnregisterToken = (unregisterToken: object) => {
+  if (!isObj(unregisterToken)) {
+    throw new TypeError(
+      `unregisterToken ('${unregisterToken}') must be an object`
+    );
+  }
+};
+const checkTarget = (target: object) => {
+  if (!isObj(target)) {
+    throw new TypeError("target must be an object");
+  }
+};
+if (typeof WeakRef === "undefined") {
   const wr = new WeakMap();
   class WeakRef<T extends object> {
     constructor(target: T) {
@@ -31,19 +29,43 @@ if (typeof WeakRef === "undefined") {
   Object.defineProperty(globalThis, "WeakRef", { value: WeakRef });
 
   ///
-  class FinalizationRegistry {
-    constructor(cleanupCallback: (heldValue: unknown) => unknown) {}
-    register(target: object, heldValue: unknown, unregisterToken?: object) {
-      checkTarget(target);
-      if (unregisterToken !== undefined) {
+}
+if (typeof FinalizationRegistry === "undefined") {
+  if (typeof FinalizationGroup !== "undefined") {
+    class FinalizationRegistry {
+      private fg: FinalizationGroup;
+      constructor(cleanupCallback: (heldValue: unknown) => unknown) {
+        this.fg = new FinalizationGroup((heldValueIter) => {
+          for (const heldValue of heldValueIter) {
+            cleanupCallback(heldValue);
+          }
+        });
+      }
+      register(target: object, heldValue: unknown, unregisterToken?: object) {
+        this.fg.register(target, heldValue, unregisterToken);
+      }
+      unregister(unregisterToken: object) {
+        this.fg.unregister(unregisterToken);
+      }
+    }
+    Object.defineProperty(globalThis, "FinalizationRegistry", {
+      value: FinalizationRegistry,
+    });
+  } else {
+    class FinalizationRegistry {
+      constructor(cleanupCallback: (heldValue: unknown) => unknown) {}
+      register(target: object, heldValue: unknown, unregisterToken?: object) {
+        checkTarget(target);
+        if (unregisterToken !== undefined) {
+          checkUnregisterToken(unregisterToken);
+        }
+      }
+      unregister(unregisterToken: object) {
         checkUnregisterToken(unregisterToken);
       }
     }
-    unregister(unregisterToken: object) {
-      checkUnregisterToken(unregisterToken);
-    }
+    Object.defineProperty(globalThis, "FinalizationRegistry", {
+      value: FinalizationRegistry,
+    });
   }
-  Object.defineProperty(globalThis, "FinalizationRegistry", {
-    value: FinalizationRegistry,
-  });
 }

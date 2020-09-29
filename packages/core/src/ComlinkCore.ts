@@ -129,7 +129,14 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */>
           type: LinkObjType.Export,
           module: this.Any2InOutBinary(scope),
         });
+      } else if (linkObj.type === LinkObjType.Release) {
+        this.importStore.releaseProxyId(linkObj.refId);
       }
+    });
+    this.exportStore.onRelease((refId) => {
+      port.send(
+        this.linkObj2TransferableBinary({ type: LinkObjType.Release, refId })
+      );
     });
   }
   //#endregion

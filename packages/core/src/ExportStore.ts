@@ -32,28 +32,62 @@ export class ExportStore {
       if (obj !== undefined) {
         return obj;
       }
-      this.objIdStore.delete(id);
+      this.releaseById(id);
     }
   }
-  // getObjIdById(id: number) {
-  //   const obj = this.getObjById(id);
-  //   if (obj) {
-  //     return { obj, id };
-  //   }
-  // }
   getIdByObj(obj: object) {
     return this.objIdWM.get(obj);
   }
-  // getObjIdByObj(obj: object) {
-  //   const id = this.getIdByObj(obj);
-  //   if (id !== undefined) {
-  //     return { id, obj };
-  //   }
-  // }
+
+  private _fr = new FinalizationRegistry((id) =>
+    this.releaseById(id as number)
+  );
+  /**
+   * 保存对象的引用
+   */
   saveObjId(obj: object, id = this.accId++) {
+    /// 保存到map中
     const wr = new WeakRef(obj);
     this.objIdStore.set(id, { id, wr });
     this.objIdWM.set(obj, id);
+    /// 注册释放回调
+    this._fr.register(obj, id, wr);
     return id;
+  }
+  /**
+   * 释放对象的引用
+   * @param id
+   */
+  releaseById(id: number) {
+    let success = false;
+    const cache = this.objIdStore.get(id);
+    if (cache) {
+      success = true;
+      this.objIdStore.delete(id);
+      const obj = cache.wr.deref();
+      if (obj !== undefined) {
+        this._fr.unregister(cache.wr);
+      }
+    } else {
+      const sym = this.symIdStore.get(id);
+      if (sym) {
+        success = true;
+        this.symIdStore.delete(id);
+        this.symIdStore.delete(sym.sym);
+      }
+    }
+
+    /// 触发回调
+    if (success) {
+      this._onReleaseCallback(id);
+    }
+  }
+
+  private _onReleaseCallback(id: number): unknown {
+    return;
+  }
+  /**监听一个引用被释放 */
+  onRelease(cb: (id: number) => unknown) {
+    this._onReleaseCallback = cb;
   }
 }

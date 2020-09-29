@@ -1,8 +1,14 @@
 export const enum LinkObjType {
+  /**获取导入的入口信息 */
   Import,
+  /**响应Import */
   Export,
+  /**指令请求 */
   In,
+  /**响应In */
   Out,
+  /**通知释放 */
+  Release,
 }
 
 export const enum LinkOperatorType {

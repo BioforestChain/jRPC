@@ -61,6 +61,7 @@ declare namespace BFChainComlink {
     // write(bin: TB): void;
     // close(): void;
     req(bin: TB): TB;
+    send(bin: TB): void;
     // res(bin: TB): void;
   }
 
@@ -75,22 +76,25 @@ declare namespace BFChainComlink {
   }
   interface LinkInObj<IOB> {
     type: import("./const").LinkObjType.In;
-    // reqId: number;
     targetId: number;
     in: IOB[];
     hasOut: boolean;
   }
   interface LinkOutObj<IOB> {
     type: import("./const").LinkObjType.Out;
-    // resId: number;
     out: IOB[];
     isThrow: boolean;
+  }
+  interface LinkReleaseObj {
+    type: import("./const").LinkObjType.Release;
+    refId: number;
   }
   type LinkObj<IOB> =
     | LinkImportObj
     | LinkExportObj<IOB>
     | LinkInObj<IOB>
-    | LinkOutObj<IOB>;
+    | LinkOutObj<IOB>
+    | LinkReleaseObj;
 
   type EmscriptionProxyHanlder<T extends object> = Required<
     Omit<ProxyHandler<T>, "enumerate">

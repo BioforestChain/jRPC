@@ -1,4 +1,6 @@
 export class ImportStore<E = unknown> {
+  /**存储协议扩展信息 */
+  idExtendsStore = new Map<number, E>();
   /**我所导入的引用对象与符号 */
   private proxyIdStore = new Map<
     number | object | symbol,
@@ -29,11 +31,19 @@ export class ImportStore<E = unknown> {
     this.proxyIdStore.set(proxy, cache);
     this.proxyIdStore.set(id, cache);
   }
-  /**导入的命名 */
-  nameStore = new Map<
-    string | number,
-    { type: "sym" | "obj"; name: string; id: number }
-  >();
-  idExtendsStore = new Map<number, E>();
+  /**
+   * 释放导入的引用
+   * @param id refId
+   */
+  releaseProxyId(id: number) {
+    const cache = this.proxyIdStore.get(id);
+    if (cache) {
+      this.proxyIdStore.delete(id);
+      this.proxyIdStore.delete(cache.proxy);
+      this.idExtendsStore.delete(id);
+      return true;
+    }
+    return false;
+  }
 }
 // export const importStore = new ImportStore();
