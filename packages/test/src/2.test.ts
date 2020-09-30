@@ -1,11 +1,5 @@
 import { InnerComlink, ShareBinaryChannel } from "./index";
-import {
-  Worker,
-  isMainThread,
-  MessageChannel,
-  parentPort,
-  threadId,
-} from "worker_threads";
+import { Worker, isMainThread, MessageChannel, parentPort, threadId } from "worker_threads";
 
 class TestService {
   private name = "Gaubee";
@@ -30,9 +24,7 @@ if (isMainThread) {
   /**
    * 生成当前线程使用的管道
    */
-  const { port: portA, sab } = new ShareBinaryChannel<InnerComlink.TB>(
-    mc.port1
-  );
+  const { port: portA, sab } = new ShareBinaryChannel<InnerComlink.TB>(mc.port1);
 
   /// 模拟A模块作为服务模块
   (async () => {
@@ -58,10 +50,7 @@ if (isMainThread) {
     /**
      * 生成当前线程使用的管道
      */
-    const { port: portB } = new ShareBinaryChannel<InnerComlink.TB>(
-      msg.mcPort,
-      msg.sab
-    );
+    const { port: portB } = new ShareBinaryChannel<InnerComlink.TB>(msg.mcPort, msg.sab);
     /// 模拟B模块作为调用模块
     (async function () {
       /**模块控制器 */
@@ -72,15 +61,13 @@ if (isMainThread) {
        * 同语法：
        * import ctx from port
        */
-      const ctxA = moduleB.import<TestService>(portB);
+      const ctxA = moduleB.import<TestService>();
 
       //#region 执行
 
       /// test apply
       console.assert(ctxA.say("qaq") === "Gaubee: xxxx-qaq-xxxx");
-      console.assert(
-        ctxA.constructor.toString().startsWith("class TestService {")
-      );
+      console.assert(ctxA.constructor.toString().startsWith("class TestService {"));
 
       /// test type
       console.assert(typeof ctxA.constructor === "function");

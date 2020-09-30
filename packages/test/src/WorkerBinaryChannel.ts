@@ -19,7 +19,7 @@ let log = (f: any, ...param: any[]) => {
 export class ShareBinaryChannel<TB> {
   constructor(
     private _notifyer: MessagePort,
-    public readonly sab = new SharedArrayBuffer(1024 * 1024)
+    public readonly sab = new SharedArrayBuffer(1024 * 1024),
   ) {}
 
   public readonly port = new ShareBinaryPort<TB>(this._notifyer, this.sab);
@@ -42,9 +42,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     log("get req", [this.si32[0], this.si32[1]]);
 
     const len = this.si32[1];
-    const bin = deserialize(
-      this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN)
-    );
+    const bin = deserialize(this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN));
     const res = this._messageHanlder(bin);
     if (res) {
       const buf = serialize(res);
@@ -99,9 +97,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       if (this.si32[0] === stackLen - 1) {
         const len = this.si32[1];
         if (len !== 0) {
-          return deserialize(
-            this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN)
-          );
+          return deserialize(this.su8.subarray(this._U8_DATA_BEGIN, len + this._U8_DATA_BEGIN));
         }
       }
 

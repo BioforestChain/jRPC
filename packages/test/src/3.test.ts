@@ -55,7 +55,7 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
    * import ctx from port
    * import {a} from port
    */
-  const ctxA = moduleB.import<CGService>(portB);
+  const ctxA = moduleB.import<CGService>();
 
   let myItem = ctxA.getList(1)[0];
   ctxA.clear();
@@ -75,7 +75,7 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
       diff < 0 ? "✅" : `❌`,
       mem.heapUsed,
       mem2.heapUsed,
-      diff
+      diff,
     );
   }
   /// 测试B能阻止A回收

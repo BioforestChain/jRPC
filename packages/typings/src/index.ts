@@ -1,4 +1,4 @@
 import "./@weakref";
 import "./@types";
-import './weakref.shim'
+import "./weakref.shim";
 export * from "./const";

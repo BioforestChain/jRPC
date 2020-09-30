@@ -51,8 +51,6 @@ interface FinalizationGroupConstructor {
    * 创建一个回收前的回调
    * heldValue: 保留值
    */
-  new (
-    cleanupCallback: (cleanupIterator: Iterable<unknown>) => unknown
-  ): FinalizationGroup;
+  new (cleanupCallback: (cleanupIterator: Iterable<unknown>) => unknown): FinalizationGroup;
 }
 declare const FinalizationGroup: FinalizationGroupConstructor;

@@ -10,10 +10,7 @@ class _InnerTurn<TB> {
   }
 }
 class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
-  constructor(
-    protected localTurn: _InnerTurn<TB>,
-    protected remoteTurn: _InnerTurn<TB>
-  ) {}
+  constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
 
   onMessage(cb: (bin: TB) => TB | undefined) {
     this.localTurn.postMessage = cb;

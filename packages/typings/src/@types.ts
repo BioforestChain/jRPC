@@ -9,15 +9,12 @@ declare namespace BFChainComlink {
     /**任意类型的对象 转换到 IOB */
     Any2InOutBinary(obj: unknown): IOB;
     /**IOB 转换到 任意类型的对象 */
-    InOutBinary2Any(port: BinaryPort<TB>, bin: IOB): unknown;
+    InOutBinary2Any(/* port: BinaryPort<TB>, */ bin: IOB): unknown;
 
     /**IO指令 转成 可传输的模型 */
     linkObj2TransferableBinary(obj: LinkObj<IOB>): TB;
     /**可传输的模型 转成 IO指令 */
     transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
-
-    // /**判断一个对象是否可以克隆，或者只能引用传输 */
-    // canClone(obj: unknown): boolean;
 
     //#endregion
 
@@ -28,27 +25,16 @@ declare namespace BFChainComlink {
      * export const key = target
      */
     export(target: object, key?: string): void;
-    // /**取消导出 */
-    // recycle(target: object): boolean;
     /**导入
      * 同语法：
      * import ? from port
      * import { key } from port
      */
-    import<T extends object>(
-      port: BinaryPort<TB>,
-      key?: string
-    ): PromiseLike<Remote<T>>;
+    import<T extends object>(key?: string): PromiseLike<Remote<T>>;
     //#endregion
 
-    //#region
-
-    //#endregion
-
-    // /**绑定一条通道 */
-    // listen(port: BinaryPort<TB>): Promise<unknown /* 握手信息 */>;
     /**释放绑定的通道 */
-    close(port: BinaryPort<TB>): boolean;
+    destroy(port: BinaryPort<TB>): boolean;
   }
 
   /**定义数据管道的双工规范
@@ -96,9 +82,7 @@ declare namespace BFChainComlink {
     | LinkOutObj<IOB>
     | LinkReleaseObj;
 
-  type EmscriptionProxyHanlder<T extends object> = Required<
-    Omit<ProxyHandler<T>, "enumerate">
-  >;
+  type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">>;
 
   type ImportRefHook<T> = T extends object
     ? {

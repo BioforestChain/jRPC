@@ -62,8 +62,8 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
    * import ctx from port
    * import {a} from port
    */
-  const ctxA = moduleB.import<TestService>(portB);
-  const a = moduleB.import<number>(portB, "a");
+  const ctxA = moduleB.import<TestService>();
+  const a = moduleB.import<number>("a");
 
   // 执行
   console.log("a:", a);

@@ -78,9 +78,7 @@ export class ImportStore<E = unknown> {
     }
     this.proxyIdStore.set(id, cache);
   }
-  private _fr = new FinalizationRegistry((id) =>
-    this.releaseProxyId(id as number)
-  );
+  private _fr = new FinalizationRegistry((id) => this.releaseProxyId(id as number));
   /**
    * 释放导入的引用
    * @param id refId

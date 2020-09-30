@@ -5,9 +5,7 @@ const isObj = (obj: unknown): obj is object => {
 
 const checkUnregisterToken = (unregisterToken: object) => {
   if (!isObj(unregisterToken)) {
-    throw new TypeError(
-      `unregisterToken ('${unregisterToken}') must be an object`
-    );
+    throw new TypeError(`unregisterToken ('${unregisterToken}') must be an object`);
   }
 };
 const checkTarget = (target: object) => {

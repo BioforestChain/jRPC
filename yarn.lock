@@ -7,10 +7,10 @@
   resolved "http://192.168.250.245:4873/7zip-bin/-/7zip-bin-5.0.3.tgz#bc5b5532ecafd923a61f2fb097e3b108c0106a3f"
   integrity sha1-vFtVMuyv2SOmHy+wl+OxCMAQaj8=
 
-"7zip-min@^1.1.2":
-  version "1.1.2"
-  resolved "http://192.168.250.245:4873/7zip-min/-/7zip-min-1.1.2.tgz#88bd4af166e26372b8ac26ed074a215eba98da1f"
-  integrity sha1-iL1K8WbiY3K4rCbtB0ohXrqY2h8=
+"7zip-min@^1.1.3":
+  version "1.1.3"
+  resolved "http://192.168.250.245:4873/7zip-min/-/7zip-min-1.1.3.tgz#1a8c97a409de3a408f39bd107ba31613a6865308"
+  integrity sha1-GoyXpAneOkCPOb0Qe6MWE6aGUwg=
   dependencies:
     "7zip-bin" "^5.0.3"
 
@@ -46,10 +46,10 @@
     prettier "^1.16.0"
     yargs "^12.0.5"
 
-"@bfchain/devkit-tsc@0.7.0":
-  version "0.7.0"
-  resolved "http://192.168.250.245:4873/@bfchain%2fdevkit-tsc/-/devkit-tsc-0.7.0.tgz#d39958046ad3c447f1a6757047a5eeb19df5d2d6"
-  integrity sha512-iteZjNVABtyL1YB0bF7ywxyHrJvOKfZNZCwTDLoN1BN089j4laED2o1gG/U4xpatIHT0r/ngJ8G2YC+FrqBtkw==
+"@bfchain/devkit-tsc@0.8.0":
+  version "0.8.0"
+  resolved "http://192.168.250.245:4873/@bfchain%2fdevkit-tsc/-/devkit-tsc-0.8.0.tgz#f8da497e1641a7f5081ad81aab412e412d9529ce"
+  integrity sha512-JbZR8fY+5pe0VjoujcEaxS/wj4YYetnQ0dh9yPz4qcy8mzRPmzlD75yOMU2V4WrXzYi05S+3n/5cQ5HzkfwyOA==
   dependencies:
     "@types/microsoft__typescript-etw" "^0.1.0"
 
@@ -60,32 +60,32 @@
   dependencies:
     "@types/microsoft__typescript-etw" "^0.1.0"
 
-"@bfchain/devkit@^0.8.19":
-  version "0.8.19"
-  resolved "http://192.168.250.245:4873/@bfchain%2fdevkit/-/devkit-0.8.19.tgz#9638a5f3fadbc96086d5651a7d5a50a4fdbc2a12"
-  integrity sha512-pD71kB3AtJv4DWA1F1LNHQzvsp9T2SmFmBd75ha1TNGQCksyqmnBsfNPoEbKj1HFa0u4B1+j073gWs4iKgXEGQ==
+"@bfchain/devkit@^0.9.0":
+  version "0.9.0"
+  resolved "http://192.168.250.245:4873/@bfchain%2fdevkit/-/devkit-0.9.0.tgz#c11e38264b25c8528dc39b7600ff404431e93a7c"
+  integrity sha512-FX+yPYiUfcNUDymGVN1aNZg4YcVknIT5It+Dcpk9WvTucWLjYzbdX7VzdhegzS98T5tll4yFKwEKBOyrA+baXg==
   dependencies:
-    "7zip-min" "^1.1.2"
+    "7zip-min" "^1.1.3"
     "@bfchain/devkit-ts-creator" "^1.3.4"
-    "@bfchain/devkit-tsc" "0.7.0"
+    "@bfchain/devkit-tsc" "0.8.0"
     "@types/json5" "^0.0.30"
-    "@types/prettier" "^2.0.1"
-    "@types/semver" "^7.3.1"
+    "@types/prettier" "^2.1.1"
+    "@types/semver" "^7.3.4"
     "@types/yargs" "^15.0.5"
     cheerio "^1.0.0-rc.3"
     console-pro "^3.3.11"
     decache "^4.6.0"
-    execa "^4.0.2"
+    execa "^4.0.3"
     globby "^11.0.1"
     json5 "^2.1.3"
     mwildcards "^1.2.2"
-    prettier "^2.0.5"
+    prettier "^2.1.2"
     semver "^7.3.2"
     slash "^3.0.0"
     source-map-support "^0.5.19"
-    typescript "^3.9.6"
+    typescript "^4.0.3"
     yaml "^1.10.0"
-    yargs "^15.3.1"
+    yargs "^16.0.3"
 
 "@bfchain/util-extends-promise-out@4.10.16":
   version "4.10.16"
@@ -1055,17 +1055,15 @@
   resolved "http://192.168.250.245:4873/@types%2fnormalize-package-data/-/normalize-package-data-2.4.0.tgz#e486d0d97396d79beedd0a6e33f4534ff6b4973e"
   integrity sha512-f5j5b/Gf71L+dbqxIpQ4Z2WlmI/mPJ0fOkGGmFgtb6sAu97EPczzbS3/tJKxmcYDj55OX6ssqwDAWOHIYDRDGA==
 
-"@types/prettier@^2.0.1":
-  version "2.0.2"
-  resolved "http://192.168.250.245:4873/@types%2fprettier/-/prettier-2.0.2.tgz#5bb52ee68d0f8efa9cc0099920e56be6cc4e37f3"
-  integrity sha1-W7Uu5o0PjvqcwAmZIOVr5sxON/M=
+"@types/prettier@^2.1.1":
+  version "2.1.1"
+  resolved "http://192.168.250.245:4873/@types%2fprettier/-/prettier-2.1.1.tgz#be148756d5480a84cde100324c03a86ae5739fb5"
+  integrity sha1-vhSHVtVICoTN4QAyTAOoauVzn7U=
 
-"@types/semver@^7.3.1":
-  version "7.3.1"
-  resolved "http://192.168.250.245:4873/@types%2fsemver/-/semver-7.3.1.tgz#7a9a5d595b6d873f338c867dcef64df289468cfa"
-  integrity sha1-eppdWVtthz8zjIZ9zvZN8olGjPo=
-  dependencies:
-    "@types/node" "*"
+"@types/semver@^7.3.4":
+  version "7.3.4"
+  resolved "http://192.168.250.245:4873/@types%2fsemver/-/semver-7.3.4.tgz#43d7168fec6fa0988bb1a513a697b29296721afb"
+  integrity sha1-Q9cWj+xvoJiLsaUTppeykpZyGvs=
 
 "@types/source-map-support@~0.5.3":
   version "0.5.3"
@@ -1619,14 +1617,14 @@ cliui@^5.0.0:
     strip-ansi "^5.2.0"
     wrap-ansi "^5.1.0"
 
-cliui@^6.0.0:
-  version "6.0.0"
-  resolved "http://192.168.250.245:4873/cliui/-/cliui-6.0.0.tgz#511d702c0c4e41ca156d7d0e96021f23e13225b1"
-  integrity sha1-UR1wLAxOQcoVbX0OlgIfI+EyJbE=
+cliui@^7.0.0:
+  version "7.0.1"
+  resolved "http://192.168.250.245:4873/cliui/-/cliui-7.0.1.tgz#a4cb67aad45cd83d8d05128fc9f4d8fbb887e6b3"
+  integrity sha1-pMtnqtRc2D2NBRKPyfTY+7iH5rM=
   dependencies:
     string-width "^4.2.0"
     strip-ansi "^6.0.0"
-    wrap-ansi "^6.2.0"
+    wrap-ansi "^7.0.0"
 
 clone-deep@^4.0.1:
   version "4.0.1"
@@ -2247,6 +2245,11 @@ es6-promisify@^5.0.0:
   dependencies:
     es6-promise "^4.0.3"
 
+escalade@^3.0.2:
+  version "3.1.0"
+  resolved "http://192.168.250.245:4873/escalade/-/escalade-3.1.0.tgz#e8e2d7c7a8b76f6ee64c2181d6b8151441602d4e"
+  integrity sha1-6OLXx6i3b27mTCGB1rgVFEFgLU4=
+
 escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "http://192.168.250.245:4873/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
@@ -2275,7 +2278,7 @@ execa@^1.0.0:
     signal-exit "^3.0.0"
     strip-eof "^1.0.0"
 
-execa@^4.0.2:
+execa@^4.0.3:
   version "4.0.3"
   resolved "http://192.168.250.245:4873/execa/-/execa-4.0.3.tgz#0a34dabbad6d66100bd6f2c576c8669403f317f2"
   integrity sha1-CjTau61tZhAL1vLFdshmlAPzF/I=
@@ -2558,7 +2561,7 @@ get-caller-file@^1.0.1:
   resolved "http://192.168.250.245:4873/get-caller-file/-/get-caller-file-1.0.3.tgz#f978fa4c90d1dfe7ff2d6beda2a515e713bdcf4a"
   integrity sha512-3t6rVToeoZfYSGd8YoLFR2DJkiQrIiUrGcjvFX2mDw3bn6k2OtwHN0TNCLbBO+w8qTvimhDkv+LSscbJY1vE6w==
 
-get-caller-file@^2.0.1:
+get-caller-file@^2.0.1, get-caller-file@^2.0.5:
   version "2.0.5"
   resolved "http://192.168.250.245:4873/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
   integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
@@ -4442,10 +4445,10 @@ prettier@^1.16.0:
   resolved "http://192.168.250.245:4873/prettier/-/prettier-1.19.1.tgz#f7d7f5ff8a9cd872a7be4ca142095956a60797cb"
   integrity sha1-99f1/4qc2HKnvkyhQglZVqYHl8s=
 
-prettier@^2.0.5:
-  version "2.0.5"
-  resolved "http://192.168.250.245:4873/prettier/-/prettier-2.0.5.tgz#d6d56282455243f2f92cc1716692c08aa31522d4"
-  integrity sha1-1tVigkVSQ/L5LMFxZpLAiqMVItQ=
+prettier@^2.1.2:
+  version "2.1.2"
+  resolved "http://192.168.250.245:4873/prettier/-/prettier-2.1.2.tgz#3050700dae2e4c8b67c4c3f666cdb8af405e1ce5"
+  integrity sha1-MFBwDa4uTItnxMP2Zs24r0BeHOU=
 
 process-nextick-args@~2.0.0:
   version "2.0.1"
@@ -5475,10 +5478,10 @@ typedarray@^0.0.6:
   resolved "http://192.168.250.245:4873/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@^3.9.6:
-  version "3.9.7"
-  resolved "http://192.168.250.245:4873/typescript/-/typescript-3.9.7.tgz#98d600a5ebdc38f40cb277522f12dc800e9e25fa"
-  integrity sha1-mNYApevcOPQMsndSLxLcgA6eJfo=
+typescript@^4.0.3:
+  version "4.0.3"
+  resolved "http://192.168.250.245:4873/typescript/-/typescript-4.0.3.tgz#153bbd468ef07725c1df9c77e8b453f8d36abba5"
+  integrity sha1-FTu9Ro7wdyXB35x36LRT+NNqu6U=
 
 uglify-js@^3.1.4:
   version "3.10.0"
@@ -5683,10 +5686,10 @@ wrap-ansi@^5.1.0:
     string-width "^3.0.0"
     strip-ansi "^5.0.0"
 
-wrap-ansi@^6.2.0:
-  version "6.2.0"
-  resolved "http://192.168.250.245:4873/wrap-ansi/-/wrap-ansi-6.2.0.tgz#e9393ba07102e6c91a3b221478f0257cd2856e53"
-  integrity sha1-6Tk7oHEC5skaOyIUePAlfNKFblM=
+wrap-ansi@^7.0.0:
+  version "7.0.0"
+  resolved "http://192.168.250.245:4873/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
+  integrity sha1-Z+FFz/UQpqaYS98RUpEdadLrnkM=
   dependencies:
     ansi-styles "^4.0.0"
     string-width "^4.1.0"
@@ -5748,6 +5751,11 @@ xtend@~4.0.1:
   resolved "http://192.168.250.245:4873/y18n/-/y18n-4.0.0.tgz#95ef94f85ecc81d007c264e190a120f0a3c8566b"
   integrity sha512-r9S/ZyXu/Xu9q1tYlpsLIsa3EeLXXk0VwlxqTcFRfg9EhMW+17kbt9G0NrgCmhGb5vT2hyhJZLfDGx+7+5Uj/w==
 
+y18n@^5.0.1:
+  version "5.0.1"
+  resolved "http://192.168.250.245:4873/y18n/-/y18n-5.0.1.tgz#1ad2a7eddfa8bce7caa2e1f6b5da96c39d99d571"
+  integrity sha1-GtKn7d+ovOfKouH2tdqWw52Z1XE=
+
 yallist@^3.0.0, yallist@^3.0.2, yallist@^3.0.3:
   version "3.1.1"
   resolved "http://192.168.250.245:4873/yallist/-/yallist-3.1.1.tgz#dbb7daf9bfd8bac9ab45ebf602b8cbad0d5d08fd"
@@ -5774,13 +5782,18 @@ yargs-parser@^15.0.1:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
 
-yargs-parser@^18.1.2, yargs-parser@^18.1.3:
+yargs-parser@^18.1.3:
   version "18.1.3"
   resolved "http://192.168.250.245:4873/yargs-parser/-/yargs-parser-18.1.3.tgz#be68c4975c6b2abf469236b0c870362fab09a7b0"
   integrity sha1-vmjEl1xrKr9GkjawyHA2L6sJp7A=
   dependencies:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
+
+yargs-parser@^20.0.0:
+  version "20.2.0"
+  resolved "http://192.168.250.245:4873/yargs-parser/-/yargs-parser-20.2.0.tgz#944791ca2be2e08ddadd3d87e9de4c6484338605"
+  integrity sha1-lEeRyivi4I3a3T2H6d5MZIQzhgU=
 
 yargs@^12.0.5:
   version "12.0.5"
@@ -5817,19 +5830,15 @@ yargs@^14.2.2:
     y18n "^4.0.0"
     yargs-parser "^15.0.1"
 
-yargs@^15.3.1:
-  version "15.4.1"
-  resolved "http://192.168.250.245:4873/yargs/-/yargs-15.4.1.tgz#0d87a16de01aee9d8bec2bfbf74f67851730f4f8"
-  integrity sha1-DYehbeAa7p2L7Cv7909nhRcw9Pg=
+yargs@^16.0.3:
+  version "16.0.3"
+  resolved "http://192.168.250.245:4873/yargs/-/yargs-16.0.3.tgz#7a919b9e43c90f80d4a142a89795e85399a7e54c"
+  integrity sha1-epGbnkPJD4DUoUKol5XoU5mn5Uw=
   dependencies:
-    cliui "^6.0.0"
-    decamelize "^1.2.0"
-    find-up "^4.1.0"
-    get-caller-file "^2.0.1"
+    cliui "^7.0.0"
+    escalade "^3.0.2"
+    get-caller-file "^2.0.5"
     require-directory "^2.1.1"
-    require-main-filename "^2.0.0"
-    set-blocking "^2.0.0"
     string-width "^4.2.0"
-    which-module "^2.0.0"
-    y18n "^4.0.0"
-    yargs-parser "^18.1.2"
+    y18n "^5.0.1"
+    yargs-parser "^20.0.0"

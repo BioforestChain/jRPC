@@ -16,10 +16,7 @@ export const enum IOB_Type {
   //   /**默认引用 */
   //   Default,
 }
-export const globalSymbolStore = new Map<
-  string | symbol,
-  { name: string; sym: symbol }
->();
+export const globalSymbolStore = new Map<string | symbol, { name: string; sym: symbol }>();
 
 [
   "asyncIterator",

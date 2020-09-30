@@ -30,7 +30,7 @@ export class InnerComlink extends ComlinkCore<
           case "symbol":
             item = {
               type: IOB_Type.RemoteSymbol,
-              refId: this._exportSymbol(obj),
+              refId: this.$exportSymbol(obj),
               extends: this._getRemoteSymbolItemExtends(obj),
             };
             break;
@@ -39,7 +39,7 @@ export class InnerComlink extends ComlinkCore<
             if (obj !== null) {
               item = {
                 type: IOB_Type.Ref,
-                refId: this._exportObject(obj),
+                refId: this.$exportObject(obj),
                 extends: this._getRefItemExtends(obj),
               };
             }
@@ -52,17 +52,13 @@ export class InnerComlink extends ComlinkCore<
 
     return item;
   }
-  InOutBinary2Any(
-    port: InnerComlink.BinaryPort,
-    bin: InnerComlink.IOB
-  ): unknown {
+  InOutBinary2Any(bin: InnerComlink.IOB): unknown {
+    const { port, importStore, exportStore } = this;
     switch (bin.type) {
       //   case LinkItemType.Default:
       //     return defaultCtx;
       case IOB_Type.Locale:
-        const loc =
-          this.exportStore.getObjById(bin.locId) ||
-          this.exportStore.getSymById(bin.locId);
+        const loc = exportStore.getObjById(bin.locId) || exportStore.getSymById(bin.locId);
         if (!loc) {
           throw new ReferenceError();
         }
@@ -70,17 +66,14 @@ export class InnerComlink extends ComlinkCore<
       case IOB_Type.Ref:
       case IOB_Type.RemoteSymbol:
         /// 读取缓存中的应用对象
-        let cachedProxy = this.importStore.getProxyById(bin.refId);
+        let cachedProxy = importStore.getProxyById(bin.refId);
         if (cachedProxy === undefined) {
           // 保存引用信息
-          this.importStore.idExtendsStore.set(bin.refId, bin.extends);
+          importStore.idExtendsStore.set(bin.refId, bin.extends);
           /// 使用导入功能生成对象
-          cachedProxy = this._createImportByRefId<symbol | Object>(
-            port,
-            bin.refId
-          );
+          cachedProxy = this.$createImportByRefId<symbol | Object>(port, bin.refId);
           /// 缓存对象
-          this.importStore.saveProxyId(cachedProxy, bin.refId);
+          importStore.saveProxyId(cachedProxy, bin.refId);
         }
         return cachedProxy;
       case IOB_Type.Clone:
@@ -96,9 +89,7 @@ export class InnerComlink extends ComlinkCore<
     return bin as InnerComlink.LinkObj;
   }
 
-  private _getRefItemExtends(
-    obj: object | Function
-  ): EmscriptionLinkRefExtends.RefItemExtends {
+  private _getRefItemExtends(obj: object | Function): EmscriptionLinkRefExtends.RefItemExtends {
     if (typeof obj === "object") {
       return {
         type: "object",
@@ -117,7 +108,7 @@ export class InnerComlink extends ComlinkCore<
   }
 
   private _getRemoteSymbolItemExtends(
-    sym: symbol
+    sym: symbol,
   ): EmscriptionLinkRefExtends.RemoteSymbolItemExtends {
     const globalSymInfo = globalSymbolStore.get(sym);
     if (globalSymInfo) {
@@ -132,19 +123,15 @@ export class InnerComlink extends ComlinkCore<
       type: "symbol",
       global: false,
       description:
-        Object.getOwnPropertyDescriptor(sym, "description")?.value ??
-        sym.toString().slice(7, -1),
+        Object.getOwnPropertyDescriptor(sym, "description")?.value ?? sym.toString().slice(7, -1),
       unique: Symbol.keyFor(sym) !== undefined,
     };
   }
 
   private _isAsyncFunction(fun: Function): boolean {
     try {
-      const AsyncFunctionConstructor = Function(
-        "return (async()=>{}).constructor"
-      )();
-      this._isAsyncFunction = (fun: Function) =>
-        fun instanceof AsyncFunctionConstructor;
+      const AsyncFunctionConstructor = Function("return (async()=>{}).constructor")();
+      this._isAsyncFunction = (fun: Function) => fun instanceof AsyncFunctionConstructor;
     } catch {
       this._isAsyncFunction = () => false;
     }
@@ -170,9 +157,9 @@ export class InnerComlink extends ComlinkCore<
     return false;
   }
 
-  protected _beforeImportRef<T>(
+  protected $beforeImportRef<T>(
     port: InnerComlink.BinaryPort,
-    refId: number
+    refId: number,
   ): BFChainComlink.ImportRefHook<T> {
     const refExtends = this.importStore.idExtendsStore.get(refId);
     if (!refExtends) {
@@ -181,13 +168,8 @@ export class InnerComlink extends ComlinkCore<
     let ref: BFChainComlink.ImportRefHook<T> | undefined;
     if (refExtends.type === "function") {
       const code_funName = refExtends.name;
-      const code_asyncPrefix = refExtends.isAsync
-        ? "async " /* 这里要确保引擎级别是匹配的 */
-        : "";
-      const code_paramList = Array.from(
-        { length: refExtends.length },
-        (_, i) => `_${i}`
-      );
+      const code_asyncPrefix = refExtends.isAsync ? "async " /* 这里要确保引擎级别是匹配的 */ : "";
+      const code_paramList = Array.from({ length: refExtends.length }, (_, i) => `_${i}`);
 
       const sourceCode = code_funName
         ? `const funContainer={${code_asyncPrefix}${code_funName}(${code_paramList}) {}};
@@ -198,31 +180,20 @@ export class InnerComlink extends ComlinkCore<
       const funRef: BFChainComlink.ImportRefHook<Function> = {
         getSource: () => sourceFun,
         getProxyHanlder: () => {
-          const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(
-            port,
-            refId
-          );
+          const defaultProxyHanlder = this.$getDefaultProxyHanlder<Function>(port, refId);
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get(target, prop, receiver) {
               if (prop === "call") {
                 return new Proxy(sourceFun[prop], {
                   apply(_, thisArg, argArray) {
-                    return defaultProxyHanlder.apply(
-                      sourceFun,
-                      argArray[0],
-                      argArray.slice(1)
-                    );
+                    return defaultProxyHanlder.apply(sourceFun, argArray[0], argArray.slice(1));
                   },
                 });
               } else if (prop === "apply") {
                 return new Proxy(sourceFun[prop], {
                   apply(_, thisArg, argArray) {
-                    return defaultProxyHanlder.apply(
-                      sourceFun,
-                      argArray[0],
-                      argArray[1]
-                    );
+                    return defaultProxyHanlder.apply(sourceFun, argArray[0], argArray[1]);
                   },
                 });
               }
@@ -238,10 +209,7 @@ export class InnerComlink extends ComlinkCore<
       const objRef: BFChainComlink.ImportRefHook<object> = {
         getSource: () => sourceObj,
         getProxyHanlder: () => {
-          const defaultProxyHanlder = this._getDefaultProxyHanlder<object>(
-            port,
-            refId
-          );
+          const defaultProxyHanlder = this.$getDefaultProxyHanlder<object>(port, refId);
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get(target, prop, receiver) {
@@ -279,16 +247,5 @@ export class InnerComlink extends ComlinkCore<
       throw new TypeError();
     }
     return ref;
-  }
-
-  import<T>(port: InnerComlink.BinaryPort, key?: string) {
-    /**模拟收到头部的数据交换了 */
-    this.InOutBinary2Any(port, {
-      type: IOB_Type.Ref,
-      refId: 0,
-      extends: { type: "object", hasThen: false },
-    });
-    /// 执行原有的import流程
-    return super.import<T>(port, key);
   }
 }
