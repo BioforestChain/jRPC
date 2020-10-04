@@ -113,7 +113,7 @@ export class InnerComlink extends ComlinkCore<
         funType: getFunctionType(obj),
         name: obj.name,
         length: obj.length,
-        sourceCode: exportDescriptor.protectSourceCode ? "" : obj.toString(),
+        sourceCode: exportDescriptor.showSourceCode ? obj.toString() : "",
       };
     }
     throw new TypeError();

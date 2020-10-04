@@ -20,7 +20,7 @@ declare namespace EmscriptionLinkRefExtends {
     sourceCode: string;
   };
   type FunctionExportDescriptor = {
-    protectSourceCode?: boolean;
+    showSourceCode?: boolean;
   };
   /**如果是Object，对象属性变更的时候，会发来推送信息 */
   type RefObjectItemExtends = {
