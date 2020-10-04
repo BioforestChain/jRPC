@@ -1,21 +1,6 @@
 import { InnerComlink, ShareBinaryChannel } from "./index";
 import { Worker, isMainThread, MessageChannel, parentPort, threadId } from "worker_threads";
-
-class TestService {
-  private name = "Gaubee";
-  say(word: string) {
-    return `${this.name}: xxxx-${word}-xxxx`;
-  }
-  zz(cb: (arg: { k: string; v: string }) => number) {
-    console.log(cb({ k: "xxx", v: "zzz" }));
-  }
-  think(ms: number) {
-    return new Promise((cb) => setTimeout(cb, ms));
-  }
-}
-setInterval(() => {
-  console.log(`thread[${threadId}] tick...`);
-}, 100);
+import { TestService } from "./commonTest";
 
 if (isMainThread) {
   console.log("main started");
@@ -63,30 +48,10 @@ if (isMainThread) {
        */
       const ctxA = moduleB.import<TestService>();
 
-      //#region 执行
+      TestService.testAll(ctxA);
+      console.log("🎊 ~ all test passed!");
 
-      /// test apply
-      console.assert(ctxA.say("qaq") === "Gaubee: xxxx-qaq-xxxx");
-      console.assert(ctxA.constructor.toString().startsWith("class TestService {"));
-
-      /// test type
-      console.assert(typeof ctxA.constructor === "function");
-
-      /// test callback
-      ctxA.zz((arg) => {
-        return arg.k.length + arg.v.length;
-      });
-
-      /// test prototype
-      console.assert(ctxA instanceof Function === false);
-      console.assert(ctxA instanceof ctxA.constructor === true);
-
-      /// test promise
-      await ctxA.think(210);
-
-      console.log("all passed!");
       process.exit();
-      //#endregion
     })().catch((err) => {
       console.error("???", err.message);
     });

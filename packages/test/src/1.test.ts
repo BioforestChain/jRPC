@@ -1,30 +1,5 @@
 import { InnerComlink, SimpleBinaryChannel } from "./index";
-
-class TestService {
-  private name = "Gaubee";
-  say(word: string) {
-    return `${this.name}: xxxx-${word}-xxxx`;
-  }
-  zz(cb: (arg: { k: string; v: string }) => number) {
-    console.log(cb({ k: "xxx", v: "zzz" }));
-  }
-  concat(arr1: unknown[], arr2: unknown[]) {
-    return arr1.concat(arr2);
-  }
-  toPrimitive(obj: unknown, type: "number" | "string") {
-    if (type === "number") {
-      return Number(obj);
-    }
-    return String(obj);
-  }
-  private _e?: Error;
-  throwLocalError(message: string) {
-    throw (this._e = new Error(message));
-  }
-  throwRemoteError(err: Error) {
-    throw err;
-  }
-}
+import { TestService } from "./commonTest";
 
 /**
  * 生成一对相通的管道
@@ -59,58 +34,18 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
   /**
    * 导入服务
    * 同语法：
-   * import ctx from port
    * import {a} from port
+   * import ctx from port
    */
-  const ctxA = moduleB.import<TestService>();
+
+  /// test import
   const a = moduleB.import<number>("a");
+  console.assert(a === 1, "import");
 
-  // 执行
-  console.log("a:", a);
-  console.log(ctxA.say("qaq"));
-  console.log(ctxA.constructor.toString().split("\n", 1)[0]);
-  console.log(typeof ctxA.constructor);
-  ctxA.zz((arg) => {
-    return arg.k.length + arg.v.length;
-  });
-  console.log(ctxA instanceof Function);
-  console.log(ctxA instanceof ctxA.constructor);
+  const ctxA = moduleB.import<TestService>();
+  TestService.testAll(ctxA);
 
-  /// test symbol
-  const arr = [1];
-  console.log(ctxA.concat(arr, [2]));
-  Object.defineProperty(arr, Symbol.isConcatSpreadable, { value: false });
-  console.log(ctxA.concat(arr, [2]));
-
-  const obj = {
-    [Symbol.toPrimitive](hint: string) {
-      console.log("GET toPrimitive!!!", hint);
-      if (hint === "number") {
-        return 123;
-      }
-      if (hint === "string") {
-        return "qaq";
-      }
-      return null;
-    },
-  };
-  const obj2 = Object.create(obj);
-  console.log(Number(obj));
-  console.log(String(obj2));
-  console.log(ctxA.toPrimitive(obj, "number"));
-  console.log(ctxA.toPrimitive(obj, "string"));
-  try {
-    ctxA.throwLocalError("qaq1");
-  } catch (err) {
-    console.log(String(err).startsWith("Error: qaq1"));
-  }
-  let err = new SyntaxError("qaq2");
-  try {
-    debugger;
-    ctxA.throwRemoteError(err);
-  } catch (err) {
-    console.log(String(err).startsWith("SyntaxError: qaq2"));
-  }
+  console.log("🎊 ~ all test passed!");
 })().catch((err) => {
   console.error("TEST FAIL:", err.stack);
 });

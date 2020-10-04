@@ -79,8 +79,8 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
     );
   }
   /// 测试B能阻止A回收
-  debugger;
   console.log(myItem.value);
+  console.log("🎊 ~ all test passed!");
 })().catch((err) => {
   console.error("???", err.message);
 });
