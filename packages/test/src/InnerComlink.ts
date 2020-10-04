@@ -204,19 +204,6 @@ export class InnerComlink extends ComlinkCore<
               if (prop === "toString") {
                 return sourceFun.toString;
               }
-              if (prop === "call") {
-                return new Proxy(sourceFun[prop], {
-                  apply(_, thisArg, argArray) {
-                    return defaultProxyHanlder.apply(sourceFun, argArray[0], argArray.slice(1));
-                  },
-                });
-              } else if (prop === "apply") {
-                return new Proxy(sourceFun[prop], {
-                  apply(_, thisArg, argArray) {
-                    return defaultProxyHanlder.apply(sourceFun, argArray[0], argArray[1]);
-                  },
-                });
-              }
               return defaultProxyHanlder.get(target, prop, receiver);
             },
           };

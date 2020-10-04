@@ -1,4 +1,5 @@
-import { LinkObjType, ESM_REFLECT_FUN_MAP, EmscriptenReflect } from "@bfchain/comlink-typings";
+import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
+import { ESM_REFLECT_FUN_MAP } from "./const";
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
 
@@ -201,9 +202,9 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
       ),
       ownKeys: (_target) => send([EmscriptenReflect.OwnKeys], true),
       apply: (_target, thisArg, argArray) =>
-        send([EmscriptenReflect.Apply, thisArg, argArray], true),
+        send([EmscriptenReflect.Apply, thisArg, ...argArray], true),
       construct: (_target, argArray, newTarget) =>
-        send([EmscriptenReflect.Construct, argArray, newTarget], true),
+        send([EmscriptenReflect.Construct, newTarget, ...argArray], true),
     };
     return proxyHandler;
   }

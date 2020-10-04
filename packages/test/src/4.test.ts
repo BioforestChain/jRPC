@@ -106,9 +106,6 @@ const { portA, portB } = new SimpleBinaryChannel<InnerComlink.TB>();
     console.assert(ctxA.get("a") === 1, "freeze, check get");
     console.assert(ctxA.set("b", 4) === false, "freeze, could note insert");
     console.assert(ctxA.del("a") === false, "freeze, could note delete");
-    if (i === 3000||i === 6000) {
-      await new Promise((cb) => setTimeout(cb, 10));
-    }
   }
   console.log("🎊 ~ all test passed! use %d ms", performance.now() - s);
 })().catch((err) => {

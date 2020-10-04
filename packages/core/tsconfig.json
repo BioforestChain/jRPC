@@ -11,6 +11,7 @@
   ],
   "files": [
     "src/ComlinkCore.ts",
+    "src/const.ts",
     "src/ExportStore.ts",
     "src/ImportStore.ts",
     "src/index.ts"
