@@ -40,17 +40,17 @@ export const IOB_EFT_Factory_Map = new Map([
     IOB_Extends_Function_Type.Sync,
     {
       factory: Function,
-      toStringFactory: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) => () =>
+      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
         `${refExtends.name}() { [remote code] }`,
     },
   ],
 ]);
-for (const [funType, { factoryCode, toStringFactory }] of [
+for (const [funType, { factoryCode, toString }] of [
   [
     IOB_Extends_Function_Type.SyncGenerator,
     {
       factoryCode: "return function* () {}.constructor",
-      toStringFactory: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) => () =>
+      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
         `*${refExtends.name}() { [remote code] }`,
     },
   ],
@@ -58,7 +58,7 @@ for (const [funType, { factoryCode, toStringFactory }] of [
     IOB_Extends_Function_Type.Async,
     {
       factoryCode: "return async function () {}.constructor",
-      toStringFactory: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) => () =>
+      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
         `async ${refExtends.name}() { [remote code] }`,
     },
   ],
@@ -66,7 +66,7 @@ for (const [funType, { factoryCode, toStringFactory }] of [
     IOB_Extends_Function_Type.AsyncGenerator,
     {
       factoryCode: "return async function* () {}.constructor",
-      toStringFactory: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) => () =>
+      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
         `async *${refExtends.name}() { [remote code] }`,
     },
   ],
@@ -74,7 +74,7 @@ for (const [funType, { factoryCode, toStringFactory }] of [
     IOB_Extends_Function_Type.Class,
     {
       factoryCode: "return ()=>class {}",
-      toStringFactory: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) => () =>
+      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
         `class ${refExtends.name} { [remote code] }`,
     },
   ],
@@ -85,7 +85,7 @@ for (const [funType, { factoryCode, toStringFactory }] of [
   } catch {
     factory = Function;
   }
-  IOB_EFT_Factory_Map.set(funType, { factory, toStringFactory });
+  IOB_EFT_Factory_Map.set(funType, { factory, toString });
 }
 
 export function getFunctionType(fun: Function) {
@@ -109,8 +109,35 @@ export function getFunctionType(fun: Function) {
   return IOB_Extends_Function_Type.Sync;
 }
 
-/**用于描述一个 object 的导出配置 */
-export const EXPORT_DESCRIPTOR_SYMBOL = Symbol("export");
+/**导出者 用于描述一个 function 的导出配置 */
+export const EXPORT_FUN_DESCRIPTOR_SYMBOL = Symbol("function.export");
+/**导入者 缓存一个 function 的导入信息 */
+export const IMPORT_FUN_EXTENDS_SYMBOL = Symbol("function.import");
+
+/**
+ * 用于替代 RefFunction 的 Function.property.toString
+ * @param this
+ */
+export function refFunctionToStringFactory() {
+  function toString(this: Function) {
+    // if (this === toString) {
+    //   return "function toString() { [remote code] }";
+    // }
+    const refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends = Reflect.get(
+      this,
+      IMPORT_FUN_EXTENDS_SYMBOL,
+    );
+    if (refExtends.sourceCode === undefined) {
+      return IOB_EFT_Factory_Map.get(refExtends.funType)!.toString(refExtends);
+    } else {
+      return refExtends.sourceCode;
+    }
+  }
+  /**使用Proxy保护源码 */
+  const proxy = new Proxy(toString, {});
+  return proxy;
+}
+
 //#endregion
 
 //#region IOB_Extends::Object

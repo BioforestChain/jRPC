@@ -3,11 +3,13 @@ import {
   IOB_Type,
   globalSymbolStore,
   IOB_Extends_Type,
-  EXPORT_DESCRIPTOR_SYMBOL,
+  EXPORT_FUN_DESCRIPTOR_SYMBOL,
   IOB_EFT_Factory_Map,
   getFunctionType,
   getObjectStatus,
   IOB_Extends_Object_Status,
+  IMPORT_FUN_EXTENDS_SYMBOL,
+  refFunctionToStringFactory,
 } from "./const";
 
 export class InnerComlink extends ComlinkCore<
@@ -15,6 +17,18 @@ export class InnerComlink extends ComlinkCore<
   InnerComlink.TB,
   InnerComlink.IOB_E
 > {
+  constructor(port: InnerComlink.BinaryPort, name: string) {
+    super(port, name);
+  }
+
+  private _rfts?: () => string;
+  private get _rfToString() {
+    if (this._rfts === undefined) {
+      this._rfts = refFunctionToStringFactory();
+    }
+    return this._rfts;
+  }
+
   Any2InOutBinary(obj: unknown): InnerComlink.IOB {
     const needClone = this.canClone(obj);
     let item: InnerComlink.IOB | undefined;
@@ -106,14 +120,14 @@ export class InnerComlink extends ComlinkCore<
       };
     }
     if (typeof obj === "function") {
-      const exportDescriptor = (Reflect.get(obj, EXPORT_DESCRIPTOR_SYMBOL) ||
+      const exportDescriptor = (Reflect.get(obj, EXPORT_FUN_DESCRIPTOR_SYMBOL) ||
         {}) as EmscriptionLinkRefExtends.FunctionExportDescriptor;
       return {
         type: IOB_Extends_Type.Function,
         funType: getFunctionType(obj),
         name: obj.name,
         length: obj.length,
-        sourceCode: exportDescriptor.showSourceCode ? obj.toString() : "",
+        sourceCode: exportDescriptor.showSourceCode ? obj.toString() : undefined,
       };
     }
     throw new TypeError();
@@ -138,17 +152,6 @@ export class InnerComlink extends ComlinkCore<
         Object.getOwnPropertyDescriptor(sym, "description")?.value ?? sym.toString().slice(7, -1),
       unique: Symbol.keyFor(sym) !== undefined,
     };
-  }
-
-  private _isAsyncFunction(fun: Function): boolean {
-    try {
-      const AsyncFunctionConstructor = Function("return (async()=>{}).constructor")();
-      this._isAsyncFunction = (fun: Function) => fun instanceof AsyncFunctionConstructor;
-    } catch {
-      this._isAsyncFunction = () => false;
-    }
-
-    return this._isAsyncFunction(fun);
   }
 
   canClone(obj: unknown) {
@@ -184,9 +187,6 @@ export class InnerComlink extends ComlinkCore<
         throw new TypeError();
       }
       const sourceFun = factory.factory();
-      sourceFun.toString = refExtends.sourceCode.length
-        ? () => refExtends.sourceCode
-        : factory.toStringFactory(refExtends);
 
       const funRef: BFChainComlink.ImportRefHook<Function> = {
         getSource: () => sourceFun,
@@ -194,15 +194,18 @@ export class InnerComlink extends ComlinkCore<
           const defaultProxyHanlder = this.$getDefaultProxyHanlder<Function>(port, refId);
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
-            get(target, prop, receiver) {
+            get: (target, prop, receiver) => {
               if (prop === "name") {
                 return refExtends.name;
               }
               if (prop === "length") {
                 return refExtends.length;
               }
+              if (prop === IMPORT_FUN_EXTENDS_SYMBOL) {
+                return refExtends;
+              }
               if (prop === "toString") {
-                return sourceFun.toString;
+                return this._rfToString;
               }
               return defaultProxyHanlder.get(target, prop, receiver);
             },

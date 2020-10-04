@@ -9,6 +9,10 @@ export const enum LinkObjType {
   Out,
   /**通知释放，由import（使用方）通知export（供给方）释放 */
   Release,
+  /**@TODO 实现对象变更推送
+   * 比如引用对象的配置信息
+   */
+  // Notify
 }
 
 export const enum LinkOperatorType {

@@ -17,7 +17,12 @@ declare namespace EmscriptionLinkRefExtends {
     funType: import("./const").IOB_Extends_Function_Type;
     name: string;
     length: number;
-    sourceCode: string;
+    /**@TODO
+     * 如果有需要，可以扩展成三种模式
+     * 如果是 === Function.prototype.toString，那么可以提供 showSourceCode 与 hideSourceCode 两种策略
+     * 如果是 !== Function.prototype.toString，也就是自己实现了toString，那么直接使用最原始的方式进行代理
+     */
+    sourceCode?: string;
   };
   type FunctionExportDescriptor = {
     showSourceCode?: boolean;

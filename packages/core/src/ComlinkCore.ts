@@ -115,8 +115,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
 
   /**用于存储导入的域 */
   private _importModule?: object;
-
-  import<T>(key = "default") {
+  protected $getImportModule() {
     const { port } = this;
     /**
      * 进行协商握手，取得对应的 refId
@@ -132,7 +131,11 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
       /// 握手完成，转成代理对象
       this._importModule = this.InOutBinary2Any(res.module) as object;
     }
-    return Reflect.get(this._importModule, key) as T;
+    return this._importModule;
+  }
+
+  import<T>(key = "default") {
+    return Reflect.get(this.$getImportModule(), key) as T;
   }
 
   protected $sendLinkIn<R = unknown>(
