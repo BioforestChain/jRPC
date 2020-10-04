@@ -1,5 +1,5 @@
 import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
-import { ESM_REFLECT_FUN_MAP } from "./const";
+import { ESM_REFLECT_FUN_MAP } from "./helper";
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
 
@@ -48,6 +48,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   export(source: unknown, name = "default") {
     Reflect.set(this._getInitedExportScope(), name, source);
   }
+  protected $getEsmReflectHanlder(operator: EmscriptenReflect) {
+    const handler = ESM_REFLECT_FUN_MAP.get(operator);
+    if (!handler) {
+      throw new SyntaxError("no support operator:" + operator);
+    }
+    return handler;
+  }
   private _listen() {
     const { exportStore, port } = this;
     port.onMessage((bin) => {
@@ -71,10 +78,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
            * 因为我们使用call/apply模拟，所以所有所需的对象都需要传递进来
            */
           const operator = this.InOutBinary2Any(linkObj.in[0]) as EmscriptenReflect;
-          const handler = ESM_REFLECT_FUN_MAP.get(operator);
-          if (!handler) {
-            throw new SyntaxError("no support operator:" + operator);
-          }
+          const handler = this.$getEsmReflectHanlder(operator);
           const paramList = linkObj.in.slice(1).map((iob) => this.InOutBinary2Any(iob));
 
           const res = handler(obj, paramList);

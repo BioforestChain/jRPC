@@ -1,4 +1,5 @@
 import { ComlinkCore, ImportStore } from "@bfchain/comlink-core";
+import { EmscriptenReflect } from "@bfchain/comlink-typings";
 import {
   IOB_Type,
   globalSymbolStore,
@@ -9,7 +10,8 @@ import {
   getObjectStatus,
   IOB_Extends_Object_Status,
   IMPORT_FUN_EXTENDS_SYMBOL,
-  refFunctionToStringFactory,
+  refFunctionStaticToStringFactory,
+  IOB_Extends_Function_ToString_Mode,
 } from "./const";
 
 export class InnerComlink extends ComlinkCore<
@@ -21,13 +23,10 @@ export class InnerComlink extends ComlinkCore<
     super(port, name);
   }
 
-  private _rfts?: () => string;
-  private get _rfToString() {
-    if (this._rfts === undefined) {
-      this._rfts = refFunctionToStringFactory();
-    }
-    return this._rfts;
-  }
+  /**
+   * ref fun statis toString
+   */
+  private _rfsts = refFunctionStaticToStringFactory();
 
   Any2InOutBinary(obj: unknown): InnerComlink.IOB {
     const needClone = this.canClone(obj);
@@ -112,6 +111,32 @@ export class InnerComlink extends ComlinkCore<
     return bin as InnerComlink.LinkObj;
   }
 
+  protected $getEsmReflectHanlder(opeartor: EmscriptenReflect) {
+    const hanlder = super.$getEsmReflectHanlder(opeartor);
+    if (opeartor === EmscriptenReflect.Apply) {
+      const applyHanlder = (((target: Function, args: unknown[]) => {
+        if (target === Function.prototype.toString) {
+          const ctx = args[0] as Function;
+          const exportDescriptor = this._getFunExpDes(ctx);
+          /// 保护源码
+          if (!exportDescriptor.showSourceCode) {
+            console.log("get to string from remote");
+            return IOB_EFT_Factory_Map.get(getFunctionType(ctx))!.toString({ name: ctx.name });
+          }
+        }
+        return hanlder(target, args);
+      }) as unknown) as typeof hanlder;
+      return applyHanlder;
+    }
+    return hanlder;
+  }
+
+  /**获取一个对象的描述信息 */
+  private _getFunExpDes(fun: Function) {
+    return (Reflect.get(fun, EXPORT_FUN_DESCRIPTOR_SYMBOL) ||
+      {}) as EmscriptionLinkRefExtends.FunctionExportDescriptor;
+  }
+  /**获取一个引用对象的扩展信息 */
   private _getRefItemExtends(obj: object | Function): EmscriptionLinkRefExtends.RefItemExtends {
     if (typeof obj === "object") {
       return {
@@ -120,19 +145,28 @@ export class InnerComlink extends ComlinkCore<
       };
     }
     if (typeof obj === "function") {
-      const exportDescriptor = (Reflect.get(obj, EXPORT_FUN_DESCRIPTOR_SYMBOL) ||
-        {}) as EmscriptionLinkRefExtends.FunctionExportDescriptor;
+      const exportDescriptor = this._getFunExpDes(obj);
+      const funType = getFunctionType(obj);
       return {
         type: IOB_Extends_Type.Function,
-        funType: getFunctionType(obj),
+        funType,
         name: obj.name,
         length: obj.length,
-        sourceCode: exportDescriptor.showSourceCode ? obj.toString() : undefined,
+        toString:
+          obj.toString === Function.prototype.toString
+            ? {
+                mode: IOB_Extends_Function_ToString_Mode.static,
+                code: exportDescriptor.showSourceCode
+                  ? obj.toString()
+                  : IOB_EFT_Factory_Map.get(funType)!.toString(obj),
+              }
+            : { mode: IOB_Extends_Function_ToString_Mode.dynamic },
       };
     }
     throw new TypeError();
   }
 
+  /**获取符号的扩展信息 */
   private _getRemoteSymbolItemExtends(
     sym: symbol,
   ): EmscriptionLinkRefExtends.RemoteSymbolItemExtends {
@@ -201,12 +235,24 @@ export class InnerComlink extends ComlinkCore<
               if (prop === "length") {
                 return refExtends.length;
               }
+
+              //#region 静态的toString模式下的本地模拟
+              /**
+               * 本地模拟的toString，constructor和protoype等等属性都没有绑定远程
+               * 这里纯粹是为了加速，模拟远端的返回，可以不用
+               * @TODO 配置成可以可选模式
+               */
               if (prop === IMPORT_FUN_EXTENDS_SYMBOL) {
                 return refExtends;
               }
-              if (prop === "toString") {
-                return this._rfToString;
+              if (
+                prop === "toString" &&
+                refExtends.toString.mode === IOB_Extends_Function_ToString_Mode.static
+              ) {
+                return this._rfsts;
               }
+              //#endregion
+
               return defaultProxyHanlder.get(target, prop, receiver);
             },
           };

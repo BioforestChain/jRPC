@@ -22,7 +22,15 @@ declare namespace EmscriptionLinkRefExtends {
      * 如果是 === Function.prototype.toString，那么可以提供 showSourceCode 与 hideSourceCode 两种策略
      * 如果是 !== Function.prototype.toString，也就是自己实现了toString，那么直接使用最原始的方式进行代理
      */
-    sourceCode?: string;
+    toString: RefFunctionToStringDynamicMode | RefFunctionToStringStaticMode;
+  };
+  type RefFunctionToStringDynamicMode = {
+    mode: import("./const").IOB_Extends_Function_ToString_Mode.dynamic;
+  };
+
+  type RefFunctionToStringStaticMode = {
+    mode: import("./const").IOB_Extends_Function_ToString_Mode.static;
+    code: string;
   };
   type FunctionExportDescriptor = {
     showSourceCode?: boolean;

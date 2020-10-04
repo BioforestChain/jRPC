@@ -34,14 +34,21 @@ export const enum IOB_Extends_Function_Type {
   AsyncGenerator = IOB_Extends_Function_Type.Async | IOB_Extends_Function_Type._GeneratorFlag,
   Class = 1 << 3,
 }
+export const enum IOB_Extends_Function_ToString_Mode {
+  /**动态 */
+  dynamic,
+  /**静态 */
+  static,
+}
 /**函数类型对应的构造函数 */
+type RefFunctionToStringArgs = { name: string };
 export const IOB_EFT_Factory_Map = new Map([
   [
     IOB_Extends_Function_Type.Sync,
     {
       factory: Function,
-      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
-        `${refExtends.name}() { [remote code] }`,
+      toString: (refExtends: RefFunctionToStringArgs) =>
+        `function ${refExtends.name}() { [remote code] }`,
     },
   ],
 ]);
@@ -50,31 +57,31 @@ for (const [funType, { factoryCode, toString }] of [
     IOB_Extends_Function_Type.SyncGenerator,
     {
       factoryCode: "return function* () {}.constructor",
-      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
-        `*${refExtends.name}() { [remote code] }`,
+      toString: (refExtends: RefFunctionToStringArgs) =>
+        `function *${refExtends.name}() { [remote code] }`,
     },
   ],
   [
     IOB_Extends_Function_Type.Async,
     {
       factoryCode: "return async function () {}.constructor",
-      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
-        `async ${refExtends.name}() { [remote code] }`,
+      toString: (refExtends: RefFunctionToStringArgs) =>
+        `async function ${refExtends.name}() { [remote code] }`,
     },
   ],
   [
     IOB_Extends_Function_Type.AsyncGenerator,
     {
       factoryCode: "return async function* () {}.constructor",
-      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
-        `async *${refExtends.name}() { [remote code] }`,
+      toString: (refExtends: RefFunctionToStringArgs) =>
+        `async function *${refExtends.name}() { [remote code] }`,
     },
   ],
   [
     IOB_Extends_Function_Type.Class,
     {
       factoryCode: "return ()=>class {}",
-      toString: (refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends) =>
+      toString: (refExtends: RefFunctionToStringArgs) =>
         `class ${refExtends.name} { [remote code] }`,
     },
   ],
@@ -118,24 +125,30 @@ export const IMPORT_FUN_EXTENDS_SYMBOL = Symbol("function.import");
  * 用于替代 RefFunction 的 Function.property.toString
  * @param this
  */
-export function refFunctionToStringFactory() {
+export function refFunctionStaticToStringFactory() {
   function toString(this: Function) {
-    // if (this === toString) {
-    //   return "function toString() { [remote code] }";
-    // }
+    if (this === self) {
+      /**模拟远端获取到的 */
+      return "function toString() { [remote code] }";
+    }
     const refExtends: EmscriptionLinkRefExtends.RefFunctionItemExtends = Reflect.get(
       this,
       IMPORT_FUN_EXTENDS_SYMBOL,
     );
-    if (refExtends.sourceCode === undefined) {
-      return IOB_EFT_Factory_Map.get(refExtends.funType)!.toString(refExtends);
-    } else {
-      return refExtends.sourceCode;
+    const { toString } = refExtends;
+    if (toString.mode === IOB_Extends_Function_ToString_Mode.static) {
+      return toString.code;
     }
+    throw new TypeError();
   }
-  /**使用Proxy保护源码 */
-  const proxy = new Proxy(toString, {});
-  return proxy;
+  const self = toString;
+  /**对自我进行源码保护 */
+  Object.defineProperty(self, "toString", {
+    configurable: false,
+    writable: false,
+    value: self,
+  });
+  return toString;
 }
 
 //#endregion

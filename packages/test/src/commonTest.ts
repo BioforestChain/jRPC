@@ -46,8 +46,9 @@ export class TestService {
   }
   static testFunctionType(ctxA: TestService) {
     console.assert(ctxA.constructor.toString === ctxA.say.toString, "Function.prototype.toString");
+    console.log( ctxA.constructor.toString.toString() )
     console.assert(
-      ctxA.constructor.toString.toString() === "function () { [native code] }",
+      ctxA.constructor.toString.toString() === "function toString() { [remote code] }",
       "Function.prototype.toString is in local",
     );
     console.assert(typeof ctxA.constructor === "function", "ctor is function");
