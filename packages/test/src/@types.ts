@@ -10,27 +10,34 @@ declare namespace InnerComlink {
 /**js语言的引用扩展格式 */
 declare namespace EmscriptionLinkRefExtends {
   //#region 对象类型：引用（双向）、克隆、缺省
-  type RefItemExtends =
-    | {
-        /**如果是function，那么call、apply就使用本地 */
-        type: "function";
-        isAsync: boolean;
-        name: string;
-        length: number;
-      }
-    | {
-        type: "object";
-        /**针对 PromiseLike，then使用本地 */
-        hasThen: boolean;
-      };
+
+  /**如果是function，那么name、length就使用本地 */
+  type RefFunctionItemExtends = {
+    type: import("./const").IOB_Extends_Type.Function;
+    funType: import("./const").IOB_Extends_Function_Type;
+    name: string;
+    length: number;
+    sourceCode: string;
+  };
+  type FunctionExportDescriptor = {
+    protectSourceCode?: boolean;
+  };
+  /**如果是Object，对象属性变更的时候，会发来推送信息 */
+  type RefObjectItemExtends = {
+    type: import("./const").IOB_Extends_Type.Object;
+    status: import("./const").IOB_Extends_Object_Status;
+  };
+
   type RemoteSymbolItemExtends = {
-    type: "symbol";
+    type: import("./const").IOB_Extends_Type.Symbol;
     /**是否是使用Symbol.keyFor生成的 */
     unique: boolean;
     /**是否是全局的，绑定在Symbol对象本身上面 */
     global: boolean;
     description: string;
   };
+  type RefItemExtends = RefFunctionItemExtends | RefObjectItemExtends;
+
   type IOB_Extends = RefItemExtends | RemoteSymbolItemExtends;
 
   type CloneItem = {

@@ -8,6 +8,7 @@
     "src/1.test.ts",
     "src/2.test.ts",
     "src/3.test.ts",
+    "src/4.test.ts",
     "src/@types.ts",
     "src/const.ts",
     "src/index.ts",

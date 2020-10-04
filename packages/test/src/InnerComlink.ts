@@ -1,5 +1,14 @@
 import { ComlinkCore, ImportStore } from "@bfchain/comlink-core";
-import { IOB_Type, globalSymbolStore } from "./const";
+import {
+  IOB_Type,
+  globalSymbolStore,
+  IOB_Extends_Type,
+  EXPORT_DESCRIPTOR_SYMBOL,
+  IOB_EFT_Factory_Map,
+  getFunctionType,
+  getObjectStatus,
+  IOB_Extends_Object_Status,
+} from "./const";
 
 export class InnerComlink extends ComlinkCore<
   InnerComlink.IOB,
@@ -92,16 +101,19 @@ export class InnerComlink extends ComlinkCore<
   private _getRefItemExtends(obj: object | Function): EmscriptionLinkRefExtends.RefItemExtends {
     if (typeof obj === "object") {
       return {
-        type: "object",
-        hasThen: obj !== null && "then" in obj,
+        type: IOB_Extends_Type.Object,
+        status: getObjectStatus(obj),
       };
     }
     if (typeof obj === "function") {
+      const exportDescriptor = (Reflect.get(obj, EXPORT_DESCRIPTOR_SYMBOL) ||
+        {}) as EmscriptionLinkRefExtends.FunctionExportDescriptor;
       return {
-        type: "function",
-        isAsync: this._isAsyncFunction(obj),
+        type: IOB_Extends_Type.Function,
+        funType: getFunctionType(obj),
         name: obj.name,
         length: obj.length,
+        sourceCode: exportDescriptor.protectSourceCode ? "" : obj.toString(),
       };
     }
     throw new TypeError();
@@ -113,14 +125,14 @@ export class InnerComlink extends ComlinkCore<
     const globalSymInfo = globalSymbolStore.get(sym);
     if (globalSymInfo) {
       return {
-        type: "symbol",
+        type: IOB_Extends_Type.Symbol,
         global: true,
         description: globalSymInfo.name,
         unique: false,
       };
     }
     return {
-      type: "symbol",
+      type: IOB_Extends_Type.Symbol,
       global: false,
       description:
         Object.getOwnPropertyDescriptor(sym, "description")?.value ?? sym.toString().slice(7, -1),
@@ -166,17 +178,16 @@ export class InnerComlink extends ComlinkCore<
       throw new ReferenceError();
     }
     let ref: BFChainComlink.ImportRefHook<T> | undefined;
-    if (refExtends.type === "function") {
-      const code_funName = refExtends.name;
-      const code_asyncPrefix = refExtends.isAsync ? "async " /* 这里要确保引擎级别是匹配的 */ : "";
-      const code_paramList = Array.from({ length: refExtends.length }, (_, i) => `_${i}`);
+    if (refExtends.type === IOB_Extends_Type.Function) {
+      const factory = IOB_EFT_Factory_Map.get(refExtends.funType);
+      if (!factory) {
+        throw new TypeError();
+      }
+      const sourceFun = factory.factory();
+      sourceFun.toString = refExtends.sourceCode.length
+        ? () => refExtends.sourceCode
+        : factory.toStringFactory(refExtends);
 
-      const sourceCode = code_funName
-        ? `const funContainer={${code_asyncPrefix}${code_funName}(${code_paramList}) {}};
-      for(const key in funContainer){return funContainer[key]};
-      return funContainer[Object.getOwnPropertySymbols(funContainer)[0]]`
-        : `return ${code_asyncPrefix}function (${code_paramList}){}`;
-      const sourceFun = Function(sourceCode)();
       const funRef: BFChainComlink.ImportRefHook<Function> = {
         getSource: () => sourceFun,
         getProxyHanlder: () => {
@@ -184,6 +195,15 @@ export class InnerComlink extends ComlinkCore<
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get(target, prop, receiver) {
+              if (prop === "name") {
+                return refExtends.name;
+              }
+              if (prop === "length") {
+                return refExtends.length;
+              }
+              if (prop === "toString") {
+                return sourceFun.toString;
+              }
               if (prop === "call") {
                 return new Proxy(sourceFun[prop], {
                   apply(_, thisArg, argArray) {
@@ -204,28 +224,40 @@ export class InnerComlink extends ComlinkCore<
         },
       };
       ref = (funRef as unknown) as BFChainComlink.ImportRefHook<T>;
-    } else if (refExtends.type === "object") {
+    } else if (refExtends.type === IOB_Extends_Type.Object) {
       const sourceObj = {};
       const objRef: BFChainComlink.ImportRefHook<object> = {
         getSource: () => sourceObj,
         getProxyHanlder: () => {
           const defaultProxyHanlder = this.$getDefaultProxyHanlder<object>(port, refId);
+          /**
+           * 因为对象一旦被设置状态后，无法回退，所以这里可以直接根据现有的状态来判断对象的可操作性
+           * @TODO 使用isExtensible isFrozen isSealed来改进
+           */
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
-            get(target, prop, receiver) {
-              if (prop === "then") {
-                if (refExtends.hasThen === false) {
-                  return undefined;
-                }
+            set(target, prop, value, receiver) {
+              /**目前如果要实现判断是insert还是update，就要基于已经知道有多少的属性来推断，这方面还需要考虑 ArrayLike 的优化
+               * 这一切可能要做成缓存的模式，缓存被禁止的属性
+               * @TODO 如果是 不能add 当 可以update 的模式，就要收集哪些是不能add的，之后就要直接在本地禁止
+               */
+              if ((refExtends.status & IOB_Extends_Object_Status.update) === 0) {
+                return false;
               }
-              return defaultProxyHanlder.get(target, prop, receiver);
+              return defaultProxyHanlder.set(target, prop, value, receiver);
+            },
+            deleteProperty(target, prop) {
+              if ((refExtends.status & IOB_Extends_Object_Status.delete) !== 0) {
+                return defaultProxyHanlder.deleteProperty(target, prop);
+              }
+              return false;
             },
           };
           return functionProxyHanlder;
         },
       };
       ref = (objRef as unknown) as BFChainComlink.ImportRefHook<T>;
-    } else if (refExtends.type === "symbol") {
+    } else if (refExtends.type === IOB_Extends_Type.Symbol) {
       let sourceSym: symbol;
       if (refExtends.global) {
         const globalSymInfo = globalSymbolStore.get(refExtends.description);
