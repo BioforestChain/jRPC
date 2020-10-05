@@ -11,3 +11,8 @@
    1. Worker
    1. Atomic
    1. WeakRef
+
+## Roadmap
+
+- [ ] v2.1 实现 ReflectAsync 模块，使得支持异步操作
+  > 将核心协议部分使用纯函数+回调的风格重写

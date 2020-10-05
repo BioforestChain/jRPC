@@ -5,17 +5,23 @@
     "rootDir": "./src"
   },
   "files": [
-    "src/1.test.ts",
-    "src/2.test.ts",
-    "src/3.test.ts",
-    "src/4.test.ts",
-    "src/@types.ts",
-    "src/commonTest.ts",
-    "src/const.ts",
-    "src/index.ts",
-    "src/InnerComlink.ts",
-    "src/SimpleBinaryChannel.ts",
-    "src/WorkerBinaryChannel.ts"
+    "src/1-1.test.ts",
+    "src/1-2.test.ts",
+    "src/2-1.test.ts",
+    "src/2-2.test.ts",
+    "src/3-1.test.ts",
+    "src/3-2.test.ts",
+    "src/envWrapper/simpleEnv.ts",
+    "src/envWrapper/workerEnv.ts",
+    "src/innerComlink/@types.ts",
+    "src/innerComlink/const.ts",
+    "src/innerComlink/index.ts",
+    "src/innerComlink/InnerComlink.ts",
+    "src/innerComlink/SimpleBinaryChannel.ts",
+    "src/innerComlink/WorkerBinaryChannel.ts",
+    "src/testTemplate/benchmarkTest.ts",
+    "src/testTemplate/commonTest.ts",
+    "src/testTemplate/memoryTest.ts"
   ],
   "references": [
     {
