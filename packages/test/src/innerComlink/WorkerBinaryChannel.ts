@@ -119,6 +119,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     }
 
     do {
+      // 因为自己即将睡眠，所以手动检查远端节点是否有主动发起的任务。PS：可能已经发来了，但因为JS事件循环的特性所以还没有触发 message 事件，所以这里在睡眠前先把事情做了
       this._checkRemote();
       // 当前线程进入休眠，等待对方回应信息
       Atomics.wait(si32, 0, stackLen);
