@@ -118,6 +118,11 @@ export function getFunctionType(fun: Function) {
 
 /**导出者 用于描述一个 function 的导出配置 */
 export const EXPORT_FUN_DESCRIPTOR_SYMBOL = Symbol("function.export");
+/**获取一个对象的描述信息 */
+export function getFunctionExportDescription(fun: Function) {
+  return (Reflect.get(fun, EXPORT_FUN_DESCRIPTOR_SYMBOL) ||
+    {}) as EmscriptionLinkRefExtends.FunctionExportDescriptor;
+}
 /**导入者 缓存一个 function 的导入信息 */
 export const IMPORT_FUN_EXTENDS_SYMBOL = Symbol("function.import");
 

@@ -78,4 +78,11 @@ export class ExportStore {
     }
     return false;
   }
+
+  exportSymbol(source: symbol) {
+    return this.getId(source) ?? this.saveSymId(source);
+  }
+  exportObject(source: object) {
+    return this.getId(source) ?? this.saveObjId(source);
+  }
 }

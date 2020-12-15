@@ -5,25 +5,28 @@ export class SimpleBinaryChannel<TB> {
   public readonly portB = new SimpleBinaryPort<TB>(this._turnB, this._turnA);
 }
 class _InnerTurn<TB> {
-  postMessage(bin: TB): TB | undefined {
-    return;
-  }
+  postMessage!: BFChainComlink.BinaryPort.MessageListener<TB>;
 }
 class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
 
-  onMessage(cb: (bin: TB) => TB | undefined) {
-    this.localTurn.postMessage = cb;
+  onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
+    this.localTurn.postMessage = listener;
   }
-  req(bin: TB): TB {
-    const resBin = this.remoteTurn.postMessage(bin);
-    if (!resBin) {
-      throw new TypeError();
-    }
-    return resBin;
+  req(cb: BFChainComlink.Callback<TB>, bin: TB) {
+    this.remoteTurn.postMessage((ret) => {
+      if (ret.isError) {
+        throw ret.error;
+      }
+      const resBin = ret.data;
+      if (!resBin) {
+        throw new TypeError();
+      }
+      cb({ isError: false, data: resBin });
+    }, bin);
   }
-  send(bin: TB): TB | undefined {
-    return this.remoteTurn.postMessage(bin);
+  send(bin: TB) {
+    this.remoteTurn.postMessage(() => {}, bin);
   }
   //   readStream: AsyncIterator<TB>;
   //   write(bin: TB) {

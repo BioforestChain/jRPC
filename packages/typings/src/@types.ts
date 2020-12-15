@@ -1,11 +1,20 @@
 declare namespace BFChainComlink {
-  /**
-   * IOB : InOutBinary
-   * TB : TransferableBinary
-   */
-  interface ComlinkCore<IOB, TB> {
-    //#region 传输的模型转换
+  type CallbackArg<D, E = Error> =
+    | {
+        isError: true;
+        error: E;
+      }
+    | {
+        isError: false;
+        data: D;
+      };
+  type Callback<D, E = Error> = (ret: CallbackArg<D, E>) => unknown;
+  type PipeCallback<I, O> = (inData: I, dataOuter: Callback<O>) => unknown;
 
+  /**
+   * 传输的模型转换
+   */
+  interface ModelTransfer<IOB, TB> {
     /**任意类型的对象 转换到 IOB */
     Any2InOutBinary(obj: unknown): IOB;
     /**IOB 转换到 任意类型的对象 */
@@ -15,43 +24,44 @@ declare namespace BFChainComlink {
     linkObj2TransferableBinary(obj: LinkObj<IOB>): TB;
     /**可传输的模型 转成 IO指令 */
     transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
-
-    //#endregion
-
+  }
+  /**
+   * IOB : InOutBinary
+   * TB : TransferableBinary
+   */
+  interface ComlinkCoreSync {
     //#region 导入导出
     /**导出
      * 同语法：
      * export default target
      * export const key = target
      */
-    export(target: object, key?: string): void;
+    export(target: unknown, key?: string): void;
     /**导入
      * 同语法：
      * import ? from port
      * import { key } from port
      */
-    import<T extends object>(key?: string): PromiseLike<Remote<T>>;
+    import<T>(key?: string): T;
     //#endregion
 
-    /**释放绑定的通道 */
-    destroy(port: BinaryPort<TB>): boolean;
+    // /**释放绑定的通道 */
+    // destroy(port: BinaryPort<TB>): boolean;
   }
 
   /**定义数据管道的双工规范
    * 这里使用pipe的风格进行定义，而不是MessagePort那样的监听
+   * 这里使用callback，可以根据回调函数进行强行转化成异步或者同步
    * 从而可以同时适用于 同步 与 异步 的风格
    */
-  interface BinaryPort<TB, RTB = TB> {
-    // readStream: AsyncIterator<TB>;
-    onMessage: (cb: (bin: TB) => TB | undefined) => void;
-    // write(bin: TB): void;
-    // close(): void;
-    req(bin: TB): TB;
+  interface BinaryPort<TB> {
+    onMessage: (listener: BinaryPort.MessageListener<TB>) => void;
+    req(cb: Callback<TB>, bin: TB): unknown;
     send(bin: TB): void;
-    // res(bin: TB): void;
   }
-
-  type Remote<T> = T;
+  namespace BinaryPort {
+    type MessageListener<TB> = (cb: Callback<TB | undefined>, bin: TB) => unknown;
+  }
 
   interface LinkImportObj {
     type: import("./const").LinkObjType.Import;

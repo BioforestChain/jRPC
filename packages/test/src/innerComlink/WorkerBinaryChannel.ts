@@ -72,33 +72,41 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     const len = si32[1];
     print("onmg", si32[0], si32[1]);
     const bin = deserialize(su8.subarray(U8_OFFSET.DATA_BEGIN, len + U8_OFFSET.DATA_BEGIN));
-    const res = this._messageHanlder(bin);
-    if (res) {
-      const buf = serialize(res);
-      si32[1] = buf.length;
-      su8.set(buf, U8_OFFSET.DATA_BEGIN);
-    } else {
-      si32[1] = 0;
-    }
+    this._messageHanlder((ret) => {
+      if (ret.isError) {
+        throw ret.error;
+      }
 
-    /// 完成任务，将任务出栈，并且通知回去
-    si32[0] -= 1;
-    print("resp", si32[0], si32[1]);
-    Atomics.notify(si32, 0, 1);
+      const res = ret.data;
+      if (res) {
+        const buf = serialize(res);
+        si32[1] = buf.length;
+        su8.set(buf, U8_OFFSET.DATA_BEGIN);
+      } else {
+        si32[1] = 0;
+      }
+
+      /// 完成任务，将任务出栈，并且通知回去
+      si32[0] -= 1;
+      print("resp", si32[0], si32[1]);
+      Atomics.notify(si32, 0, 1);
+    }, bin);
   }
-  private _messageHanlder(bin: TB): TB | undefined {
-    return;
-  }
-  onMessage(cb: (bin: TB) => TB | undefined) {
-    this._messageHanlder = cb;
+  private _messageHanlder!: BFChainComlink.BinaryPort.MessageListener<TB>;
+  onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
+    this._messageHanlder = listener;
   }
   // private _U8_DATA_BEGIN = Int32Array.BYTES_PER_ELEMENT * 2;
-  req(bin: TB): TB {
-    const resBin = this.send(bin);
-    if (!resBin) {
-      throw new TypeError();
+  req(cb: BFChainComlink.Callback<TB>, bin: TB) {
+    try {
+      const resBin = this.send(bin);
+      if (!resBin) {
+        throw new TypeError();
+      }
+      cb({ isError: false, data: resBin });
+    } catch (error) {
+      cb({ isError: true, error });
     }
-    return resBin;
   }
   send(bin: TB): TB | undefined {
     const { currentDataPkg: dataPkg } = this;

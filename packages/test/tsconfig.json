@@ -18,6 +18,7 @@
     "src/innerComlink/index.ts",
     "src/innerComlink/InnerComlink.ts",
     "src/innerComlink/SimpleBinaryChannel.ts",
+    "src/innerComlink/SimpleModelTransfer.ts",
     "src/innerComlink/WorkerBinaryChannel.ts",
     "src/testTemplate/benchmarkTest.ts",
     "src/testTemplate/commonTest.ts",

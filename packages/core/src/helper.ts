@@ -46,3 +46,49 @@ export const ESM_REFLECT_FUN_MAP = new Map([
       Reflect.construct(target as Function, args as ArrayLike<unknown>, newTarget),
   ],
 ]);
+
+export const CallbackPiper = <I, O>(
+  pipeCb: BFChainComlink.PipeCallback<I, O>,
+  outCb: BFChainComlink.Callback<O>,
+) => {
+  const inCb: BFChainComlink.Callback<I> = (inRet) => {
+    if (inRet.isError) {
+      outCb(inRet);
+    } else {
+      try {
+        pipeCb(inRet.data, outCb);
+      } catch (error) {
+        outCb({
+          isError: true,
+          error,
+        });
+      }
+    }
+  };
+};
+export const SyncForCallback = <T>(cb: BFChainComlink.Callback<T>, handler: () => T) => {
+  try {
+    cb({ isError: false, data: handler() });
+  } catch (error) {
+    cb({ isError: true, error });
+  }
+};
+export const SyncToCallback = <ARG extends unknown[], T>(
+  cb: BFChainComlink.Callback<T>,
+  handler: (...args: ARG) => T,
+) => {
+  return (...args: ARG) => {
+    try {
+      cb({ isError: false, data: handler(...args) });
+    } catch (error) {
+      cb({ isError: true, error });
+    }
+  };
+};
+
+export const OpenArg = <T>(arg: BFChainComlink.CallbackArg<T>) => {
+  if (arg.isError) {
+    throw arg.error;
+  }
+  return arg.data;
+};
