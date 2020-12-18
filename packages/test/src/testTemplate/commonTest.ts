@@ -168,8 +168,8 @@ export class TestService {
 
   static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     await this.testApply2(ctxA);
-    await this.testFunctionType2(ctxA);
-    await this.testSymbol2(ctxA);
+    // await this.testFunctionType2(ctxA);
+    // await this.testSymbol2(ctxA);
     // await this.testThrow2(ctxA);
     // await this.testPromise2(ctxA);
   }

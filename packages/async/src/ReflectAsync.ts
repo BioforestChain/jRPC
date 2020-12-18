@@ -3,8 +3,8 @@ import { cacheGetter } from "@bfchain/util-decorator";
 import { CallbackToAsync, CallbackToAsyncBind } from "./helper";
 
 let ID_ACC = 0;
-export class AsyncReflectValue<T /* extends object */>
-  implements BFChainComlink.AsyncReflectValue<T> {
+export class ReflectAsync<T /* extends object */>
+  implements BFChainComlink.ReflectAsync<T> {
   constructor(
     private reflectSender: <R>(
       cb: BFChainComlink.Callback<R>,

@@ -2,15 +2,15 @@ declare namespace BFChainComlink {
   interface ComlinkAsync {
     import<T>(key?: string): PromiseLike<AsyncUtil.Remote<T>>;
     // import<T>(key?: string): PromiseLike<AsyncValue<T>>;
-    // wrap<T>(val: AsyncReflectValue<T>): AsyncUtil.Remote<T>;
+    // wrap<T>(val: ReflectAsync<T>): AsyncUtil.Remote<T>;
   }
 
-  type AsyncValue<T> = T extends object ? AsyncReflectValue<T> : T;
+  type AsyncValue<T> = T extends object ? ReflectAsync<T> : T;
 
   /**
    * @TODO 需要提供callback版本，不能只提供promise版本，会不精确
    */
-  interface AsyncReflectValue<T /* extends object */> {
+  interface ReflectAsync<T /* extends object */> {
     source?: T;
     // toString(): PromiseLike<AsyncUtil.Primitive<T>>;
     apply(
@@ -113,7 +113,7 @@ declare namespace BFChainComlink {
       // If the value is a method, comlink will proxy it automatically.
       // Objects are only proxied if they are marked to be proxied.
       // Otherwise, the property is converted to a Promise that resolves the cloned value.
-      T extends Function | ProxyMarked ? Remote<T> : Promisify<T>;
+      T extends Function | ProxyMarked ? Remote<T> : Promisify<Remote<T>>;
 
     /**
      * Takes the raw type of a property as a remote thread would see it through a proxy (e.g. when passed in as a function
@@ -124,7 +124,7 @@ declare namespace BFChainComlink {
      * Note: This needs to be its own type alias, otherwise it will not distribute over unions. See
      * https://www.typescriptlang.org/docs/handbook/advanced-types.html#distributive-conditional-types
      */
-    type LocalProperty<T> = T extends Function | ProxyMarked ? Local<T> : Unpromisify<T>;
+    type LocalProperty<T> = T extends Function | ProxyMarked ? Local<T> : Unpromisify<Local<T>>;
 
     /**
      * Proxies `T` if it is a `ProxyMarked`, clones it otherwise (as handled by structured cloning and transfer handlers).
@@ -175,7 +175,7 @@ declare namespace BFChainComlink {
         (T extends (...args: infer TArguments) => infer TReturn
           ? (
               ...args: { [I in keyof TArguments]: UnproxyOrClone<TArguments[I]> }
-            ) => Promisify<ProxyOrClone<Unpromisify<TReturn>>>
+            ) => Promisify<Remote<ProxyOrClone<Unpromisify<TReturn>>>>
           : unknown) &
         // Handle construct signature (if present)
         // The return of construct signatures is always proxied (whether marked or not)

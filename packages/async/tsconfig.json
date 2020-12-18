@@ -17,11 +17,11 @@
   ],
   "files": [
     "src/@types.ts",
-    "src/AsyncReflectValue.ts",
     "src/AsyncValueProxy.ts",
     "src/ComlinkAsync.ts",
     "src/const.ts",
     "src/helper.ts",
-    "src/index.ts"
+    "src/index.ts",
+    "src/ReflectAsync.ts"
   ]
 }

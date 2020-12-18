@@ -1,6 +1,6 @@
 import { ComlinkCore, STORE_TYPE, helper } from "@bfchain/comlink-core";
 import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
-import { AsyncReflectValue } from "./AsyncReflectValue";
+import { ReflectAsync } from "./ReflectAsync";
 import { createAsyncValueProxyHanlder } from "./AsyncValueProxy";
 import { CallbackToAsync } from "./helper";
 import {
@@ -22,7 +22,7 @@ export class ComlinkAsync
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
-  wrap<T>(val: BFChainComlink.AsyncReflectValue<T>): BFChainComlink.AsyncUtil.Remote<T> {
+  wrap<T>(val: BFChainComlink.ReflectAsync<T>): BFChainComlink.AsyncUtil.Remote<T> {
     throw new Error("Method not implemented.");
   }
   readonly transfer: BFChainComlink.ModelTransfer<
@@ -71,7 +71,7 @@ export class ComlinkAsync
       }
 
       const sourceFun = factory.factory();
-      const asyncReflectValue = this.$getAsyncReflectValue<Function>(port, refId);
+      const asyncReflectValue = this.$getReflectAsync<Function>(port, refId);
       const defaultProxyHanlder = createAsyncValueProxyHanlder(asyncReflectValue, sourceFun, {
         get target() {
           return asyncReflectValue.source;
@@ -122,7 +122,7 @@ export class ComlinkAsync
       ref = (funRef as unknown) as BFChainComlink.ImportRefHook<T>;
     } else if (refExtends.type === IOB_Extends_Type.Object) {
       const sourceObj = { __comlink_async_remote__: true };
-      const asyncReflectValue = this.$getAsyncReflectValue<object>(port, refId);
+      const asyncReflectValue = this.$getReflectAsync<object>(port, refId);
       const defaultProxyHanlder = createAsyncValueProxyHanlder(asyncReflectValue, sourceObj, {
         get target() {
           return asyncReflectValue.source;
@@ -187,11 +187,11 @@ export class ComlinkAsync
     }
     return ref;
   }
-  protected $getAsyncReflectValue<T extends object>(
+  protected $getReflectAsync<T extends object>(
     port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>,
     refId: number,
     proxy?: T,
-  ): BFChainComlink.AsyncReflectValue<T> {
+  ): BFChainComlink.ReflectAsync<T> {
     const send = async <R extends BFChainComlink.AsyncValue<unknown>>(
       cb: BFChainComlink.Callback<R>,
       linkIn: [EmscriptenReflect, ...unknown[]],
@@ -207,7 +207,7 @@ export class ComlinkAsync
               const storeItem = this.importStore.getProxy(proxyMaybe);
               if (storeItem && storeItem.type === STORE_TYPE.Proxy) {
                 // 要将proxy对象与asyncReflect对象进行关联，否则proxy对象会被垃圾回收引起远端释放引用
-                res = (this.$getAsyncReflectValue(
+                res = (this.$getReflectAsync(
                   port,
                   storeItem.id,
                   proxyMaybe as RO,
@@ -225,7 +225,7 @@ export class ComlinkAsync
         hasOut,
       );
 
-    const asyncReflectValue = new AsyncReflectValue<T>(send, proxy);
+    const asyncReflectValue = new ReflectAsync<T>(send, proxy);
 
     return asyncReflectValue;
   }

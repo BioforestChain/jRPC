@@ -80,6 +80,14 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
                 res = $handler(res, $paramList);
               }
             } else {
+              // const funStoreItem = this.importStore.getProxy(obj);
+              // if(funStoreItem){
+              //   // 使用远端的函数进行对象创建，那么这时候可以直接提供占位符，用于存储其返回结果。
+              //   const pid = this.importStore.createPid();
+              //   paramList.unshift(pid)
+              //   Reflect.apply(obj, paramList);
+              //   return {type:'placeholder', pid}
+              // }
               /// 单项操作
               const handler = this.$getEsmReflectHanlder(operator);
               res = handler(obj, paramList);

@@ -2,10 +2,10 @@ import type {} from "@bfchain/util-typings";
 import { isObj } from "@bfchain/comlink-typings";
 
 import { PromiseOut, safePromiseThen } from "@bfchain/util-extends-promise";
-import { AsyncReflectValue } from "./AsyncReflectValue";
+import { ReflectAsync } from "./ReflectAsync";
 
-const isAsyncReflectValue = <T = any>(obj: unknown): obj is BFChainComlink.AsyncReflectValue<T> => {
-  return forceGetInstaceOf(obj, AsyncReflectValue);
+const isReflectAsync = <T = any>(obj: unknown): obj is BFChainComlink.ReflectAsync<T> => {
+  return forceGetInstaceOf(obj, ReflectAsync);
 };
 let _force_get_instance_of = false;
 const forceGetInstaceOf = <T extends object>(
@@ -34,7 +34,7 @@ const doGet = <T, K extends keyof T>(reflectValue: BFChainComlink.AsyncValue<T>,
     openAsSource(
       prop,
       async (prop) => {
-        if (isAsyncReflectValue<T>(reflectValue)) {
+        if (isReflectAsync<T>(reflectValue)) {
           val = reflectValue.get(prop);
         } else {
           /// Reflect 只适用object，这里有可能是 primitive
@@ -57,7 +57,7 @@ const doSet = <T, K extends keyof T>(
       [prop, val] as const,
       ([prop, val]) => {
         try {
-          if (isAsyncReflectValue(reflectValue)) {
+          if (isReflectAsync(reflectValue)) {
             resolve(reflectValue.set(prop, val));
           } else {
             /// Reflect 只适用object，这里有可能是 primitive
@@ -80,7 +80,7 @@ const doDeleteProperty = <T, K extends keyof T>(
       prop,
       (prop) => {
         try {
-          if (isAsyncReflectValue(reflectValue)) {
+          if (isReflectAsync(reflectValue)) {
             resolve(reflectValue.deleteProperty(prop));
           } else {
             /// Reflect 只适用object，这里有可能是 primitive
@@ -105,7 +105,7 @@ const doApply = <T>(
     openAsSourceList(
       [thisArg, ...argArray] as const,
       ([thisArg, ...argArray]) => {
-        if (isAsyncReflectValue<T>(reflectValue)) {
+        if (isReflectAsync<T>(reflectValue)) {
           res = reflectValue.apply(thisArg, argArray);
         } else {
           res = Reflect.apply(reflectValue as any, thisArg, argArray);
@@ -128,7 +128,7 @@ const doConstruct = async <T>(
     openAsSourceList(
       [newTarget, ...argArray] as const,
       ([newTarget, ...argArray]) => {
-        if (isAsyncReflectValue<T>(reflectValue)) {
+        if (isReflectAsync<T>(reflectValue)) {
           res = reflectValue.construct(argArray, newTarget);
         } else {
           res = Reflect.construct(reflectValue as any, argArray, newTarget);
@@ -140,12 +140,12 @@ const doConstruct = async <T>(
   });
 };
 
-type MaybeAsyncReflectValuePromiseOut<T = object> =
-  | BFChainComlink.AsyncReflectValue<T>
-  | PromiseOut<BFChainComlink.AsyncReflectValue<T>>;
+type MaybeReflectAsyncPromiseOut<T = object> =
+  | BFChainComlink.ReflectAsync<T>
+  | PromiseOut<BFChainComlink.ReflectAsync<T>>;
 /**缓存所有proxy与它的目标 */
-const PROXY_TARGET_WM = new WeakMap<object, MaybeAsyncReflectValuePromiseOut>();
-const TARGET_PROXY_WM = new WeakMap<MaybeAsyncReflectValuePromiseOut, object>();
+const PROXY_TARGET_WM = new WeakMap<object, MaybeReflectAsyncPromiseOut>();
+const TARGET_PROXY_WM = new WeakMap<MaybeReflectAsyncPromiseOut, object>();
 /**缓存所有内部生成的PromiseOut */
 const PROMISEOUT_WS = new WeakSet<PromiseOut<any>>();
 /**解开代理对象，获取原始值
@@ -165,8 +165,8 @@ const openAsSource = <V>(
   const asyncReflectValue = openPromiseOut<V>(asyncValue);
 
   /// 解开asyncReflectValue
-  if (isAsyncReflectValue<V>(asyncReflectValue)) {
-    const comlinkProxy = (asyncReflectValue as BFChainComlink.AsyncReflectValue<V>).source;
+  if (isReflectAsync<V>(asyncReflectValue)) {
+    const comlinkProxy = (asyncReflectValue as BFChainComlink.ReflectAsync<V>).source;
     if (!comlinkProxy) {
       onError(new TypeError());
       return;
@@ -300,6 +300,17 @@ export function createAsyncValueProxyHanlder<T extends object>(
     },
     /**导入子模块 */
     get: <K extends keyof T>(_target: object, prop: K, r?: unknown) => {
+      // 禁止支持 Symbol.toPrimitive
+      if (prop === Symbol.toPrimitive) {
+        return;
+      }
+      if (prop === "name") {
+        debugger;
+      }
+      if (prop === "length") {
+        debugger;
+      }
+
       /**
        * @TODO 不能有缓存，除了then函数
        */
@@ -367,7 +378,9 @@ export function createAsyncValueProxyHanlder<T extends object>(
       return true;
     },
     apply: (_target, thisArg, argArray) => {
-      const retPo = new PromiseOut<BFChainComlink.AsyncUtil.ReturnType<T>>();
+      const retPo = new PromiseOut<
+        BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.ReturnType<T>>
+      >();
       openAsAsyncValue(
         asyncValue,
         (asyncValue) => {
@@ -384,24 +397,16 @@ export function createAsyncValueProxyHanlder<T extends object>(
             }
             return;
           }
-          safePromiseThen(
-            doApply(asyncValue, thisArg, argArray),
-            (v) => {
-              retPo.resolve(
-                createAsyncValueProxy(v, undefined, {
-                  get target() {
-                    return asyncProxyCacher.get();
-                  },
-                  paths: from.paths.concat(`<apply>(~${argArray.length}parmas)`),
-                }),
-              );
-            },
-            retPo.reject,
-          );
+          safePromiseThen(doApply(asyncValue, thisArg, argArray), retPo.resolve, retPo.reject);
         },
         retPo.reject,
       );
-      return retPo.promise;
+      return createAsyncValueProxy(retPo, undefined, {
+        get target() {
+          return asyncProxyCacher.get();
+        },
+        paths: from.paths.concat(`<apply>(~${argArray.length}parmas)`),
+      });
     },
     construct: (_target, argArray, newTarget) => {
       const insPo = new PromiseOut<BFChainComlink.AsyncUtil.InstanceType<T>>();
@@ -410,20 +415,17 @@ export function createAsyncValueProxyHanlder<T extends object>(
         (asyncValue) =>
           safePromiseThen(
             doConstruct(asyncValue, argArray, newTarget),
-            (v) =>
-              insPo.resolve(
-                createAsyncValueProxy(v, undefined, {
-                  get target() {
-                    return asyncProxyCacher.get();
-                  },
-                  paths: from.paths.concat(`<new>(~${argArray.length}parmas)`),
-                }),
-              ),
+            insPo.resolve,
             insPo.reject,
           ),
         insPo.reject,
       );
-      return insPo.promise;
+      return createAsyncValueProxy(insPo, undefined, {
+        get target() {
+          return asyncProxyCacher.get();
+        },
+        paths: from.paths.concat(`<new>(~${argArray.length}parmas)`),
+      });
     },
   };
   return proxyHanlder;
@@ -445,7 +447,7 @@ function createAsyncValueProxy<T>(
   if (!isObj(asyncValue)) {
     return asyncValue as T;
   }
-  const asyncReflectValue = (asyncValue as unknown) as MaybeAsyncReflectValuePromiseOut;
+  const asyncReflectValue = (asyncValue as unknown) as MaybeReflectAsyncPromiseOut;
 
   let proxy = TARGET_PROXY_WM.get(asyncReflectValue);
   if (!proxy) {

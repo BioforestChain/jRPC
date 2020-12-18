@@ -21,6 +21,9 @@ export class ImportStore<E = unknown> {
   /**我所导入的引用对象与符号 */
   private proxyIdStore = new Map<number | /* object | */ symbol, StoreItem>();
   private proxyIdWM = new WeakMap<object, number>();
+  /**
+   * 获取代理对象背后真正的引用信息
+   */
   getProxy(proxy: unknown) {
     let cache: StoreItem | undefined;
     switch (typeof proxy) {
