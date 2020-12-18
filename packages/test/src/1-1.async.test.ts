@@ -28,11 +28,10 @@ installSimpleEnv(
      */
 
     /// test import
-    const a = await moduleB.import<string>("a");
+    const a = await moduleB.import<typeof A>("a");
     Reflect.set(globalThis, "a", a);
     console.assert(a === A, "import");
 
-    debugger
     const ctxA = await moduleB.import<TestService>();
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll2(ctxA);

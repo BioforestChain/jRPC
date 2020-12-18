@@ -1,12 +1,13 @@
 import { installSimpleEnv } from "./envWrapper/simpleEnv";
 import { TestService } from "./testTemplate/commonTest";
 
+const A = "~aAa~";
 installSimpleEnv(
   (moduleA) => {
     /**生成服务 */
     const ctxA = new TestService();
     /**随便一个常量 */
-    const a = 1;
+    const a = A;
     /**
      * 导出服务
      * 同语法： export default ctxA
@@ -25,8 +26,8 @@ installSimpleEnv(
      */
 
     /// test import
-    const a = moduleB.import<number>("a");
-    console.assert(a === 1, "import");
+    const a = moduleB.import<typeof A >("a");
+    console.assert(a === A, "import");
 
     const ctxA = moduleB.import<TestService>();
     return TestService.testAll(ctxA);

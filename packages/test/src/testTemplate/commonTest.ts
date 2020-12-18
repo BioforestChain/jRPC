@@ -139,7 +139,6 @@ export class TestService {
   }
   static async testSymbol2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     const arr = [1];
-    console.log(await ctxA.concat(arr, [2]));
     console.assert(
       format(await ctxA.concat(arr, [2])) === "[ 1, 2 ]",
       "isConcatSpreadable === true",
@@ -169,8 +168,8 @@ export class TestService {
 
   static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     await this.testApply2(ctxA);
-    // await this.testFunctionType2(ctxA);
-    // await this.testSymbol2(ctxA);
+    await this.testFunctionType2(ctxA);
+    await this.testSymbol2(ctxA);
     // await this.testThrow2(ctxA);
     // await this.testPromise2(ctxA);
   }

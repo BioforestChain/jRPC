@@ -247,14 +247,28 @@ export function createAsyncValueProxyHanlder<T extends object>(
     throw new TypeError();
   }
   if (asyncValue instanceof PromiseOut) {
-    asyncValue.onSuccess((v) => (asyncValue = v));
+    asyncValue.onSuccess((v) => {
+      asyncValue = v;
+      asyncProxyCacher.clear();
+    });
   }
+  const asyncProxyCacher = new (class AsyncValueProxyCacher {
+    get = this._sourceGet;
+    clear() {
+      this.get = this._sourceGet;
+    }
+    private _sourceGet() {
+      return this._create();
+    }
+    private _create() {
+      const asyncProxy = createAsyncValueProxy(asyncValue, source, from);
+      this.get = () => asyncProxy;
+      return asyncProxy;
+    }
+  })();
+
   const propMap = getPropWM(source);
-  let getAsyncValueProxy = () => {
-    const asyncProxy = createAsyncValueProxy(asyncValue, source, from);
-    getAsyncValueProxy = () => asyncProxy;
-    return asyncProxy;
-  };
+
   const proxyHanlder: BFChainComlink.EmscriptionProxyHanlder<T> = {
     getPrototypeOf: () => {
       if (!_force_get_instance_of) {
@@ -285,7 +299,7 @@ export function createAsyncValueProxyHanlder<T extends object>(
       throw new Error("no support AsyncReflect.has");
     },
     /**导入子模块 */
-    get: <K extends keyof T>(_target: object, prop: K) => {
+    get: <K extends keyof T>(_target: object, prop: K, r?: unknown) => {
       /**
        * @TODO 不能有缓存，除了then函数
        */
@@ -293,29 +307,33 @@ export function createAsyncValueProxyHanlder<T extends object>(
 
       /// 对then属性做特殊的处理
       if (prop === "then") {
-        const asyncProxy = getAsyncValueProxy();
-        /**
-         * @TODO then disabled 是一次性的
-         */
+        const asyncProxy = asyncProxyCacher.get();
+
+        // then disabled 是一次性的
+        if (THEN_DISABLED_WS.has(asyncProxy)) {
+          THEN_DISABLED_WS.delete(asyncProxy);
+          return;
+        }
+        // 如果是then().then，禁用掉
         if (
-          THEN_DISABLED_WS.has(asyncProxy) ||
-          // 如果是then().then，禁用掉
-          from.paths[from.paths.length - 2] === "then"
+          from.paths[from.paths.length - 2] === "then" &&
+          from.paths[from.paths.length - 1] === "<apply>(~2parmas)"
         ) {
-          //   THEN_DISABLED_WS.delete(asyncProxy);
           return;
         }
         /// 如果前一个任务还没完成，那么自己的asyncValue就是promise模式
         if (propVal === undefined && asyncValue instanceof PromiseOut) {
           /// 那么这里创建一个 委托函数 进行promise任务等待，等待真正的asyncValue被上一个任务创建完成
-          const p = asyncValue.promise;
-          propVal = (resolve: Function, reject: any) =>
-            p.then((asyncValue) => {
+          const po = asyncValue;
+          propVal = (resolve: Function, reject: any) => {
+            po.onSuccess((asyncValue) => {
               /// 清除已经缓存的 委托函数
               propMap.delete(prop);
-              /// 返回原来的对象, 那么它会走下面那个非promiseOut的函数
-              return resolve(createAsyncValueProxy(asyncValue, undefined, from));
-            }, reject);
+              /// 返回原来的对象, resolve行为会再次触发then，如果可以，那么它会走下面那个非promiseOut的处理逻辑，如果asyncValue是primitive，那么就直接返回了
+              return resolve(asyncProxyCacher.get());
+            });
+            po.onError(reject);
+          };
         }
       }
       /// 获取或者创建缓存
@@ -329,9 +347,9 @@ export function createAsyncValueProxyHanlder<T extends object>(
           },
           promiseOut.reject,
         );
-        propVal = createAsyncValueProxy<T[K]>(promiseOut, source, {
+        propVal = createAsyncValueProxy<T[K]>(promiseOut, undefined, {
           get target() {
-            return getAsyncValueProxy();
+            return asyncProxyCacher.get();
           },
           paths: from.paths.concat(prop),
         });
@@ -372,7 +390,7 @@ export function createAsyncValueProxyHanlder<T extends object>(
               retPo.resolve(
                 createAsyncValueProxy(v, undefined, {
                   get target() {
-                    return getAsyncValueProxy();
+                    return asyncProxyCacher.get();
                   },
                   paths: from.paths.concat(`<apply>(~${argArray.length}parmas)`),
                 }),
@@ -396,7 +414,7 @@ export function createAsyncValueProxyHanlder<T extends object>(
               insPo.resolve(
                 createAsyncValueProxy(v, undefined, {
                   get target() {
-                    return getAsyncValueProxy();
+                    return asyncProxyCacher.get();
                   },
                   paths: from.paths.concat(`<new>(~${argArray.length}parmas)`),
                 }),

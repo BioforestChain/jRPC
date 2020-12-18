@@ -28,7 +28,8 @@ installWorkerEnv(
     console.log(a);
     console.assert(a === 1, "import");
 
-    // const ctxA = moduleB.import<TestService>();
-    // return TestService.testAll(ctxA);
+    const ctxA = await moduleB.import<TestService>();
+    Reflect.set(globalThis, "ctxA", ctxA);
+    await TestService.testAll2(ctxA);
   },
 );

@@ -44,7 +44,7 @@ export class ComlinkAsync
           const exportDescriptor = getFunctionExportDescription(ctx);
           /// 保护源码
           if (!exportDescriptor.showSourceCode) {
-            console.log("get to string from remote");
+            // console.log("get to string from remote");
             return IOB_EFT_Factory_Map.get(getFunctionType(ctx))!.toString({ name: ctx.name });
           }
         }
