@@ -1,21 +1,20 @@
-import { ComlinkCore, ModelTransfer } from "@bfchain/comlink-core";
+import type { ComlinkCore } from "@bfchain/comlink-core";
 import {
   IOB_Type,
   globalSymbolStore,
   IOB_Extends_Type,
-  EXPORT_FUN_DESCRIPTOR_SYMBOL,
   IOB_EFT_Factory_Map,
   getFunctionType,
   getObjectStatus,
-  IOB_Extends_Object_Status,
   IOB_Extends_Function_ToString_Mode,
   getFunctionExportDescription,
 } from "./const";
 
-export class SimpleModelTransfer extends ModelTransfer<InnerComlink.IOB, InnerComlink.TB> {
-  constructor(private core: ComlinkCore<InnerComlink.IOB, InnerComlink.TB, InnerComlink.IOB_E>) {
-    super();
-  }
+export class ModelTransfer
+  implements BFChainComlink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
+  constructor(
+    private core: ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>,
+  ) {}
   canClone(obj: unknown) {
     switch (typeof obj) {
       case "bigint":
@@ -85,9 +84,9 @@ export class SimpleModelTransfer extends ModelTransfer<InnerComlink.IOB, InnerCo
     throw new TypeError();
   }
 
-  Any2InOutBinary(obj: unknown): InnerComlink.IOB {
+  Any2InOutBinary(obj: unknown): ComlinkProtocol.IOB {
     const needClone = this.canClone(obj);
-    let item: InnerComlink.IOB | undefined;
+    let item: ComlinkProtocol.IOB | undefined;
     /// 可直接通过赋值而克隆的对象
     if (needClone) {
       item = {
@@ -131,7 +130,7 @@ export class SimpleModelTransfer extends ModelTransfer<InnerComlink.IOB, InnerCo
 
     return item;
   }
-  InOutBinary2Any(bin: InnerComlink.IOB): unknown {
+  InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {
     const { port, importStore, exportStore } = this.core;
     switch (bin.type) {
       //   case LinkItemType.Default:
@@ -161,10 +160,10 @@ export class SimpleModelTransfer extends ModelTransfer<InnerComlink.IOB, InnerCo
     throw new TypeError();
   }
 
-  linkObj2TransferableBinary(obj: InnerComlink.LinkObj) {
-    return obj as InnerComlink.TB;
+  linkObj2TransferableBinary(obj: ComlinkProtocol.LinkObj) {
+    return obj as ComlinkProtocol.TB;
   }
-  transferableBinary2LinkObj(bin: InnerComlink.TB) {
-    return bin as InnerComlink.LinkObj;
+  transferableBinary2LinkObj(bin: ComlinkProtocol.TB) {
+    return bin as ComlinkProtocol.LinkObj;
   }
 }

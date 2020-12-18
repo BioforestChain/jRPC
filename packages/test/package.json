@@ -9,7 +9,7 @@
   ],
   "module": "build/esm/index.js",
   "dependencies": {
-    "@bfchain/comlink-core": "2.1.0",
+    "@bfchain/comlink": "2.1.0",
     "@bfchain/comlink-typings": "2.1.0",
     "source-map-support": "~0.5.19"
   },

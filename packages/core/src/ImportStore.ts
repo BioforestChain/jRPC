@@ -1,4 +1,4 @@
-const enum STORE_TYPE {
+export const enum STORE_TYPE {
   Proxy,
   Symbol,
 }

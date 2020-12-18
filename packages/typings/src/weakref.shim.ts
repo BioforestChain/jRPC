@@ -1,8 +1,4 @@
-const isObj = (obj: unknown): obj is object => {
-  const targetType = typeof obj;
-  return (targetType === "object" || targetType === "function") && obj !== null;
-};
-
+import { isObj } from "./helper";
 const checkUnregisterToken = (unregisterToken: object) => {
   if (!isObj(unregisterToken)) {
     throw new TypeError(`unregisterToken ('${unregisterToken}') must be an object`);

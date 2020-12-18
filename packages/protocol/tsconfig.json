@@ -6,19 +6,16 @@
   },
   "references": [
     {
-      "path": "../async/tsconfig.json"
-    },
-    {
       "path": "../core/tsconfig.json"
-    },
-    {
-      "path": "../sync/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
     }
   ],
   "files": [
-    "src/index.ts"
+    "src/@types.ts",
+    "src/const.ts",
+    "src/index.ts",
+    "src/ModelTransfer.ts"
   ]
 }

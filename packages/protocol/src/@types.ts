@@ -1,4 +1,4 @@
-declare namespace InnerComlink {
+declare namespace ComlinkProtocol {
   type IOB = EmscriptionLinkRefExtends.InOutObj;
   type IOB_E = EmscriptionLinkRefExtends.IOB_Extends;
   type TB = BFChainComlink.LinkObj<IOB>;

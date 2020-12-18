@@ -1,3 +1,5 @@
+import { helper } from "@bfchain/comlink";
+
 export class SimpleBinaryChannel<TB> {
   private _turnA = new _InnerTurn<TB>();
   private _turnB = new _InnerTurn<TB>();
@@ -14,16 +16,19 @@ class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     this.localTurn.postMessage = listener;
   }
   req(cb: BFChainComlink.Callback<TB>, bin: TB) {
-    this.remoteTurn.postMessage((ret) => {
-      if (ret.isError) {
-        throw ret.error;
-      }
-      const resBin = ret.data;
-      if (!resBin) {
-        throw new TypeError();
-      }
-      cb({ isError: false, data: resBin });
-    }, bin);
+    this.remoteTurn.postMessage(
+      helper.SyncToCallback(cb, (ret) => {
+        if (ret.isError) {
+          throw ret.error;
+        }
+        const resBin = ret.data;
+        if (!resBin) {
+          throw new TypeError();
+        }
+        return resBin;
+      }),
+      bin,
+    );
   }
   send(bin: TB) {
     this.remoteTurn.postMessage(() => {}, bin);

@@ -5,20 +5,20 @@
     "rootDir": "./src"
   },
   "files": [
+    "src/1-1.async.test.ts",
     "src/1-1.test.ts",
+    "src/1-2.async.test.ts",
     "src/1-2.test.ts",
     "src/2-1.test.ts",
     "src/2-2.test.ts",
     "src/3-1.test.ts",
     "src/3-2.test.ts",
+    "src/envWrapper/simpleAsyncEnv.ts",
     "src/envWrapper/simpleEnv.ts",
+    "src/envWrapper/workerAsyncEnv.ts",
     "src/envWrapper/workerEnv.ts",
-    "src/innerComlink/@types.ts",
-    "src/innerComlink/const.ts",
     "src/innerComlink/index.ts",
-    "src/innerComlink/InnerComlink.ts",
     "src/innerComlink/SimpleBinaryChannel.ts",
-    "src/innerComlink/SimpleModelTransfer.ts",
     "src/innerComlink/WorkerBinaryChannel.ts",
     "src/testTemplate/benchmarkTest.ts",
     "src/testTemplate/commonTest.ts",
@@ -26,7 +26,7 @@
   ],
   "references": [
     {
-      "path": "../core/tsconfig.json"
+      "path": "../comlink/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"

@@ -1,29 +1,29 @@
-import { ComlinkCoreSync, ModelTransfer } from "@bfchain/comlink-core";
 import { EmscriptenReflect } from "@bfchain/comlink-typings";
+import { ComlinkCore } from "@bfchain/comlink-core";
+import { CallbackToSync } from "./helper";
 import {
+  ModelTransfer,
   globalSymbolStore,
   IOB_Extends_Type,
   IOB_EFT_Factory_Map,
   getFunctionType,
   IOB_Extends_Object_Status,
-  IMPORT_FUN_EXTENDS_SYMBOL,
-  refFunctionStaticToStringFactory,
   IOB_Extends_Function_ToString_Mode,
   getFunctionExportDescription,
-} from "./const";
-import { SimpleModelTransfer } from "./SimpleModelTransfer";
+  IMPORT_FUN_EXTENDS_SYMBOL,
+  refFunctionStaticToStringFactory,
+} from "@bfchain/comlink-protocol";
 
-export class InnerComlink extends ComlinkCoreSync<
-  InnerComlink.IOB,
-  InnerComlink.TB,
-  InnerComlink.IOB_E
-> {
-  constructor(port: InnerComlink.BinaryPort, name: string) {
+export class ComlinkSync
+  extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
+  implements BFChainComlink.ComlinkSync {
+  constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
-  readonly transfer: ModelTransfer<InnerComlink.IOB, InnerComlink.TB> = new SimpleModelTransfer(
-    this,
-  );
+  readonly transfer: BFChainComlink.ModelTransfer<
+    ComlinkProtocol.IOB,
+    ComlinkProtocol.TB
+  > = new ModelTransfer(this);
 
   /**
    * ref fun statis toString
@@ -51,7 +51,7 @@ export class InnerComlink extends ComlinkCoreSync<
   }
 
   protected $beforeImportRef<T>(
-    port: InnerComlink.BinaryPort,
+    port: ComlinkProtocol.BinaryPort,
     refId: number,
   ): BFChainComlink.ImportRefHook<T> {
     const refExtends = this.importStore.idExtendsStore.get(refId);
@@ -67,6 +67,7 @@ export class InnerComlink extends ComlinkCoreSync<
       const sourceFun = factory.factory();
 
       const funRef: BFChainComlink.ImportRefHook<Function> = {
+        type: "object",
         getSource: () => sourceFun,
         getProxyHanlder: () => {
           const defaultProxyHanlder = this.$getDefaultProxyHanlder<Function>(port, refId);
@@ -107,6 +108,7 @@ export class InnerComlink extends ComlinkCoreSync<
     } else if (refExtends.type === IOB_Extends_Type.Object) {
       const sourceObj = {};
       const objRef: BFChainComlink.ImportRefHook<object> = {
+        type: "object",
         getSource: () => sourceObj,
         getProxyHanlder: () => {
           const defaultProxyHanlder = this.$getDefaultProxyHanlder<object>(port, refId);
@@ -151,6 +153,7 @@ export class InnerComlink extends ComlinkCoreSync<
           : Symbol(refExtends.description);
       }
       const symRef: BFChainComlink.ImportRefHook<symbol> = {
+        type: "primitive",
         getSource: () => sourceSym,
       };
       ref = (symRef as unknown) as BFChainComlink.ImportRefHook<T>;
@@ -159,5 +162,49 @@ export class InnerComlink extends ComlinkCoreSync<
       throw new TypeError();
     }
     return ref;
+  }
+  protected $getDefaultProxyHanlder<T extends object>(
+    port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>,
+    refId: number,
+  ) {
+    const send = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]], hasOut: boolean) =>
+      CallbackToSync(this.$sendLinkIn, [port, refId, linkIn, hasOut], this) as R;
+
+    const proxyHandler: BFChainComlink.EmscriptionProxyHanlder<T> = {
+      getPrototypeOf: (_target) => send<object | null>([EmscriptenReflect.GetPrototypeOf], true),
+      setPrototypeOf: (_target, proto) =>
+        send<boolean>([EmscriptenReflect.SetPrototypeOf, proto], true),
+      isExtensible: (target) => send<boolean>([EmscriptenReflect.IsExtensible], true),
+      preventExtensions: (_target) => send<boolean>([EmscriptenReflect.PreventExtensions], true),
+      getOwnPropertyDescriptor: (_target, prop: PropertyKey) =>
+        send<PropertyDescriptor | undefined>(
+          [EmscriptenReflect.GetOwnPropertyDescriptor, prop],
+          true,
+        ),
+      has: (_target, prop: PropertyKey) => send<boolean>([EmscriptenReflect.Has], true),
+      /**导入子模块 */
+      get: (_target, prop, _reciver) =>
+        // console.log("get", prop),
+        send<boolean>([EmscriptenReflect.Get, prop], true),
+      /**发送 set 操作 */
+      set: (_target, prop: PropertyKey, value: any, _receiver: any) => (
+        send<boolean>([EmscriptenReflect.Set, prop, value], false), true
+      ),
+      deleteProperty: (_target, prop: PropertyKey) => (
+        send([EmscriptenReflect.DeleteProperty, prop], false), true
+      ),
+      defineProperty: (_target, prop: PropertyKey, attr: PropertyDescriptor) => (
+        send([EmscriptenReflect.DefineProperty, prop, attr], false), true
+      ),
+      ownKeys: (_target) => send([EmscriptenReflect.OwnKeys], true),
+      apply: (_target, thisArg, argArray) =>
+        send([EmscriptenReflect.Apply, thisArg, ...argArray], true),
+      construct: (_target, argArray, newTarget) =>
+        send([EmscriptenReflect.Construct, newTarget, ...argArray], true),
+    };
+    return proxyHandler;
+  }
+  import<T>(key = "default") {
+    return CallbackToSync(this.$import, [key], this) as T;
   }
 }

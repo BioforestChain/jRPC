@@ -1,4 +1,4 @@
-import { ComlinkSync } from "@bfchain/comlink";
+import { ComlinkAsync } from "@bfchain/comlink";
 import { ShareBinaryChannel } from "../innerComlink/index";
 import { PromiseOut } from "@bfchain/util-extends-promise-out";
 import {
@@ -11,8 +11,8 @@ import {
 } from "worker_threads";
 
 export async function installWorkerEnv(
-  mainThreadCallback: (module: ComlinkSync) => unknown,
-  workerThreadCallback: (module: ComlinkSync) => unknown,
+  mainThreadCallback: (module: ComlinkAsync) => unknown,
+  workerThreadCallback: (module: ComlinkAsync) => unknown,
 ) {
   type Msg = {
     mcPort: MessagePort;
@@ -33,7 +33,7 @@ export async function installWorkerEnv(
     /// 模拟A模块作为服务模块
     try {
       /**模块控制器 */
-      const moduleA = new ComlinkSync(portA, "A");
+      const moduleA = new ComlinkAsync(portA, "A");
 
       // 执行回调
       await mainThreadCallback(moduleA);
@@ -65,7 +65,7 @@ export async function installWorkerEnv(
         );
         /// 模拟B模块作为调用模块
         /**模块控制器 */
-        const moduleB = new ComlinkSync(portB, "B");
+        const moduleB = new ComlinkAsync(portB, "B");
 
         // 回调
         await workerThreadCallback(moduleB);

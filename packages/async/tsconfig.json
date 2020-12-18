@@ -6,19 +6,22 @@
   },
   "references": [
     {
-      "path": "../async/tsconfig.json"
-    },
-    {
       "path": "../core/tsconfig.json"
     },
     {
-      "path": "../sync/tsconfig.json"
+      "path": "../protocol/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
     }
   ],
   "files": [
+    "src/@types.ts",
+    "src/AsyncReflectValue.ts",
+    "src/AsyncValueProxy.ts",
+    "src/ComlinkAsync.ts",
+    "src/const.ts",
+    "src/helper.ts",
     "src/index.ts"
   ]
 }

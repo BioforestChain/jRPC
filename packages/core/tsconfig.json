@@ -11,12 +11,9 @@
   ],
   "files": [
     "src/ComlinkCore.ts",
-    "src/ComlinkCoreAsync.ts",
-    "src/ComlinkCoreSync.ts",
     "src/ExportStore.ts",
     "src/helper.ts",
     "src/ImportStore.ts",
-    "src/index.ts",
-    "src/ModelTransfer.ts"
+    "src/index.ts"
   ]
 }

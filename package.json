@@ -58,7 +58,7 @@
     "build"
   ],
   "devDependencies": {
-    "@bfchain/devkit": "^0.9.0",
+    "@bfchain/devkit": "^0.9.22",
     "lerna": "^3.20.2"
   }
 }

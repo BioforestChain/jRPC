@@ -1,6 +1,7 @@
 import { EmscriptenReflect } from "@bfchain/comlink-typings";
 
 export const ESM_REFLECT_FUN_MAP = new Map([
+  // [EmscriptenReflect.Multi, (target: object,operatorList:) => Reflect.getPrototypeOf(target)],
   [EmscriptenReflect.GetPrototypeOf, (target: object) => Reflect.getPrototypeOf(target)],
   [
     EmscriptenReflect.SetPrototypeOf,
@@ -47,25 +48,6 @@ export const ESM_REFLECT_FUN_MAP = new Map([
   ],
 ]);
 
-export const CallbackPiper = <I, O>(
-  pipeCb: BFChainComlink.PipeCallback<I, O>,
-  outCb: BFChainComlink.Callback<O>,
-) => {
-  const inCb: BFChainComlink.Callback<I> = (inRet) => {
-    if (inRet.isError) {
-      outCb(inRet);
-    } else {
-      try {
-        pipeCb(inRet.data, outCb);
-      } catch (error) {
-        outCb({
-          isError: true,
-          error,
-        });
-      }
-    }
-  };
-};
 export const SyncForCallback = <T>(cb: BFChainComlink.Callback<T>, handler: () => T) => {
   try {
     cb({ isError: false, data: handler() });

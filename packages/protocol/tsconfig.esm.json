@@ -9,13 +9,7 @@
   },
   "references": [
     {
-      "path": "../async/tsconfig.esm.json"
-    },
-    {
       "path": "../core/tsconfig.esm.json"
-    },
-    {
-      "path": "../sync/tsconfig.esm.json"
     },
     {
       "path": "../typings/tsconfig.esm.json"

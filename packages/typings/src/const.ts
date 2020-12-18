@@ -42,4 +42,6 @@ export const enum EmscriptenReflect {
    * typeof 无法代理，所以则需要一个对象在返回的时候，一并返回它的基础类型
    */
   _Typeof,
+  /**批量操作 */
+  Multi,
 }

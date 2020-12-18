@@ -1,9 +1,9 @@
-import { ComlinkSync } from "@bfchain/comlink";
+import { ComlinkAsync } from "@bfchain/comlink";
 import { SimpleBinaryChannel } from "../innerComlink/index";
 
 export async function installSimpleEnv(
-  moduleACallback: (module: ComlinkSync) => unknown,
-  moduleBCallback: (module: ComlinkSync) => unknown,
+  moduleACallback: (module: ComlinkAsync) => unknown,
+  moduleBCallback: (module: ComlinkAsync) => unknown,
 ) {
   /**
    * 生成一对相通的管道
@@ -13,7 +13,7 @@ export async function installSimpleEnv(
   /// 模拟A模块作为服务模块
   try {
     /**模块控制器 */
-    const moduleA = new ComlinkSync(portA, "A");
+    const moduleA = new ComlinkAsync(portA, "A");
     (global as any).moduleA = moduleA;
 
     // 执行回调
@@ -26,7 +26,7 @@ export async function installSimpleEnv(
   /// 模拟B模块作为调用模块
   try {
     /**模块控制器 */
-    const moduleB = new ComlinkSync(portB, "B");
+    const moduleB = new ComlinkAsync(portB, "B");
     (global as any).moduleB = moduleB;
 
     // 执行回调

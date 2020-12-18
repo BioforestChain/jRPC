@@ -25,29 +25,6 @@ declare namespace BFChainComlink {
     /**可传输的模型 转成 IO指令 */
     transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
   }
-  /**
-   * IOB : InOutBinary
-   * TB : TransferableBinary
-   */
-  interface ComlinkCoreSync {
-    //#region 导入导出
-    /**导出
-     * 同语法：
-     * export default target
-     * export const key = target
-     */
-    export(target: unknown, key?: string): void;
-    /**导入
-     * 同语法：
-     * import ? from port
-     * import { key } from port
-     */
-    import<T>(key?: string): T;
-    //#endregion
-
-    // /**释放绑定的通道 */
-    // destroy(port: BinaryPort<TB>): boolean;
-  }
 
   /**定义数据管道的双工规范
    * 这里使用pipe的风格进行定义，而不是MessagePort那样的监听
@@ -94,13 +71,18 @@ declare namespace BFChainComlink {
 
   type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">>;
 
-  type ImportRefHook<T> = T extends object
-    ? {
-        getSource: () => T;
-        getProxyHanlder?: () => BFChainComlink.EmscriptionProxyHanlder<T>;
-      }
-    : {
-        getSource: () => T;
-        getProxyHanlder?: undefined;
-      };
+  type ImportRefHook<S> =
+    | ImportObjectRefHook<S> //(S extends object ? ImportObjectRefHook<S> : ImportPrimitiveRefHook<S>)
+    | ImportPrimitiveRefHook<S>;
+  type ToObject<T> = T extends object ? T : never;
+  type ImportObjectRefHook<S, O extends ToObject<S> = ToObject<S>> = {
+    type: "object";
+    getSource: () => O;
+    getProxyHanlder: () => BFChainComlink.EmscriptionProxyHanlder<O>;
+    onProxyCreated?: (proxy: O) => unknown;
+  };
+  type ImportPrimitiveRefHook<S> = {
+    type: "primitive";
+    getSource: () => S;
+  };
 }

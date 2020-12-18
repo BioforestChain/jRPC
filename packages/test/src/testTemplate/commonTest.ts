@@ -31,6 +31,8 @@ export class TestService {
     return new Promise((cb) => setTimeout(cb, ms));
   }
 
+  //#region 正常模式测试
+
   static testApply(ctxA: TestService) {
     console.assert(ctxA.say("qaq") === "Gaubee: xxxx-qaq-xxxx", "call say");
     console.assert(
@@ -109,4 +111,68 @@ export class TestService {
     this.testThrow(ctxA);
     await this.testPromise(ctxA);
   }
+  //#endregion
+
+  //#region 异步模式测试
+
+  static async testApply2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    console.assert((await ctxA.say("qaq")) === "Gaubee: xxxx-qaq-xxxx", "call say");
+    console.assert(
+      (await ctxA.constructor.toString()) === `class TestService { [remote code] }`,
+      "toString",
+    );
+    const localArg = { k: "qaq", v: "quq" };
+    const len = await ctxA.useCallback(localArg, (_) => {
+      const arg = _ as typeof localArg;
+      return arg.k.length + arg.v.length;
+    });
+    console.assert(len === 6, "use callback");
+  }
+  static async testFunctionType2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    // 因为不支持实时的属性get，所以即便是 === 操作也完成不了
+    // console.assert(ctxA.constructor.toString === ctxA.say.toString, "Function.prototype.toString");
+    console.assert(
+      (await ctxA.constructor.toString.toString()) === "function toString() { [remote code] }",
+      "Function.prototype.toString is in local",
+    );
+    console.assert(typeof ctxA.constructor === "function", "ctor is function");
+  }
+  static async testSymbol2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    const arr = [1];
+    console.log(await ctxA.concat(arr, [2]));
+    console.assert(
+      format(await ctxA.concat(arr, [2])) === "[ 1, 2 ]",
+      "isConcatSpreadable === true",
+    );
+    Object.defineProperty(arr, Symbol.isConcatSpreadable, { value: false });
+    console.assert(
+      format(await ctxA.concat(arr, [2])) === "[ [ 1 ], 2 ]",
+      "isConcatSpreadable === false",
+    );
+  }
+  static async testThrow2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    try {
+      await ctxA.throwLocalError("qaq1");
+    } catch (err) {
+      console.assert(String(err).startsWith("Error: qaq1"), "throw 1");
+    }
+    let err = new SyntaxError("qaq2");
+    try {
+      await ctxA.throwRemoteError(err);
+    } catch (err) {
+      console.assert(String(err).startsWith("SyntaxError: qaq2"), "throw 2");
+    }
+  }
+  static async testPromise2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    return Promise.all([ctxA.think(10), ctxA.think(10)]);
+  }
+
+  static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+    await this.testApply2(ctxA);
+    // await this.testFunctionType2(ctxA);
+    // await this.testSymbol2(ctxA);
+    // await this.testThrow2(ctxA);
+    // await this.testPromise2(ctxA);
+  }
+  //#endregion
 }

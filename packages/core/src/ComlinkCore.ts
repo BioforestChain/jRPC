@@ -1,14 +1,7 @@
 import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
-import {
-  CallbackPiper,
-  ESM_REFLECT_FUN_MAP,
-  OpenArg,
-  SyncForCallback,
-  SyncToCallback,
-} from "./helper";
+import { ESM_REFLECT_FUN_MAP, OpenArg, SyncForCallback, SyncToCallback } from "./helper";
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
-import type { ModelTransfer } from "./ModelTransfer";
 
 export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS> {
   constructor(public readonly port: BFChainComlink.BinaryPort<TB>, public readonly name: string) {
@@ -18,7 +11,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
     throw new Error("Method not implemented.");
   }
 
-  abstract readonly transfer: ModelTransfer<IOB, TB>;
+  abstract readonly transfer: BFChainComlink.ModelTransfer<IOB, TB>;
 
   exportStore = new ExportStore(this.name);
   importStore = new ImportStore<IMP_EXTENDS>(this.name);
@@ -38,7 +31,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
     }
     return _exportModule.scope;
   }
-  protected $export(source: unknown, name = "default") {
+  export(source: unknown, name = "default") {
     Reflect.set(this._getInitedExportScope(), name, source);
   }
   protected $getEsmReflectHanlder(operator: EmscriptenReflect) {
@@ -67,15 +60,30 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
             isThrow: false,
           };
           try {
+            let res;
+
             /**JS语言中，this对象不用传输。
              * 但在Comlink协议中，它必须传输：
              * 因为我们使用call/apply模拟，所以所有所需的对象都需要传递进来
              */
             const operator = this.transfer.InOutBinary2Any(linkObj.in[0]) as EmscriptenReflect;
-            const handler = this.$getEsmReflectHanlder(operator);
             const paramList = linkObj.in.slice(1).map((iob) => this.transfer.InOutBinary2Any(iob));
 
-            const res = handler(obj, paramList);
+            if (EmscriptenReflect.Multi === operator) {
+              /// 批量操作
+              res = obj;
+              for (let i = 0; i < paramList.length; i++) {
+                const len = paramList[i] as number;
+                const $operator = paramList[i + 1] as EmscriptenReflect;
+                const $paramList = paramList.slice(i + 1, i + len);
+                const $handler = this.$getEsmReflectHanlder($operator);
+                res = $handler(res, $paramList);
+              }
+            } else {
+              /// 单项操作
+              const handler = this.$getEsmReflectHanlder(operator);
+              res = handler(obj, paramList);
+            }
 
             /// 如果有返回结果的需要，那么就尝试进行返回
             if (linkObj.hasOut) {
@@ -191,9 +199,11 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   createImportByRefId<T>(port: BFChainComlink.BinaryPort<TB>, refId: number) {
     const ref = this.$beforeImportRef<T>(port, refId);
     const source = ref.getSource();
-    const proxyHanlder = ref.getProxyHanlder?.();
-    if (proxyHanlder) {
-      return new Proxy(source, proxyHanlder);
+    if (ref.type === "object") {
+      const proxyHanlder = ref.getProxyHanlder();
+      const proxy = new Proxy(source as never, proxyHanlder);
+      ref.onProxyCreated?.(proxy);
+      return proxy;
     }
     return source;
   }
