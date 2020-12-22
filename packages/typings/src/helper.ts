@@ -4,5 +4,5 @@
  */
 export const isObj = (obj: unknown): obj is object => {
   const targetType = typeof obj;
-  return (targetType === "object" || targetType === "function") && obj !== null;
+  return (targetType === "object" && obj !== null) || targetType === "function";
 };

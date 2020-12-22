@@ -8,13 +8,13 @@ import {
   getObjectStatus,
   IOB_Extends_Function_ToString_Mode,
   getFunctionExportDescription,
+  IOB_Extends_Function_Type,
 } from "./const";
 
-export class ModelTransfer
-  implements BFChainComlink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
-  constructor(
-    private core: ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>,
-  ) {}
+export abstract class ModelTransfer<
+  Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
+> implements BFChainComlink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
+  constructor(protected core: Core) {}
   canClone(obj: unknown) {
     switch (typeof obj) {
       case "bigint":
@@ -65,11 +65,21 @@ export class ModelTransfer
     if (typeof obj === "function") {
       const exportDescriptor = getFunctionExportDescription(obj);
       const funType = getFunctionType(obj);
+      /**
+       * @FIXME 这种判断也是有风险的，因为虽然箭头函数等严格模式不允许执行 `fun.caller = 1`，但因为`caller`并不在属性里，而是在原型链上进行约束的，所以可能会使用`Reflect.set(fun,'caller',1)`从而达成混淆的效果
+       */
+      const isStatic = Object.getOwnPropertyDescriptor(obj, "caller") === undefined;
       return {
         type: IOB_Extends_Type.Function,
         funType,
         name: obj.name,
         length: obj.length,
+        isStatic,
+        status: getObjectStatus(obj),
+        instanceOfFunction: obj instanceof Function,
+        canConstruct:
+          funType === IOB_Extends_Function_Type.Class ||
+          (funType === IOB_Extends_Function_Type.Sync && isStatic === false),
         toString:
           obj.toString === Function.prototype.toString
             ? {
@@ -130,35 +140,7 @@ export class ModelTransfer
 
     return item;
   }
-  InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {
-    const { port, importStore, exportStore } = this.core;
-    switch (bin.type) {
-      //   case LinkItemType.Default:
-      //     return defaultCtx;
-      case IOB_Type.Locale:
-        const loc = exportStore.getObjById(bin.locId) || exportStore.getSymById(bin.locId);
-        if (!loc) {
-          throw new ReferenceError();
-        }
-        return loc;
-      case IOB_Type.Ref:
-      case IOB_Type.RemoteSymbol:
-        /// 读取缓存中的应用对象
-        let cachedProxy = importStore.getProxyById(bin.refId);
-        if (cachedProxy === undefined) {
-          // 保存引用信息
-          importStore.idExtendsStore.set(bin.refId, bin.extends);
-          /// 使用导入功能生成对象
-          cachedProxy = this.core.createImportByRefId<symbol | Object>(port, bin.refId);
-          /// 缓存对象
-          importStore.saveProxyId(cachedProxy, bin.refId);
-        }
-        return cachedProxy;
-      case IOB_Type.Clone:
-        return bin.data;
-    }
-    throw new TypeError();
-  }
+  abstract InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown;
 
   linkObj2TransferableBinary(obj: ComlinkProtocol.LinkObj) {
     return obj as ComlinkProtocol.TB;

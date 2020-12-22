@@ -15,7 +15,7 @@ type SymbolStoreItem = {
 type StoreItem = ProxyStoreItem | SymbolStoreItem;
 
 export class ImportStore<E = unknown> {
-  constructor(private name: string) {}
+  constructor(public readonly name: string) {}
   /**存储协议扩展信息 */
   idExtendsStore = new Map<number, E>();
   /**我所导入的引用对象与符号 */
@@ -43,6 +43,19 @@ export class ImportStore<E = unknown> {
         break;
     }
     return cache;
+  }
+  isProxy(proxy: unknown) {
+    switch (typeof proxy) {
+      case "symbol":
+        return this.proxyIdStore.has(proxy);
+      case "object":
+        if (proxy === null) {
+          return false;
+        }
+      case "function":
+        return this.proxyIdWM.has(proxy);
+    }
+    return false;
   }
   getProxyById<FORCE_TYPE = symbol | object>(id: number) {
     const cache = this.proxyIdStore.get(id);

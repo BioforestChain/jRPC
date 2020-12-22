@@ -6,16 +6,18 @@ type ObjectStoreItem = {
   id: number;
   type: STORE_TYPE.Object;
   obj: object;
+  // hid?: number;
 };
 type SymbolStoreItem = {
   id: number;
   type: STORE_TYPE.Symbol;
   sym: symbol;
+  // hid?: number;
 };
 type StoreItem = ObjectStoreItem | SymbolStoreItem;
 
 export class ExportStore {
-  constructor(private name: string) {}
+  constructor(public readonly name: string) {}
   /**
    * 提供给远端的 refId|symId
    * 远端可以使用 locId 来进行访问本地

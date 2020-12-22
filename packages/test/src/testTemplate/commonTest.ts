@@ -20,9 +20,11 @@ export class TestService {
     }
     return String(obj);
   }
-  private _e?: Error;
   throwLocalError(message: string) {
-    throw (this._e = new Error(message));
+    throw new Error(message);
+  }
+  throwLocal(error: unknown) {
+    throw error;
   }
   throwRemoteError(err: Error) {
     throw err;
@@ -151,15 +153,9 @@ export class TestService {
   }
   static async testThrow2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     try {
-      await ctxA.throwLocalError("qaq1");
+      ctxA.throwLocal("qaq3");
     } catch (err) {
-      console.assert(String(err).startsWith("Error: qaq1"), "throw 1");
-    }
-    let err = new SyntaxError("qaq2");
-    try {
-      await ctxA.throwRemoteError(err);
-    } catch (err) {
-      console.assert(String(err).startsWith("SyntaxError: qaq2"), "throw 2");
+      console.assert(err === "qaq3", "throw 3");
     }
   }
   static async testPromise2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
@@ -168,10 +164,10 @@ export class TestService {
 
   static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     await this.testApply2(ctxA);
-    // await this.testFunctionType2(ctxA);
-    // await this.testSymbol2(ctxA);
-    // await this.testThrow2(ctxA);
-    // await this.testPromise2(ctxA);
+    await this.testFunctionType2(ctxA);
+    await this.testSymbol2(ctxA);
+    await this.testThrow2(ctxA);
+    await this.testPromise2(ctxA);
   }
   //#endregion
 }

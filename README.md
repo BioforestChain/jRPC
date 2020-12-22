@@ -14,5 +14,5 @@
 
 ## Roadmap
 
-- [ ] v2.1 实现 ReflectAsync 模块，使得支持异步操作
+- [ ] v2.1 实现 HolderReflect 模块，使得支持异步操作
   > 将核心协议部分使用纯函数+回调的风格重写

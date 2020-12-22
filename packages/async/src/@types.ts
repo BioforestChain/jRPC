@@ -2,44 +2,65 @@ declare namespace BFChainComlink {
   interface ComlinkAsync {
     import<T>(key?: string): PromiseLike<AsyncUtil.Remote<T>>;
     // import<T>(key?: string): PromiseLike<AsyncValue<T>>;
-    // wrap<T>(val: ReflectAsync<T>): AsyncUtil.Remote<T>;
+    // wrap<T>(val: HolderReflect<T>): AsyncUtil.Remote<T>;
   }
 
-  type AsyncValue<T> = T extends object ? ReflectAsync<T> : T;
+  type Holder<T = unknown> = PromiseLike<T> & AsyncUtil.Remote<T>;
+
+  type AsyncValue<T> = T extends object ? Holder<T> : T;
 
   /**
    * @TODO 需要提供callback版本，不能只提供promise版本，会不精确
    */
-  interface ReflectAsync<T /* extends object */> {
-    source?: T;
-    // toString(): PromiseLike<AsyncUtil.Primitive<T>>;
+  interface HolderReflect<T /* extends object */> {
+    readonly linkIn:
+      | readonly []
+      | readonly [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]];
+    createSubHolder<R>(
+      linkIn: [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]],
+    ): HolderReflect<R>;
+    toHolder(): Holder<T>;
+    toValue(): BFChainUtil.PromiseMaybe<AsyncValue<T>>;
+    bindIOB(iob: ComlinkProtocol.IOB): void;
+    getIOB(): ComlinkProtocol.IOB | undefined;
+    waitIOB(): BFChainUtil.PromiseMaybe<ComlinkProtocol.IOB>;
+
+    throw(): BFChainUtil.PromiseMaybe<unknown>;
+
+    // source?: T;
+    // toString(): BFChainUtil.PromiseMaybe<AsyncUtil.Primitive<T>>;
     apply(
       thisArgument: unknown,
       argumentsList: AsyncUtil.Parameters<T>,
-    ): PromiseLike<AsyncValue<AsyncUtil.ReturnType<T>>>;
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.ReturnType<T>>>;
     construct(
       argumentsList: AsyncUtil.ConstructorParameters<T>,
       newTarget?: unknown,
-    ): PromiseLike<AsyncValue<AsyncUtil.InstanceType<T>>>;
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.InstanceType<T>>>;
     defineProperty<K extends AsyncUtil.PropertyKey<T>>(
       propertyKey: K,
       attributes: AsyncUtil.PropertyDescriptor<T, K>,
-    ): PromiseLike<boolean>;
-    deleteProperty(propertyKey: AsyncUtil.PropertyKey<T>): PromiseLike<boolean>;
-    get<K extends AsyncUtil.PropertyKey<T>>(propertyKey: K): PromiseLike<AsyncValue<T[K]>>;
+    ): BFChainUtil.PromiseMaybe<boolean>;
+    deleteProperty(propertyKey: AsyncUtil.PropertyKey<T>): BFChainUtil.PromiseMaybe<boolean>;
+    get<K extends PropertyKey>(
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.Get<T, K>>>;
+    asset<K extends PropertyKey>(
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.Get<T, K>>>;
     getOwnPropertyDescriptor<K extends AsyncUtil.PropertyKey<T>>(
-      propertyKey: AsyncUtil.PropertyKey<T>,
-    ): PromiseLike<AsyncValue<AsyncUtil.PropertyDescriptor<T, K> | undefined>>;
-    getPrototypeOf<P = unknown>(): PromiseLike<AsyncValue<P>>;
-    has(propertyKey: AsyncUtil.PropertyKey<T>): PromiseLike<boolean>;
-    isExtensible(): PromiseLike<boolean>;
-    ownKeys(): PromiseLike<AsyncValue<AsyncUtil.PropertyKey<T>[]>>;
-    preventExtensions(): PromiseLike<boolean>;
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.PropertyDescriptor<T, K> | undefined>>;
+    getPrototypeOf<P = unknown>(): BFChainUtil.PromiseMaybe<AsyncValue<P>>;
+    has(propertyKey: AsyncUtil.PropertyKey<T>): BFChainUtil.PromiseMaybe<boolean>;
+    isExtensible(): BFChainUtil.PromiseMaybe<boolean>;
+    ownKeys(): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.PropertyKey<T>[]>>;
+    preventExtensions(): BFChainUtil.PromiseMaybe<boolean>;
     set<K extends AsyncUtil.PropertyKey<T>>(
       propertyKey: K,
       value: AsyncValue<T[K]> | T[K],
-    ): PromiseLike<boolean>;
-    setPrototypeOf(proto: unknown): PromiseLike<boolean>;
+    ): BFChainUtil.PromiseMaybe<boolean>;
+    setPrototypeOf(proto: unknown): BFChainUtil.PromiseMaybe<boolean>;
   }
 
   namespace AsyncUtil {
@@ -69,14 +90,18 @@ declare namespace BFChainComlink {
     type ConstructorParameters<T> = T extends new (...args: infer P) => any ? P : never;
     type InstanceType<T> = T extends new (...args: any) => infer R ? R : any;
     type PropertyKey<T> = keyof T;
-    interface PropertyDescriptor<T, K extends PropertyKey<T>> {
+    type PropertyDescriptorStract<T, K extends PropertyKey<T>> = {
       configurable?: boolean;
       enumerable?: boolean;
       value?: AsyncValue<T[K]>;
       writable?: boolean;
       get?(): AsyncValue<T[K]>;
-      set?(v: AsyncValue<T[K] | T[K]>): void;
-    }
+      set?(v: AsyncValue<T[K]> | T[K]): void;
+    };
+    type Get<T, K> = K extends PropertyKey<T> ? T[K] : unknown;
+    type PropertyDescriptor<T, K> = K extends PropertyKey<T>
+      ? PropertyDescriptorStract<T, K>
+      : never;
 
     const proxyMarker: unique symbol;
     type proxyMarkerSymbol = typeof proxyMarker;

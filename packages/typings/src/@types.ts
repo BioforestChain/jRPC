@@ -11,6 +11,7 @@ declare namespace BFChainComlink {
   type Callback<D, E = Error> = (ret: CallbackArg<D, E>) => unknown;
   type PipeCallback<I, O> = (inData: I, dataOuter: Callback<O>) => unknown;
 
+  // type ComlinkIOB<T> = T extends <>
   /**
    * 传输的模型转换
    */
@@ -79,7 +80,7 @@ declare namespace BFChainComlink {
     type: "object";
     getSource: () => O;
     getProxyHanlder: () => BFChainComlink.EmscriptionProxyHanlder<O>;
-    onProxyCreated?: (proxy: O) => unknown;
+    // onProxyCreated?: (proxy: O) => unknown;
   };
   type ImportPrimitiveRefHook<S> = {
     type: "primitive";

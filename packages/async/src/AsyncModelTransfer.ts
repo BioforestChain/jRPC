@@ -1,0 +1,133 @@
+import {
+  globalSymbolStore,
+  IMPORT_FUN_EXTENDS_SYMBOL,
+  IOB_EFT_Factory_Map,
+  IOB_Extends_Function_ToString_Mode,
+  IOB_Extends_Object_Status,
+  IOB_Extends_Type,
+  IOB_Type,
+  ModelTransfer,
+  refFunctionStaticToStringFactory,
+} from "@bfchain/comlink-protocol";
+import { EmscriptenReflect, isObj, LinkObjType } from "@bfchain/comlink-typings";
+import type { ComlinkAsync } from "./ComlinkAsync";
+import { createHolderProxyHanlder } from "./AsyncValueProxy";
+import { helper, STORE_TYPE } from "@bfchain/comlink-core";
+import { HolderReflect } from "./HolderReflect";
+import { safePromiseThen } from "@bfchain/util-extends-promise";
+
+export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
+  constructor(core: ComlinkAsync) {
+    super(core);
+  }
+
+  /**
+   * ref fun statis toString
+   */
+  private _rfsts = refFunctionStaticToStringFactory();
+
+  /**这里保持使用cb风格，可以确保更好的性能
+   * @TODO 内部的函数也应该尽可能使用cb风格来实现
+   */
+  private _sendLinkIn<R = unknown>(
+    port: ComlinkProtocol.BinaryPort,
+    targetId: number,
+    linkIn: readonly unknown[],
+    hasOut?: BFChainComlink.HolderReflect<R> | false,
+  ) {
+    const { transfer } = this.core;
+
+    port.req(
+      async (ret) => {
+        const bin = helper.OpenArg(ret);
+        const linkObj = transfer.transferableBinary2LinkObj(bin);
+
+        if (linkObj.type !== LinkObjType.Out) {
+          throw new TypeError();
+        }
+
+        if (linkObj.isThrow) {
+          const err_iob = linkObj.out.slice().pop();
+          if (!err_iob) {
+            throw new TypeError();
+          }
+          if (hasOut) {
+            hasOut.bindIOB(err_iob);
+            throw await hasOut.throw();
+          } else {
+            /**
+             * @TODO 统一使用 HolderReflect.throw 来获取要抛出的异常信息
+             */
+            throw await this.InOutBinary2Any(err_iob);
+          }
+        } else if (hasOut) {
+          const res_iob = linkObj.out.slice().pop();
+          if (!res_iob) {
+            throw new TypeError();
+          }
+          hasOut.bindIOB(res_iob);
+        }
+      },
+      transfer.linkObj2TransferableBinary({
+        type: LinkObjType.In,
+        // reqId,
+        targetId,
+        in: linkIn.map((a) => transfer.Any2InOutBinary(a)),
+        hasOut: hasOut !== undefined,
+      }),
+    );
+  }
+
+  /**
+   * 主动生成引用代理
+   * @param port
+   * @param refId
+   */
+  private _createHolderByRefId<T>(
+    port: ComlinkProtocol.BinaryPort,
+    refId: number,
+    iob: ComlinkProtocol.IOB,
+  ) {
+    const holder = this._getHolder<T>(port, refId, iob);
+    return holder.toHolder();
+  }
+
+  private _getHolder<T>(port: ComlinkProtocol.BinaryPort, refId: number, iob: ComlinkProtocol.IOB) {
+    const holder = new HolderReflect<T>(this.linkInSenderFactory(port, refId), this.core, []);
+    holder.bindIOB(iob);
+    return holder;
+  }
+
+  linkInSenderFactory(port: ComlinkProtocol.BinaryPort, refId: number) {
+    return <R>(
+      linkIn: readonly [EmscriptenReflect, ...unknown[]],
+      hasOut?: BFChainComlink.HolderReflect<R> | false,
+    ) => this._sendLinkIn(port, refId, linkIn, hasOut);
+  }
+
+  InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {
+    const { port, importStore, exportStore } = this.core;
+    switch (bin.type) {
+      //   case LinkItemType.Default:
+      //     return defaultCtx;
+      case IOB_Type.Locale:
+        const loc = exportStore.getObjById(bin.locId) || exportStore.getSymById(bin.locId);
+        if (!loc) {
+          throw new ReferenceError();
+        }
+        return loc;
+      case IOB_Type.Ref:
+      case IOB_Type.RemoteSymbol:
+        /// 读取缓存中的应用对象
+        let cachedHolder = importStore.getProxyById(bin.refId);
+        if (cachedHolder === undefined) {
+          /// 使用导入功能生成对象
+          cachedHolder = this._createHolderByRefId<symbol | Object>(port, bin.refId, bin);
+        }
+        return cachedHolder;
+      case IOB_Type.Clone:
+        return bin.data;
+    }
+    throw new TypeError();
+  }
+}

@@ -19,6 +19,7 @@
     "src/@types.ts",
     "src/ComlinkSync.ts",
     "src/helper.ts",
-    "src/index.ts"
+    "src/index.ts",
+    "src/SyncModelTransfer.ts"
   ]
 }

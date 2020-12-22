@@ -1,4 +1,5 @@
 import { helper } from "@bfchain/comlink";
+import { CallbackToSync } from "@bfchain/comlink-sync";
 
 export class SimpleBinaryChannel<TB> {
   private _turnA = new _InnerTurn<TB>();
@@ -15,13 +16,10 @@ class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
     this.localTurn.postMessage = listener;
   }
-  req(cb: BFChainComlink.Callback<TB>, bin: TB) {
+  req(output: BFChainComlink.Callback<TB>, bin: TB) {
     this.remoteTurn.postMessage(
-      helper.SyncToCallback(cb, (ret) => {
-        if (ret.isError) {
-          throw ret.error;
-        }
-        const resBin = ret.data;
+      helper.SyncPiperFactory(output, (ret) => {
+        const resBin = helper.OpenArg(ret);
         if (!resBin) {
           throw new TypeError();
         }

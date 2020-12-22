@@ -17,6 +17,13 @@ declare namespace EmscriptionLinkRefExtends {
     funType: import("./const").IOB_Extends_Function_Type;
     name: string;
     length: number;
+    isStatic: boolean;
+    /**箭头函数、异步函数 都是无prototype的，这种情况可以直接判定对象不是构造函数 */
+    canConstruct: boolean;
+    /**是否已经禁止扩展了 */
+    status: import("./const").IOB_Extends_Object_Status;
+    /**是否延续标准，继承于Function */
+    instanceOfFunction: boolean;
     /**@TODO
      * 如果有需要，可以扩展成三种模式
      * 如果是 === Function.prototype.toString，那么可以提供 showSourceCode 与 hideSourceCode 两种策略
@@ -57,10 +64,10 @@ declare namespace EmscriptionLinkRefExtends {
     type: import("./const").IOB_Type.Clone;
     data: unknown;
   };
-  type RefItem = {
+  type RefItem<E extends RefItemExtends = RefItemExtends> = {
     type: import("./const").IOB_Type.Ref;
     refId: number;
-    extends: RefItemExtends;
+    extends: E;
   };
   type RemoteSymbolItem = {
     type: import("./const").IOB_Type.RemoteSymbol;
@@ -76,7 +83,11 @@ declare namespace EmscriptionLinkRefExtends {
   //   lsId: number;
   // };
 
-  type InOutObj = CloneItem | RefItem | LocaleItem | RemoteSymbolItem;
+  type InOutObj = InOutObj.Local | InOutObj.Remote;
+  namespace InOutObj {
+    type Local = CloneItem | LocaleItem;
+    type Remote = RefItem | RemoteSymbolItem;
+  }
   // | LocalSymbolItem;
 
   //#endregion
