@@ -46,6 +46,14 @@ export const ESM_REFLECT_FUN_MAP = new Map([
     (target: object, [newTarget, ...args]: unknown[]) =>
       Reflect.construct(target as Function, args as ArrayLike<unknown>, newTarget),
   ],
+
+  /// 运算符
+  [EmscriptenReflect.Asset, (target: object, [prop]: unknown[]) => target[prop as never]],
+  [EmscriptenReflect.Typeof, (target: unknown) => typeof target],
+  [
+    EmscriptenReflect.Instanceof,
+    (target: object, [ctor]: unknown[]) => target instanceof (ctor as never),
+  ],
 ]);
 
 export const SyncForCallback = <T>(cb: BFChainComlink.Callback<T>, handler: () => T) => {

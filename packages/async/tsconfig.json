@@ -22,9 +22,7 @@
     "src/ComlinkAsync.ts",
     "src/const.ts",
     "src/helper.ts",
-    "src/Holder.ts",
     "src/HolderReflect.ts",
-    "src/HolderStore.ts",
     "src/index.ts",
     "src/ReflectForbidenMethods.ts"
   ]

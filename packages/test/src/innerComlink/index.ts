@@ -12,3 +12,4 @@ if (require("inspector").url()) {
 import "@bfchain/comlink-typings";
 export * from "./SimpleBinaryChannel";
 export * from "./WorkerBinaryChannel";
+export * from "./NativeBinaryChannel";

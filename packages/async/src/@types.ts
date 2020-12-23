@@ -5,7 +5,9 @@ declare namespace BFChainComlink {
     // wrap<T>(val: HolderReflect<T>): AsyncUtil.Remote<T>;
   }
 
-  type Holder<T = unknown> = PromiseLike<AsyncUtil.Remote<T>> & AsyncUtil.Remote<T>;
+  type Holder<T = unknown> = T extends object
+    ? AsyncUtil.Remote<T>
+    : PromiseLike<AsyncUtil.Remote<T>>;
 
   type AsyncValue<T> = T extends object ? Holder<T> : T;
 
@@ -21,8 +23,10 @@ declare namespace BFChainComlink {
     ): HolderReflect<R>;
     toHolder(): Holder<T>;
     toValue(): BFChainUtil.PromiseMaybe<AsyncValue<T>>;
+    toAsyncValue(): AsyncValue<T>;
     bindIOB(iob: ComlinkProtocol.IOB, isError?: boolean): void;
     getIOB(): ComlinkProtocol.IOB | undefined;
+    isBindedIOB(): boolean
     waitIOB(): BFChainUtil.PromiseMaybe<ComlinkProtocol.IOB>;
 
     // throw(): BFChainUtil.PromiseMaybe<unknown>;

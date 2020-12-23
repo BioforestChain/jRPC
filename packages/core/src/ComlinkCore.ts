@@ -67,12 +67,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
             if (EmscriptenReflect.Multi === operator) {
               /// 批量操作
               res = obj;
-              for (let i = 0; i < paramList.length; i++) {
+              for (let i = 0; i < paramList.length; ) {
                 const len = paramList[i] as number;
                 const $operator = paramList[i + 1] as EmscriptenReflect;
-                const $paramList = paramList.slice(i + 1, i + len);
+                const $paramList = paramList.slice(i + 2, i + 1 + len);
                 const $handler = this.$getEsmReflectHanlder($operator);
                 res = $handler(res, $paramList);
+                i += len + 1;
               }
             } else {
               /// 单项操作

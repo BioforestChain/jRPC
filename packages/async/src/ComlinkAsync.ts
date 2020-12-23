@@ -15,8 +15,6 @@ import {
   IMPORT_FUN_EXTENDS_SYMBOL,
   refFunctionStaticToStringFactory,
 } from "@bfchain/comlink-protocol";
-import { HolderStore } from "./HolderStore";
-import { createHolder } from "./Holder";
 import { AsyncModelTransfer } from "./AsyncModelTransfer";
 
 export class ComlinkAsync

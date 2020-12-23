@@ -37,42 +37,89 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   ) {
     const { transfer } = this.core;
 
-    port.req(
-      async (ret) => {
-        const bin = helper.OpenArg(ret);
-        const linkObj = transfer.transferableBinary2LinkObj(bin);
+    const doReq = () => {
+      port.req(
+        async (ret) => {
+          const bin = helper.OpenArg(ret);
+          const linkObj = transfer.transferableBinary2LinkObj(bin);
 
-        if (linkObj.type !== LinkObjType.Out) {
-          throw new TypeError();
-        }
-
-        if (linkObj.isThrow) {
-          const err_iob = linkObj.out.slice().pop();
-          if (!err_iob) {
+          if (linkObj.type !== LinkObjType.Out) {
             throw new TypeError();
           }
-          if (hasOut) {
-            hasOut.bindIOB(err_iob, true);
-          } else {
-            /// 远端传来的异常，本地却没有可以捕捉的对象，协议不对称！
-            throw err_iob;
+
+          if (linkObj.isThrow) {
+            const err_iob = linkObj.out.slice().pop();
+            if (!err_iob) {
+              throw new TypeError();
+            }
+            if (hasOut) {
+              hasOut.bindIOB(err_iob, true);
+            } else {
+              /// 远端传来的异常，本地却没有可以捕捉的对象，协议不对称！
+              throw err_iob;
+            }
+          } else if (hasOut) {
+            const res_iob = linkObj.out.slice().pop();
+            if (!res_iob) {
+              throw new TypeError();
+            }
+            hasOut.bindIOB(res_iob);
           }
-        } else if (hasOut) {
-          const res_iob = linkObj.out.slice().pop();
-          if (!res_iob) {
-            throw new TypeError();
-          }
-          hasOut.bindIOB(res_iob);
+        },
+        transfer.linkObj2TransferableBinary({
+          type: LinkObjType.In,
+          // reqId,
+          targetId,
+          in: linkIn.map((a) => transfer.Any2InOutBinary(a)),
+          hasOut: hasOut !== undefined,
+        }),
+      );
+    };
+
+    /// 准备开始执行任务前，要确保参数已经全部resolve了
+    const doReject = hasOut
+      ? (err: unknown) => {
+          hasOut.bindIOB(
+            {
+              type: IOB_Type.Clone,
+              data: err,
+            },
+            true,
+          );
         }
-      },
-      transfer.linkObj2TransferableBinary({
-        type: LinkObjType.In,
-        // reqId,
-        targetId,
-        in: linkIn.map((a) => transfer.Any2InOutBinary(a)),
-        hasOut: hasOut !== undefined,
-      }),
-    );
+      : (err: unknown) => {
+          console.error("uncatch error:", err);
+        };
+
+    /// 前置任务集合
+    const preTasks = new Set<HolderReflect<unknown>>();
+    let successTaskCount = 0;
+    const tryResolve = (ret: BFChainComlink.CallbackArg<unknown>) => {
+      if (ret.isError) {
+        return doReject(ret.error);
+      }
+      successTaskCount += 1;
+      if (successTaskCount === preTasks.size) {
+        doReq();
+      }
+    };
+
+    for (const maybeHolder of linkIn) {
+      const reflect = HolderReflect.getHolderReflect(maybeHolder);
+      /// 寻找还没有返回结果的任务。这里先统一加完，再单独对preTasks进行循环，避免通讯是同步的，直接导致回调完成进行任务触发
+      if (reflect && reflect.isBindedIOB() === false) {
+        preTasks.add(reflect);
+      }
+    }
+
+    // 无需等待，那么直接执行任务
+    if (preTasks.size === 0) {
+      doReq();
+    } else {
+      for (const reflect of preTasks) {
+        reflect.toValueSync(tryResolve);
+      }
+    }
   }
 
   /**

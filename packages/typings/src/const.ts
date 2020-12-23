@@ -38,10 +38,10 @@ export const enum EmscriptenReflect {
   Apply,
   Construct,
 
-  /**
-   * typeof 无法代理，所以则需要一个对象在返回的时候，一并返回它的基础类型
-   */
-  _Typeof,
+  /**运算符操作 */
+  Asset,
+  Typeof,
+  Instanceof,
   /**批量操作 */
   Multi,
 }
