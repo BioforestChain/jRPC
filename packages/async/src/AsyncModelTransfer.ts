@@ -105,7 +105,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
     };
 
     for (const maybeHolder of linkIn) {
-      const reflect = HolderReflect.getHolderReflect(maybeHolder);
+      const reflect = HolderReflect.getHolderReflect(maybeHolder as never);
       /// 寻找还没有返回结果的任务。这里先统一加完，再单独对preTasks进行循环，避免通讯是同步的，直接导致回调完成进行任务触发
       if (reflect && reflect.isBindedIOB() === false) {
         preTasks.add(reflect);

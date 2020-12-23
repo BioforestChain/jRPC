@@ -104,6 +104,10 @@ export abstract class ModelTransfer<
         data: obj,
       };
     } else {
+      /**
+       * @TODO 对于 Holder<LOCAL>，需要直接转为本地模型
+       */
+
       /// 对象是否是导入进来的
       const imp = this.core.importStore.getProxy(obj as object);
       if (imp) {

@@ -1,3 +1,5 @@
+import { HolderReflect } from "@bfchain/comlink";
+
 export class MyItem {
   constructor(public readonly value: number) {}
 }
@@ -49,7 +51,7 @@ export class CGService {
     for (let i = 0; i < 10; i++) {
       const list = await ctxA.getList(UTIMES);
       let total = 0;
-      for await (const item of list) {
+      for await (const item of HolderReflect.getHolderReflect(list).iterator()) {
         total += await item.value;
       }
       console.log(`UTIMES: %d; total: %d;`, UTIMES, total);

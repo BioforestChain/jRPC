@@ -48,8 +48,8 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   static isHolder(target: unknown): target is BFChainComlink.Holder {
     return __HOLDER_WM__.has(target as never);
   }
-  static getHolderReflect<T>(target: unknown): HolderReflect<T> {
-    return __HOLDER_WM__.get(target as never) as HolderReflect<T>;
+  static getHolderReflect<T>(target: BFChainComlink.Holder<T>): HolderReflect<T> {
+    return __HOLDER_WM__.get(target) as HolderReflect<T>;
   }
   public readonly id = ID_ACC++;
   public readonly name = `holder_${this.id}`;
@@ -1520,9 +1520,34 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
    */
 
   /**支持自定义的Symbol.iterator，本地可用for await来进行迭代 */
-  iterator() {}
+  async *iterator() {
+    const iterable = (await this.assetHolder(Symbol.iterator).apply(
+      this.toAsyncValue(),
+      [] as never,
+    )) as BFChainComlink.Holder<IterableIterator<unknown>>;
+
+    do {
+      const item = await iterable.next();
+      if (await item.done) {
+        break;
+      }
+      yield item.value as BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.IteratorType<T>>;
+    } while (true);
+  }
   /**支持自定义的Symbol.asyncIterator，本地可用for await来进行迭代 */
-  asyncIterator() {}
+  async *asyncIterator() {
+    const iterable =await this.assetHolder(Symbol.asyncIterator).apply(
+      this.toAsyncValue(),
+      [] as never,
+    ) as BFChainComlink.Holder<AsyncIterator<unknown>>;
+    do {
+      const item = await iterable.next();
+      if (await item.done) {
+        break;
+      }
+      yield item.value as BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.AsyncIteratorType<T>>;
+    } while (true);
+  }
 
   /**支持自定义的Symbol.isConcatSpreadable */
   Array_concat() {}

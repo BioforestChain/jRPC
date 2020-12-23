@@ -26,7 +26,7 @@ declare namespace BFChainComlink {
     toAsyncValue(): AsyncValue<T>;
     bindIOB(iob: ComlinkProtocol.IOB, isError?: boolean): void;
     getIOB(): ComlinkProtocol.IOB | undefined;
-    isBindedIOB(): boolean
+    isBindedIOB(): boolean;
     waitIOB(): BFChainUtil.PromiseMaybe<ComlinkProtocol.IOB>;
 
     // throw(): BFChainUtil.PromiseMaybe<unknown>;
@@ -86,6 +86,25 @@ declare namespace BFChainComlink {
 
     // type Key<T> = T extends
     // type Keys<Ks extends unknown[]> = Ks extends [infer K1,...infer K2]?
+
+    type IteratorType<T> = /* T extends Remote<{
+      [Symbol.iterator](): IterableIterator<infer I>;
+    }>
+      ? I
+      : */ T extends {
+          [Symbol.iterator](): IterableIterator<infer I>;
+        }
+      ? I
+      : never;
+    type AsyncIteratorType<T> = T extends Holder<{
+      [Symbol.asyncIterator](): AsyncIterator<infer I>;
+    }>
+      ? I
+      : T extends {
+          [Symbol.asyncIterator](): AsyncIterator<infer I>;
+        }
+      ? I
+      : never;
 
     type Primitive<T> = T extends object ? never : T;
     type NoPrimitive<T> = T extends object ? T : never;
