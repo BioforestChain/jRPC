@@ -153,9 +153,15 @@ export class TestService {
   }
   static async testThrow2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     try {
-      ctxA.throwLocal("qaq3");
+      await ctxA.throwLocal("qaq3");
     } catch (err) {
       console.assert(err === "qaq3", "throw 3");
+    }
+    try {
+      await ctxA.throwLocalError("qaq4");
+    } catch (err) {
+      const zz = await err.message;
+      console.assert((await err.message) === "qaq4", "throw 4");
     }
   }
   static async testPromise2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {

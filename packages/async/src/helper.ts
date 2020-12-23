@@ -1,12 +1,10 @@
+import { helper } from "@bfchain/comlink-core";
 export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
   cbCaller: (cb: BFChainComlink.Callback<R>, ...args: ARGS) => void,
   args: ARGS,
   ctx: unknown,
 ) {
-  let syncRet = {
-    isError: true,
-    error: undefined as any,
-  } as BFChainComlink.CallbackArg<R>;
+  let syncRet: BFChainComlink.CallbackArg<R> | undefined;
 
   /// 默认是同步模式
   let syncResolve = (data: R) => {
@@ -15,29 +13,37 @@ export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
       data,
     };
   };
-  let syncReject = (err?: unknown): unknown => {
-    throw err;
+  let syncReject = (error: Error) => {
+    syncRet = {
+      isError: true,
+      error,
+    };
   };
-  /// 执行，并尝试同步
-  cbCaller.call(
-    ctx,
-    (ret) => {
-      if (ret.isError) {
-        syncReject(ret.error);
-      } else {
-        syncResolve(ret.data);
-      }
-    },
-    ...args,
-  );
-  /// 没有得到及时的响应，进入异步模式
-  if (syncRet.isError) {
-    return new Promise<R>((resolve, reject) => {
-      syncResolve = resolve;
-      syncReject = reject;
-    });
+  try {
+    /// 执行，并尝试同步
+    cbCaller.call(
+      ctx,
+      (ret) => {
+        if (ret.isError) {
+          syncReject(ret.error);
+        } else {
+          syncResolve(ret.data);
+        }
+      },
+      ...args,
+    );
+  } catch (err) {
+    syncReject(err);
   }
-  return syncRet.data;
+  /// 得到及时的响应，直接返回
+  if (syncRet !== undefined) {
+    return helper.OpenArg(syncRet);
+  }
+  /// 没有得到及时的响应，进入异步模式
+  return new Promise<R>((resolve, reject) => {
+    syncResolve = resolve;
+    syncReject = reject;
+  });
 }
 /**
  * ## 强泛型定义的bind实现

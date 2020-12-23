@@ -49,10 +49,10 @@ export class CGService {
     for (let i = 0; i < 10; i++) {
       const list = await ctxA.getList(UTIMES);
       let total = 0;
-      debugger;
       for await (const item of list) {
         total += await item.value;
       }
+      console.log(`UTIMES: %d; total: %d;`, UTIMES, total);
       await ctxA.clear();
       const mem = process.memoryUsage();
       /// 尝试释放内存

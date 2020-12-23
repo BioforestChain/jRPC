@@ -5,7 +5,7 @@ declare namespace BFChainComlink {
     // wrap<T>(val: HolderReflect<T>): AsyncUtil.Remote<T>;
   }
 
-  type Holder<T = unknown> = PromiseLike<T> & AsyncUtil.Remote<T>;
+  type Holder<T = unknown> = PromiseLike<AsyncUtil.Remote<T>> & AsyncUtil.Remote<T>;
 
   type AsyncValue<T> = T extends object ? Holder<T> : T;
 
@@ -13,19 +13,19 @@ declare namespace BFChainComlink {
    * @TODO 需要提供callback版本，不能只提供promise版本，会不精确
    */
   interface HolderReflect<T /* extends object */> {
-    readonly linkIn:
-      | readonly []
-      | readonly [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]];
+    // readonly linkIn:
+    //   | readonly []
+    //   | readonly [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]];
     createSubHolder<R>(
       linkIn: [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]],
     ): HolderReflect<R>;
     toHolder(): Holder<T>;
     toValue(): BFChainUtil.PromiseMaybe<AsyncValue<T>>;
-    bindIOB(iob: ComlinkProtocol.IOB): void;
+    bindIOB(iob: ComlinkProtocol.IOB, isError?: boolean): void;
     getIOB(): ComlinkProtocol.IOB | undefined;
     waitIOB(): BFChainUtil.PromiseMaybe<ComlinkProtocol.IOB>;
 
-    throw(): BFChainUtil.PromiseMaybe<unknown>;
+    // throw(): BFChainUtil.PromiseMaybe<unknown>;
 
     // source?: T;
     // toString(): BFChainUtil.PromiseMaybe<AsyncUtil.Primitive<T>>;
@@ -138,7 +138,8 @@ declare namespace BFChainComlink {
       // If the value is a method, comlink will proxy it automatically.
       // Objects are only proxied if they are marked to be proxied.
       // Otherwise, the property is converted to a Promise that resolves the cloned value.
-      T extends Function | ProxyMarked ? Remote<T> : Promisify<Remote<T>>;
+      Holder<T>;
+    // T extends Function | ProxyMarked ? Remote<T> : Promisify<Remote<T>>;
 
     /**
      * Takes the raw type of a property as a remote thread would see it through a proxy (e.g. when passed in as a function
@@ -249,5 +250,40 @@ declare namespace BFChainComlink {
               MaybePromise<Local<Unpromisify<TInstance>>>;
             }
           : unknown);
+  }
+
+  namespace HolderReflect {
+    type IOB_Cacher<T> = IOB_CacherWaiting | IOB_CacherThrow<T> | IOB_CacherBinded<T>;
+
+    interface IOB_CacherWaiting {
+      type: import("./const").IOB_CACHE_STATUS.WAITING;
+      waitter: BFChainComlink.Callback<void>[]; // PromiseOut<void>;
+    }
+
+    interface IOB_CacherThrow<T> {
+      type: import("./const").IOB_CACHE_STATUS.THROW;
+      cacher: IOB_CacherBinded<T>;
+    }
+
+    interface IOB_CacherRemote<
+      IOB extends EmscriptionLinkRefExtends.RefItem = EmscriptionLinkRefExtends.RefItem
+    > {
+      type: import("./const").IOB_CACHE_STATUS.REMOTE_REF;
+      port: ComlinkProtocol.BinaryPort;
+      iob: IOB;
+    }
+    interface IOB_CacherRemoteSymbol {
+      type: import("./const").IOB_CACHE_STATUS.REMOTE_SYMBOL;
+      port: ComlinkProtocol.BinaryPort;
+      value: symbol;
+      iob: EmscriptionLinkRefExtends.RemoteSymbolItem;
+    }
+    interface IOB_CacherLocal<T> {
+      type: import("./const").IOB_CACHE_STATUS.LOCAL;
+      value: T;
+      iob: EmscriptionLinkRefExtends.InOutObj.Local;
+    }
+    type IOB_CacherHasValue<T> = IOB_CacherLocal<T> | IOB_CacherRemoteSymbol;
+    type IOB_CacherBinded<T> = IOB_CacherHasValue<T> | IOB_CacherRemote;
   }
 }

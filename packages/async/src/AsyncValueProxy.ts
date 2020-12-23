@@ -251,6 +251,21 @@ const noSupportHolderToPrimitive = (hint: string) =>
 
 // const THEN_DISABLED_WS = new WeakSet<object>();
 
+const NO_ALLOW_PROP = new Set([
+  Symbol.toPrimitive,
+  Symbol.toStringTag,
+  Symbol.hasInstance,
+  Symbol.species,
+  Symbol.iterator,
+  // Symbol.asyncIterator,
+  Symbol.isConcatSpreadable,
+  Symbol.match,
+  Symbol.matchAll,
+  Symbol.replace,
+  Symbol.search,
+  Symbol.split,
+]);
+
 export function createHolderProxyHanlder<T extends object>(
   holderReflect: BFChainComlink.HolderReflect<T>, // BFChainComlink.AsyncValue<T> | PromiseOut<BFChainComlink.AsyncValue<T>>,
   // source: T,
@@ -314,12 +329,11 @@ export function createHolderProxyHanlder<T extends object>(
     /**导入子模块 */
     get: <K extends keyof T>(_target: object, prop: K, r?: unknown) => {
       // 禁止支持 Symbol.toPrimitive
-      if (prop === Symbol.toPrimitive) {
-        // throw new TypeError("holder could not get Symbol.toPrimitive")
-        return noSupportHolderToPrimitive;
-      }
-      if (prop === EXPORT_FUN_DESCRIPTOR_SYMBOL) {
+      if (NO_ALLOW_PROP.has(prop as never)) {
         return;
+      }
+      if (prop === Symbol.asyncIterator) {
+        prop = Symbol.iterator as K;
       }
 
       return holderReflect.asset(prop);
@@ -400,6 +414,7 @@ export function createHolderProxyHanlder<T extends object>(
     },
     apply: (_target, thisArg, argArray) => {
       return holderReflect.apply(thisArg, argArray);
+
       // const retPo = new PromiseOut<
       //   BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.ReturnType<T>>
       // >();

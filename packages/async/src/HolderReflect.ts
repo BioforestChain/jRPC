@@ -15,41 +15,7 @@ import type { ComlinkAsync } from "./ComlinkAsync";
 import { CallbackToAsync, CallbackToAsyncBind, isNil } from "./helper";
 import { ReflectForbidenMethods } from "./ReflectForbidenMethods";
 
-const enum IOB_CACHE_STATUS {
-  WAITING,
-  LOCAL,
-  REMOTE_REF,
-  REMOTE_SYMBOL,
-}
-
-type IOB_Cacher<T> =
-  | IOB_CacherWaiting
-  | IOB_CacherRemote
-  | IOB_CacherRemoteSymbol
-  | IOB_CacherLocal<T>;
-type IOB_CacherWaiting = {
-  type: IOB_CACHE_STATUS.WAITING;
-  waitter: BFChainComlink.Callback<void>[]; // PromiseOut<void>;
-};
-type IOB_CacherRemote<
-  IOB extends EmscriptionLinkRefExtends.RefItem = EmscriptionLinkRefExtends.RefItem
-> = {
-  type: IOB_CACHE_STATUS.REMOTE_REF;
-  port: ComlinkProtocol.BinaryPort;
-  iob: IOB;
-};
-type IOB_CacherRemoteSymbol = {
-  type: IOB_CACHE_STATUS.REMOTE_SYMBOL;
-  port: ComlinkProtocol.BinaryPort;
-  value: symbol;
-  iob: EmscriptionLinkRefExtends.RemoteSymbolItem;
-};
-type IOB_CacherLocal<T> = {
-  type: IOB_CACHE_STATUS.LOCAL;
-  value: T;
-  iob: EmscriptionLinkRefExtends.InOutObj.Local;
-};
-type IOB_CacherHasValue<T> = IOB_CacherLocal<T> | IOB_CacherRemoteSymbol;
+import { IOB_CACHE_STATUS } from "./const";
 
 let ID_ACC = 0;
 
@@ -81,12 +47,16 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   public readonly name = `holder_${this.id}`;
   public readonly staticMode = true;
   constructor(
-    public linkInSender: <R>(
-      linkIn: readonly [EmscriptenReflect, ...unknown[]],
-      hasOut?: BFChainComlink.HolderReflect<R> | false,
-    ) => unknown,
-    public readonly core: ComlinkAsync,
-    public readonly linkIn: readonly [] | readonly [EmscriptenReflect, ...unknown[]],
+    public linkSenderArgs: Readonly<{
+      linkIn: readonly [] | readonly [EmscriptenReflect, ...unknown[]];
+      port: ComlinkProtocol.BinaryPort;
+      refId: number | undefined;
+    }>,
+    // public linkInSender: <R>(
+    //   linkIn: readonly [EmscriptenReflect, ...unknown[]],
+    //   hasOut?: BFChainComlink.HolderReflect<R> | false,
+    // ) => unknown,
+    public readonly core: ComlinkAsync, // public readonly linkIn: readonly [] | readonly [EmscriptenReflect, ...unknown[]],
   ) {}
 
   //#region Holder特有接口
@@ -96,7 +66,6 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     let needSend = false;
     if (iobCacher === undefined) {
       needSend = true;
-      // const waitter = new PromiseOut<void>();
       iobCacher = this._iobCacher = {
         type: IOB_CACHE_STATUS.WAITING,
         waitter: [],
@@ -104,24 +73,41 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     }
     if (iobCacher.type === IOB_CACHE_STATUS.WAITING) {
       iobCacher.waitter.push((ret) => {
-        helper.OpenArg(ret);
-        iobCacher = this._iobCacher;
-        if (!iobCacher || iobCacher.type === IOB_CACHE_STATUS.WAITING) {
-          throw new TypeError();
+        try {
+          helper.OpenArg(ret);
+          iobCacher = this._iobCacher;
+          if (!iobCacher || iobCacher.type === IOB_CACHE_STATUS.WAITING) {
+            throw new TypeError();
+          }
+          this.toValueSync(cb);
+        } catch (error) {
+          cb({ isError: true, error });
         }
-        this.toValueSync(cb);
       });
       if (needSend) {
-        if (this.linkIn.length === 0) {
+        const { linkSenderArgs } = this;
+        if (linkSenderArgs.linkIn.length === 0) {
           throw new TypeError();
         }
-        this.linkInSender(this.linkIn as readonly [EmscriptenReflect, ...unknown[]], this);
+        if (linkSenderArgs.refId === undefined) {
+          throw new TypeError("no refId");
+        }
+        this.core.transfer.sendLinkIn(
+          linkSenderArgs.port,
+          linkSenderArgs.refId,
+          linkSenderArgs.linkIn,
+          this,
+        );
+        // this.linkInSender(this.linkIn as readonly [EmscriptenReflect, ...unknown[]], this);
       }
       return;
       // iobCacher = this._iobCacher;
     }
 
-    if (iobCacher.type === IOB_CACHE_STATUS.LOCAL) {
+    if (
+      iobCacher.type === IOB_CACHE_STATUS.LOCAL ||
+      iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL
+    ) {
       cb({ isError: false, data: iobCacher.value as BFChainComlink.AsyncValue<T> });
       return;
     }
@@ -131,12 +117,41 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return;
     }
 
-    throw new TypeError(`unknown iob type '${iobCacher}'`);
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      this.toCatchedValueSync((ret) => {
+        const error = helper.OpenArg(ret);
+        cb({ isError: true, error: error as never });
+      });
+      return;
+    }
+
+    end(iobCacher);
   }
 
   @cacheGetter
   get toValue() {
     return CallbackToAsyncBind(this.toValueSync, this);
+  }
+  toCatchedValueSync(cb: CallbackAsyncValue<T>) {
+    const catchedReflect = this._getCatchedReflect();
+    catchedReflect.toValueSync(cb);
+  }
+
+  @cacheGetter
+  get toCatchedValue() {
+    return CallbackToAsyncBind(this.toCatchedValueSync, this);
+  }
+
+  toAsyncValue(): BFChainComlink.AsyncValue<T> {
+    const iobCacher = this._iobCacher;
+    if (
+      iobCacher &&
+      (iobCacher.type === IOB_CACHE_STATUS.LOCAL ||
+        iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL)
+    ) {
+      return iobCacher.value as never;
+    }
+    return this.toHolder() as never;
   }
 
   private _holder?: BFChainComlink.Holder<T>;
@@ -150,10 +165,28 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     return this._holder;
   }
 
-  private _iobCacher?: IOB_Cacher<T>;
+  toCatchedHolder() {
+    return this._getCatchedReflect().toHolder();
+  }
+
+  private _catchedReflect?: HolderReflect<T>;
+  private _getCatchedReflect() {
+    let { _catchedReflect: _catched } = this;
+    if (!_catched) {
+      const { _iobCacher: iobCacher } = this;
+      if (iobCacher?.type !== IOB_CACHE_STATUS.THROW) {
+        throw new Error("no an error");
+      }
+      _catched = new HolderReflect<T>(this.linkSenderArgs, this.core);
+      _catched.bindIOB(iobCacher.cacher.iob);
+    }
+    return _catched;
+  }
+
+  private _iobCacher?: BFChainComlink.HolderReflect.IOB_Cacher<T>;
   // private _isError?
 
-  bindIOB(iob: ComlinkProtocol.IOB, port = this.core.port): void {
+  bindIOB(iob: ComlinkProtocol.IOB, isError = false, port = this.core.port): void {
     const { _iobCacher: iobCacher } = this;
     /// 如果已经存在iobCacher，而且不是waiting的状态，那么重复绑定了。注意不能用`iobCacher?.type`
     if (iobCacher !== undefined && iobCacher.type !== IOB_CACHE_STATUS.WAITING) {
@@ -163,6 +196,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const { exportStore, importStore } = this.core;
 
     let remoteIob: EmscriptionLinkRefExtends.InOutObj.Remote | undefined;
+    let newIobCacher: BFChainComlink.HolderReflect.IOB_Cacher<T>;
     /// 解析iob，将之定义成local或者remote两种模式
     switch (iob.type) {
       case IOB_Type.Locale:
@@ -170,14 +204,18 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
         if (!loc) {
           throw new ReferenceError();
         }
-        this._iobCacher = { type: IOB_CACHE_STATUS.LOCAL, value: (loc as unknown) as T, iob };
+        newIobCacher = {
+          type: IOB_CACHE_STATUS.LOCAL,
+          value: (loc as unknown) as T,
+          iob,
+        };
         break;
       case IOB_Type.Clone:
-        this._iobCacher = { type: IOB_CACHE_STATUS.LOCAL, value: iob.data as T, iob };
+        newIobCacher = { type: IOB_CACHE_STATUS.LOCAL, value: iob.data as T, iob };
         break;
       case IOB_Type.Ref:
         remoteIob = iob;
-        this._iobCacher = { type: IOB_CACHE_STATUS.REMOTE_REF, port, iob };
+        newIobCacher = { type: IOB_CACHE_STATUS.REMOTE_REF, port, iob };
         break;
       case IOB_Type.RemoteSymbol:
         remoteIob = iob;
@@ -194,66 +232,109 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
             ? Symbol.for(refExtends.description)
             : Symbol(refExtends.description);
         }
-        this._iobCacher = { type: IOB_CACHE_STATUS.REMOTE_SYMBOL, port, value: sourceSym, iob };
+        newIobCacher = {
+          type: IOB_CACHE_STATUS.REMOTE_SYMBOL,
+          port,
+          value: sourceSym,
+          iob,
+        };
         break;
     }
+    if (isError) {
+      newIobCacher = {
+        type: IOB_CACHE_STATUS.THROW,
+        cacher: newIobCacher,
+      };
+    }
+    this._iobCacher = newIobCacher;
 
-    cleanAllGetterCache(this);
     if (remoteIob === undefined) {
-      this.linkInSender = () => {
-        throw new Error("no refId");
+      this.linkSenderArgs = {
+        ...this.linkSenderArgs,
+        refId: undefined,
       };
     } else {
       // 保存引用信息
       importStore.idExtendsStore.set(remoteIob.refId, remoteIob.extends);
       /// 缓存对象
-      importStore.saveProxyId(this.toHolder(), remoteIob.refId);
-      this.linkInSender = this.core.transfer.linkInSenderFactory(port, remoteIob.refId);
-      this.linkIn.length = 0;
+      importStore.saveProxyId(
+        (isError ? this._getCatchedReflect().toAsyncValue() : this.toAsyncValue()) as never,
+        remoteIob.refId,
+      );
+      /// 它是有指令长度的，那么清空指令；对应的，需要重新生成指令发送器
+      this.linkSenderArgs = {
+        ...this.linkSenderArgs,
+        refId: remoteIob.refId,
+        linkIn: [],
+      };
     }
+    /// 核心属性变更，清理所有getter缓存
+    cleanAllGetterCache(this);
 
-    iobCacher?.waitter.forEach((cb) => cb({ isError: false, data: undefined }));
+    iobCacher?.waitter.forEach((cb) => {
+      try {
+        cb({ isError: false, data: undefined });
+      } catch (err) {
+        console.error("uncatch error", err);
+      }
+    });
   }
   getIOB(): ComlinkProtocol.IOB | undefined {
     if (this._iobCacher && this._iobCacher.type !== IOB_CACHE_STATUS.WAITING) {
+      if (this._iobCacher.type === IOB_CACHE_STATUS.THROW) {
+        return this._iobCacher.cacher.iob;
+      }
       return this._iobCacher.iob;
     }
   }
   waitIOB(): PromiseLike<ComlinkProtocol.IOB> {
     throw new Error("Method not implemented.");
   }
-  async throw() {
-    const err = await this.toValue();
-    throw err;
-    // throw await this.toHolder().toString();
-    // throw new Error("Method not implemented.");
-  }
 
-  createSubHolder<T>(linkIn: [EmscriptenReflect, ...unknown[]]) {
+  createSubHolder<T>(subHolderLinkIn: [EmscriptenReflect, ...unknown[]]) {
+    const { linkSenderArgs } = this;
     /// 从空指令变成单指令
-    if (this.linkIn.length === 0) {
-      return new HolderReflect<T>(this.linkInSender, this.core, linkIn);
+    if (linkSenderArgs.linkIn.length === 0) {
+      return new HolderReflect<T>(
+        {
+          ...linkSenderArgs,
+          linkIn: subHolderLinkIn,
+        },
+        this.core,
+      );
     }
     /// 单指令变成多指令
-    if (this.linkIn[0] !== EmscriptenReflect.Multi) {
-      return new HolderReflect<T>(this.linkInSender, this.core, [
-        EmscriptenReflect.Multi,
-        /// 加入原有的单指令
-        this.linkIn.length,
-        ...this.linkIn,
-        /// 加入新的单指令
-        linkIn.length,
-        ...linkIn,
-      ]);
+    if (linkSenderArgs.linkIn[0] !== EmscriptenReflect.Multi) {
+      return new HolderReflect<T>(
+        {
+          ...linkSenderArgs,
+          linkIn: [
+            EmscriptenReflect.Multi,
+            /// 加入原有的单指令
+            linkSenderArgs.linkIn.length,
+            ...linkSenderArgs.linkIn,
+            /// 加入新的单指令
+            subHolderLinkIn.length,
+            ...subHolderLinkIn,
+          ],
+        },
+        this.core,
+      );
     }
 
     /// 维持多指令
-    return new HolderReflect<T>(this.linkInSender, this.core, [
-      ...this.linkIn,
-      /// 加入新的单指令
-      linkIn.length,
-      ...linkIn,
-    ]);
+    return new HolderReflect<T>(
+      {
+        ...linkSenderArgs,
+        linkIn: [
+          ...linkSenderArgs.linkIn,
+          /// 加入新的单指令
+          subHolderLinkIn.length,
+          ...subHolderLinkIn,
+        ],
+      },
+      this.core,
+    );
   }
 
   private _getSubHolderPrimitiveSync<R>(
@@ -267,6 +348,31 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect 接口
 
+  //#region throw
+
+  private throw_binded(cb: CallbackAsyncValue<never>) {
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherBinded<T>;
+    if (
+      iobCacher.type === IOB_CACHE_STATUS.LOCAL ||
+      iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL
+    ) {
+      helper.rejectCallback(cb, iobCacher.value as never);
+      return;
+    }
+    if (iobCacher.type === IOB_CACHE_STATUS.REMOTE_REF) {
+      helper.rejectCallback(cb, this._getCatchedReflect().toHolder() as never);
+      return;
+    }
+    end(iobCacher);
+  }
+  // async throw() {
+  //   const err = await this.toValue();
+  //   throw err;
+  //   // throw await this.toHolder().toString();
+  //   // throw new Error("Method not implemented.");
+  // }
+  //#endregion
+
   //#region Reflect.apply
 
   private apply_local(
@@ -277,7 +383,8 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     helper.resolveCallback(
       cb,
       Reflect.apply(
-        ((this._iobCacher as unknown) as IOB_CacherLocal<Function>).value,
+        ((this._iobCacher as unknown) as BFChainComlink.HolderReflect.IOB_CacherLocal<Function>)
+          .value,
         thisArgument,
         argumentsList,
       ),
@@ -297,6 +404,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   @cacheGetter
   get applyCallback(): HolderReflect<T>["apply_remote"] {
     const { _iobCacher: iobCacher } = this;
+
     if (
       // 未知，未发送
       !iobCacher ||
@@ -323,6 +431,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.apply;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -343,7 +454,8 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     helper.resolveCallback(
       cb,
       Reflect.construct(
-        ((this._iobCacher as unknown) as IOB_CacherLocal<Function>).value,
+        ((this._iobCacher as unknown) as BFChainComlink.HolderReflect.IOB_CacherLocal<Function>)
+          .value,
         argumentsList,
         newTarget,
       ),
@@ -398,6 +510,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.apply;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -418,7 +533,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     helper.resolveCallback(
       cb,
       Reflect.defineProperty(
-        (this._iobCacher as IOB_CacherLocal<T>).value as never,
+        (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T>).value as never,
         propertyKey,
         attributes,
       ),
@@ -460,6 +575,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return this.defineProperty_remote;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -478,7 +596,10 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   ) {
     helper.resolveCallback(
       cb,
-      Reflect.deleteProperty((this._iobCacher as IOB_CacherLocal<T>).value as never, propertyKey),
+      Reflect.deleteProperty(
+        (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T>).value as never,
+        propertyKey,
+      ),
     );
   }
 
@@ -515,6 +636,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.deleteProperty;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -530,7 +654,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobExtends = (this._iobCacher as IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
     /// 自定义属性
@@ -585,7 +709,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.get(iobCacher.value, propertyKey));
   }
 
@@ -633,6 +757,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.get;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -669,7 +796,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
     propertyKey: K,
   ) {
-    const iobExtends = (this._iobCacher as IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
 
@@ -729,7 +856,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(
       cb,
       Reflect.getOwnPropertyDescriptor(iobCacher.value, propertyKey) as never,
@@ -772,6 +899,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return alwaysUndefinedCallbackCaller;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -783,7 +913,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region getPrototypeOf
   getPrototypeOf_local<P = unknown>(cb: CallbackAsyncValue<P>) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.getPrototypeOf(iobCacher.value) as never);
   }
   getPrototypeOf_remote<P = unknown>(cb: CallbackAsyncValue<P>) {
@@ -816,6 +946,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return this.getPrototypeOf_remote;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -843,7 +976,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return helper.resolveCallback(cb, true);
     }
 
-    const iobExtends = (this._iobCacher as IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
 
@@ -894,7 +1027,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<boolean>,
     propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
   ) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.has(iobCacher.value, propertyKey));
   }
   private has_remote(
@@ -932,6 +1065,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return this.has_local;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -944,7 +1080,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.isExtensible
 
   isExtensible_local(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.isExtensible(iobCacher.value));
   }
   private isExtensible_remote(cb: CallbackAsyncValue<boolean>) {
@@ -979,6 +1115,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.isExtensible;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -991,7 +1130,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.ownKeys
 
   private ownKeys_local(cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyKey<T>[]>) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.ownKeys(iobCacher.value) as never);
   }
 
@@ -1021,6 +1160,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.ownKeys;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -1033,7 +1175,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect.preventExtensions
   private preventExtensions_local(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.preventExtensions(iobCacher.value));
   }
 
@@ -1042,7 +1184,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
 
   private preventExtensions_onceRemote(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as IOB_CacherRemote;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote;
     iobCacher.iob.extends.status &= IOB_Extends_Object_Status.preventedExtensions;
     cleanGetterCache(this, "preventExtensionsCallback");
     cleanGetterCache(this, "preventExtensions");
@@ -1087,6 +1229,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.preventExtensions;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -1104,7 +1249,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     propertyKey: K,
     value: BFChainComlink.AsyncValue<T[K]> | T[K],
   ) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.set(iobCacher.value, propertyKey, value));
   }
   private set_remote<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
@@ -1147,6 +1292,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.set;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -1157,7 +1305,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#endregion
 
   private setPrototypeOf_local(cb: CallbackAsyncValue<boolean>, proto: unknown) {
-    const iobCacher = this._iobCacher as IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.setPrototypeOf(iobCacher.value, proto));
   }
   private setPrototypeOf_remote(cb: CallbackAsyncValue<boolean>, proto: unknown) {
@@ -1196,6 +1344,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return reflectForbidenMethods.setPrototypeOf;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }
@@ -1214,7 +1365,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as IOB_CacherHasValue<T>;
+    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherHasValue<T>;
     helper.resolveCallback(cb, iobCacher.value[propertyKey as never]);
   }
   get assetCallback(): HolderReflect<T>["asset_value"] {
@@ -1254,6 +1405,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return this.asset_value;
     }
 
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
     /// 类型安全的非return结束
     end(iobCacher);
   }

@@ -29,7 +29,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   /**这里保持使用cb风格，可以确保更好的性能
    * @TODO 内部的函数也应该尽可能使用cb风格来实现
    */
-  private _sendLinkIn<R = unknown>(
+  sendLinkIn<R = unknown>(
     port: ComlinkProtocol.BinaryPort,
     targetId: number,
     linkIn: readonly unknown[],
@@ -52,13 +52,10 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
             throw new TypeError();
           }
           if (hasOut) {
-            hasOut.bindIOB(err_iob);
-            throw await hasOut.throw();
+            hasOut.bindIOB(err_iob, true);
           } else {
-            /**
-             * @TODO 统一使用 HolderReflect.throw 来获取要抛出的异常信息
-             */
-            throw await this.InOutBinary2Any(err_iob);
+            /// 远端传来的异常，本地却没有可以捕捉的对象，协议不对称！
+            throw err_iob;
           }
         } else if (hasOut) {
           const res_iob = linkObj.out.slice().pop();
@@ -89,21 +86,28 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
     iob: ComlinkProtocol.IOB,
   ) {
     const holder = this._getHolder<T>(port, refId, iob);
-    return holder.toHolder();
+    return holder.toAsyncValue();
   }
 
   private _getHolder<T>(port: ComlinkProtocol.BinaryPort, refId: number, iob: ComlinkProtocol.IOB) {
-    const holder = new HolderReflect<T>(this.linkInSenderFactory(port, refId), this.core, []);
+    const holder = new HolderReflect<T>(
+      {
+        port,
+        refId,
+        linkIn: [],
+      },
+      this.core,
+    );
     holder.bindIOB(iob);
     return holder;
   }
 
-  linkInSenderFactory(port: ComlinkProtocol.BinaryPort, refId: number) {
-    return <R>(
-      linkIn: readonly [EmscriptenReflect, ...unknown[]],
-      hasOut?: BFChainComlink.HolderReflect<R> | false,
-    ) => this._sendLinkIn(port, refId, linkIn, hasOut);
-  }
+  // linkInSenderFactory(port: ComlinkProtocol.BinaryPort, refId: number) {
+  //   return <R>(
+  //     linkIn: readonly [EmscriptenReflect, ...unknown[]],
+  //     hasOut?: BFChainComlink.HolderReflect<R> | false,
+  //   ) => this.sendLinkIn(port, refId, linkIn, hasOut);
+  // }
 
   InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {
     const { port, importStore, exportStore } = this.core;
