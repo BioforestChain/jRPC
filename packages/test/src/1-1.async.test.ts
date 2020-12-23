@@ -17,9 +17,6 @@ installSimpleEnv(
     moduleA.export(a, "a");
   },
   async (moduleB) => {
-    setTimeout(() => {
-      console.log("done");
-    }, 1000000);
     /**
      * 导入服务
      * 同语法：

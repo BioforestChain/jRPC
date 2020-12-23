@@ -1,3 +1,3 @@
 import "./@types";
-export * from "./AsyncReflectValue";
+export * from "./HolderReflect";
 export * from "./ComlinkAsync";

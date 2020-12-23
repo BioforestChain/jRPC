@@ -55,15 +55,45 @@ export const SyncForCallback = <T>(cb: BFChainComlink.Callback<T>, handler: () =
     cb({ isError: true, error });
   }
 };
-export const SyncToCallback = <ARG extends unknown[], T>(
-  cb: BFChainComlink.Callback<T>,
-  handler: (...args: ARG) => T,
+export function resolveCallback<T>(cb: BFChainComlink.Callback<T>, data: T) {
+  cb({ isError: false, data });
+}
+export function rejectCallback<E>(cb: BFChainComlink.Callback<never, E>, error: E) {
+  cb({ isError: true, error });
+}
+
+/**
+ * 生成一个回调函数，通过指定的处理函数，最终传输给cb风格的出口
+ * @param output
+ * @param transformer
+ */
+export const SyncPiperFactory = <ARG extends unknown[], T>(
+  output: BFChainComlink.Callback<T>,
+  transformer: (...args: ARG) => T,
 ) => {
   return (...args: ARG) => {
     try {
-      cb({ isError: false, data: handler(...args) });
+      output({ isError: false, data: transformer(...args) });
     } catch (error) {
-      cb({ isError: true, error });
+      output({ isError: true, error });
+    }
+  };
+};
+/**
+ * @TODO 移除这些异步helper
+ * 生成一个回调函数，通过指定的处理函数，最终传输给cb风格的出口
+ * @param output
+ * @param transformer
+ */
+export const AsyncPiperFactory = <ARG extends unknown[], T>(
+  output: BFChainComlink.Callback<T>,
+  transformer: (...args: ARG) => PromiseLike<T>,
+) => {
+  return async (...args: ARG) => {
+    try {
+      output({ isError: false, data: await transformer(...args) });
+    } catch (error) {
+      output({ isError: true, error });
     }
   };
 };

@@ -2,44 +2,65 @@ declare namespace BFChainComlink {
   interface ComlinkAsync {
     import<T>(key?: string): PromiseLike<AsyncUtil.Remote<T>>;
     // import<T>(key?: string): PromiseLike<AsyncValue<T>>;
-    // wrap<T>(val: AsyncReflectValue<T>): AsyncUtil.Remote<T>;
+    // wrap<T>(val: HolderReflect<T>): AsyncUtil.Remote<T>;
   }
 
-  type AsyncValue<T> = T extends object ? AsyncReflectValue<T> : T;
+  type Holder<T = unknown> = PromiseLike<AsyncUtil.Remote<T>> & AsyncUtil.Remote<T>;
+
+  type AsyncValue<T> = T extends object ? Holder<T> : T;
 
   /**
    * @TODO 需要提供callback版本，不能只提供promise版本，会不精确
    */
-  interface AsyncReflectValue<T /* extends object */> {
-    source?: T;
-    // toString(): PromiseLike<AsyncUtil.Primitive<T>>;
+  interface HolderReflect<T /* extends object */> {
+    // readonly linkIn:
+    //   | readonly []
+    //   | readonly [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]];
+    createSubHolder<R>(
+      linkIn: [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]],
+    ): HolderReflect<R>;
+    toHolder(): Holder<T>;
+    toValue(): BFChainUtil.PromiseMaybe<AsyncValue<T>>;
+    bindIOB(iob: ComlinkProtocol.IOB, isError?: boolean): void;
+    getIOB(): ComlinkProtocol.IOB | undefined;
+    waitIOB(): BFChainUtil.PromiseMaybe<ComlinkProtocol.IOB>;
+
+    // throw(): BFChainUtil.PromiseMaybe<unknown>;
+
+    // source?: T;
+    // toString(): BFChainUtil.PromiseMaybe<AsyncUtil.Primitive<T>>;
     apply(
       thisArgument: unknown,
       argumentsList: AsyncUtil.Parameters<T>,
-    ): PromiseLike<AsyncValue<AsyncUtil.ReturnType<T>>>;
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.ReturnType<T>>>;
     construct(
       argumentsList: AsyncUtil.ConstructorParameters<T>,
       newTarget?: unknown,
-    ): PromiseLike<AsyncValue<AsyncUtil.InstanceType<T>>>;
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.InstanceType<T>>>;
     defineProperty<K extends AsyncUtil.PropertyKey<T>>(
       propertyKey: K,
       attributes: AsyncUtil.PropertyDescriptor<T, K>,
-    ): PromiseLike<boolean>;
-    deleteProperty(propertyKey: AsyncUtil.PropertyKey<T>): PromiseLike<boolean>;
-    get<K extends AsyncUtil.PropertyKey<T>>(propertyKey: K): PromiseLike<AsyncValue<T[K]>>;
+    ): BFChainUtil.PromiseMaybe<boolean>;
+    deleteProperty(propertyKey: AsyncUtil.PropertyKey<T>): BFChainUtil.PromiseMaybe<boolean>;
+    get<K extends PropertyKey>(
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.Get<T, K>>>;
+    asset<K extends PropertyKey>(
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.Get<T, K>>>;
     getOwnPropertyDescriptor<K extends AsyncUtil.PropertyKey<T>>(
-      propertyKey: AsyncUtil.PropertyKey<T>,
-    ): PromiseLike<AsyncValue<AsyncUtil.PropertyDescriptor<T, K> | undefined>>;
-    getPrototypeOf<P = unknown>(): PromiseLike<AsyncValue<P>>;
-    has(propertyKey: AsyncUtil.PropertyKey<T>): PromiseLike<boolean>;
-    isExtensible(): PromiseLike<boolean>;
-    ownKeys(): PromiseLike<AsyncValue<AsyncUtil.PropertyKey<T>[]>>;
-    preventExtensions(): PromiseLike<boolean>;
+      propertyKey: K,
+    ): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.PropertyDescriptor<T, K> | undefined>>;
+    getPrototypeOf<P = unknown>(): BFChainUtil.PromiseMaybe<AsyncValue<P>>;
+    has(propertyKey: AsyncUtil.PropertyKey<T>): BFChainUtil.PromiseMaybe<boolean>;
+    isExtensible(): BFChainUtil.PromiseMaybe<boolean>;
+    ownKeys(): BFChainUtil.PromiseMaybe<AsyncValue<AsyncUtil.PropertyKey<T>[]>>;
+    preventExtensions(): BFChainUtil.PromiseMaybe<boolean>;
     set<K extends AsyncUtil.PropertyKey<T>>(
       propertyKey: K,
       value: AsyncValue<T[K]> | T[K],
-    ): PromiseLike<boolean>;
-    setPrototypeOf(proto: unknown): PromiseLike<boolean>;
+    ): BFChainUtil.PromiseMaybe<boolean>;
+    setPrototypeOf(proto: unknown): BFChainUtil.PromiseMaybe<boolean>;
   }
 
   namespace AsyncUtil {
@@ -69,14 +90,18 @@ declare namespace BFChainComlink {
     type ConstructorParameters<T> = T extends new (...args: infer P) => any ? P : never;
     type InstanceType<T> = T extends new (...args: any) => infer R ? R : any;
     type PropertyKey<T> = keyof T;
-    interface PropertyDescriptor<T, K extends PropertyKey<T>> {
+    type PropertyDescriptorStract<T, K extends PropertyKey<T>> = {
       configurable?: boolean;
       enumerable?: boolean;
       value?: AsyncValue<T[K]>;
       writable?: boolean;
       get?(): AsyncValue<T[K]>;
-      set?(v: AsyncValue<T[K] | T[K]>): void;
-    }
+      set?(v: AsyncValue<T[K]> | T[K]): void;
+    };
+    type Get<T, K> = K extends PropertyKey<T> ? T[K] : unknown;
+    type PropertyDescriptor<T, K> = K extends PropertyKey<T>
+      ? PropertyDescriptorStract<T, K>
+      : never;
 
     const proxyMarker: unique symbol;
     type proxyMarkerSymbol = typeof proxyMarker;
@@ -113,7 +138,8 @@ declare namespace BFChainComlink {
       // If the value is a method, comlink will proxy it automatically.
       // Objects are only proxied if they are marked to be proxied.
       // Otherwise, the property is converted to a Promise that resolves the cloned value.
-      T extends Function | ProxyMarked ? Remote<T> : Promisify<T>;
+      Holder<T>;
+    // T extends Function | ProxyMarked ? Remote<T> : Promisify<Remote<T>>;
 
     /**
      * Takes the raw type of a property as a remote thread would see it through a proxy (e.g. when passed in as a function
@@ -124,7 +150,7 @@ declare namespace BFChainComlink {
      * Note: This needs to be its own type alias, otherwise it will not distribute over unions. See
      * https://www.typescriptlang.org/docs/handbook/advanced-types.html#distributive-conditional-types
      */
-    type LocalProperty<T> = T extends Function | ProxyMarked ? Local<T> : Unpromisify<T>;
+    type LocalProperty<T> = T extends Function | ProxyMarked ? Local<T> : Unpromisify<Local<T>>;
 
     /**
      * Proxies `T` if it is a `ProxyMarked`, clones it otherwise (as handled by structured cloning and transfer handlers).
@@ -175,7 +201,7 @@ declare namespace BFChainComlink {
         (T extends (...args: infer TArguments) => infer TReturn
           ? (
               ...args: { [I in keyof TArguments]: UnproxyOrClone<TArguments[I]> }
-            ) => Promisify<ProxyOrClone<Unpromisify<TReturn>>>
+            ) => Promisify<Remote<ProxyOrClone<Unpromisify<TReturn>>>>
           : unknown) &
         // Handle construct signature (if present)
         // The return of construct signatures is always proxied (whether marked or not)
@@ -224,5 +250,40 @@ declare namespace BFChainComlink {
               MaybePromise<Local<Unpromisify<TInstance>>>;
             }
           : unknown);
+  }
+
+  namespace HolderReflect {
+    type IOB_Cacher<T> = IOB_CacherWaiting | IOB_CacherThrow<T> | IOB_CacherBinded<T>;
+
+    interface IOB_CacherWaiting {
+      type: import("./const").IOB_CACHE_STATUS.WAITING;
+      waitter: BFChainComlink.Callback<void>[]; // PromiseOut<void>;
+    }
+
+    interface IOB_CacherThrow<T> {
+      type: import("./const").IOB_CACHE_STATUS.THROW;
+      cacher: IOB_CacherBinded<T>;
+    }
+
+    interface IOB_CacherRemote<
+      IOB extends EmscriptionLinkRefExtends.RefItem = EmscriptionLinkRefExtends.RefItem
+    > {
+      type: import("./const").IOB_CACHE_STATUS.REMOTE_REF;
+      port: ComlinkProtocol.BinaryPort;
+      iob: IOB;
+    }
+    interface IOB_CacherRemoteSymbol {
+      type: import("./const").IOB_CACHE_STATUS.REMOTE_SYMBOL;
+      port: ComlinkProtocol.BinaryPort;
+      value: symbol;
+      iob: EmscriptionLinkRefExtends.RemoteSymbolItem;
+    }
+    interface IOB_CacherLocal<T> {
+      type: import("./const").IOB_CACHE_STATUS.LOCAL;
+      value: T;
+      iob: EmscriptionLinkRefExtends.InOutObj.Local;
+    }
+    type IOB_CacherHasValue<T> = IOB_CacherLocal<T> | IOB_CacherRemoteSymbol;
+    type IOB_CacherBinded<T> = IOB_CacherHasValue<T> | IOB_CacherRemote;
   }
 }

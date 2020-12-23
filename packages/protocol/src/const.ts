@@ -6,7 +6,7 @@ export const enum IOB_Type {
    */
   RemoteSymbol,
   /**本地符号引用 */
-  LocalSymbol,
+  // LocalSymbol,
   /**远端引用（必须是之前已经新建过的） */
   Ref,
   //   /**新建远端引用 */

@@ -1,5 +1,5 @@
 import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
-import { ESM_REFLECT_FUN_MAP, OpenArg, SyncForCallback, SyncToCallback } from "./helper";
+import { ESM_REFLECT_FUN_MAP, OpenArg, SyncForCallback, SyncPiperFactory } from "./helper";
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
 
@@ -13,13 +13,8 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
 
   abstract readonly transfer: BFChainComlink.ModelTransfer<IOB, TB>;
 
-  exportStore = new ExportStore(this.name);
-  importStore = new ImportStore<IMP_EXTENDS>(this.name);
-
-  protected abstract $beforeImportRef<T>(
-    port: BFChainComlink.BinaryPort<TB>,
-    refId: number,
-  ): BFChainComlink.ImportRefHook<T>;
+  readonly exportStore = new ExportStore(this.name);
+  readonly importStore = new ImportStore<IMP_EXTENDS>(this.name);
 
   /**用于存储导出的域 */
   private _exportModule = { scope: Object.create(null), isExported: false };
@@ -83,6 +78,36 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
               /// 单项操作
               const handler = this.$getEsmReflectHanlder(operator);
               res = handler(obj, paramList);
+
+              // const { holderStore } = this;
+              // /// 如果可以且需要，启用占位符模式
+              // if (
+              //   holderStore &&
+              //   (operator === EmscriptenReflect.Get ||
+              //     operator === EmscriptenReflect.Apply ||
+              //     operator === EmscriptenReflect.Construct)
+              // ) {
+              //   /// 如果占位符模式下 远端对象的操作
+              //   if (this.importStore.isProxy(obj)) {
+              //     // 生成占位符
+              //     const pid = holderStore.createPid();
+              //     paramList.unshift(pid);
+              //     const shouldPid = handler(obj, paramList);
+              //     if (shouldPid !== pid) {
+              //       throw new Error("should return pid when in placehoder mode.");
+              //     }
+              //     res = holderStore.importValueByPid(pid);
+              //   }
+              //   /// 占位符模式下，本地对象的操作
+              //   else {
+              //     // 读取占位符
+              //     const pid = paramList.shift() as PlaceId;
+              //     res = handler(obj, paramList);
+              //     holderStore.exportValueAsPid(pid, res);
+              //   }
+              // } else {
+              //   res = handler(obj, paramList);
+              // }
             }
 
             /// 如果有返回结果的需要，那么就尝试进行返回
@@ -122,7 +147,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
 
   /**用于存储导入的域 */
   private _importModule?: object;
-  protected $getImportModule(cb: BFChainComlink.Callback<object>) {
+  protected $getImportModule(output: BFChainComlink.Callback<object>) {
     const { port } = this;
     /**
      * 进行协商握手，取得对应的 refId
@@ -130,7 +155,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
      */
     if (this._importModule === undefined) {
       port.req(
-        SyncToCallback(cb, (ret) => {
+        SyncPiperFactory(output, (ret) => {
           const bin = OpenArg(ret);
           const linkObj = this.transfer.transferableBinary2LinkObj(bin);
           if (linkObj.type !== LinkObjType.Export) {
@@ -143,68 +168,9 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
       );
       return;
     }
-    cb({
+    output({
       isError: false,
       data: this._importModule,
     });
-  }
-
-  protected $import<T>(cb: BFChainComlink.Callback<T>, key: string) {
-    this.$getImportModule(
-      SyncToCallback(cb, (importModuleRet) => Reflect.get(OpenArg(importModuleRet), key)),
-    );
-  }
-
-  protected $sendLinkIn<R = unknown>(
-    cb: BFChainComlink.Callback<R>,
-    port: BFChainComlink.BinaryPort<TB>,
-    targetId: number,
-    linkIn: unknown[],
-    hasOut: boolean,
-  ) {
-    port.req(
-      SyncToCallback(cb, (ret) => {
-        const bin = OpenArg(ret);
-        const linkObj = this.transfer.transferableBinary2LinkObj(bin);
-
-        if (linkObj.type !== LinkObjType.Out) {
-          throw new TypeError();
-        }
-
-        if (linkObj.isThrow) {
-          const err_iob = linkObj.out.slice().pop();
-          const err = err_iob && this.transfer.InOutBinary2Any(err_iob);
-          throw err;
-        } else {
-          const res_iob = linkObj.out.slice().pop();
-          const res = res_iob && this.transfer.InOutBinary2Any(res_iob);
-          return res as R;
-        }
-      }),
-      this.transfer.linkObj2TransferableBinary({
-        type: LinkObjType.In,
-        // reqId,
-        targetId,
-        in: linkIn.map((a) => this.transfer.Any2InOutBinary(a)),
-        hasOut,
-      }),
-    );
-  }
-
-  /**
-   * 主动生成引用代理
-   * @param port
-   * @param refId
-   */
-  createImportByRefId<T>(port: BFChainComlink.BinaryPort<TB>, refId: number) {
-    const ref = this.$beforeImportRef<T>(port, refId);
-    const source = ref.getSource();
-    if (ref.type === "object") {
-      const proxyHanlder = ref.getProxyHanlder();
-      const proxy = new Proxy(source as never, proxyHanlder);
-      ref.onProxyCreated?.(proxy);
-      return proxy;
-    }
-    return source;
   }
 }

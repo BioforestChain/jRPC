@@ -17,11 +17,15 @@
   ],
   "files": [
     "src/@types.ts",
-    "src/AsyncReflectValue.ts",
+    "src/AsyncModelTransfer.ts",
     "src/AsyncValueProxy.ts",
     "src/ComlinkAsync.ts",
     "src/const.ts",
     "src/helper.ts",
-    "src/index.ts"
+    "src/Holder.ts",
+    "src/HolderReflect.ts",
+    "src/HolderStore.ts",
+    "src/index.ts",
+    "src/ReflectForbidenMethods.ts"
   ]
 }
