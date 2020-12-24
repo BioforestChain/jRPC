@@ -1,14 +1,14 @@
 {
   "name": "@bfchain/comlink-protocol",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/comlink-core": "2.1.0",
-    "@bfchain/comlink-typings": "2.1.0"
+    "@bfchain/comlink-core": "2.2.0",
+    "@bfchain/comlink-typings": "2.2.0"
   },
   "module": "build/esm/index.js"
 }
