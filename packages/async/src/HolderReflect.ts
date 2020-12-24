@@ -15,7 +15,7 @@ import {
   cleanAllGetterCache,
   cleanGetterCache,
 } from "@bfchain/util-decorator";
-import { createHolderProxyHanlder } from "./AsyncValueProxy";
+import { getHolder, getHolderReflect, isHolder } from "./Holder";
 import type { ComlinkAsync } from "./ComlinkAsync";
 import { CallbackToAsync, CallbackToAsyncBind, isNil } from "./helper";
 import { ReflectForbidenMethods } from "./ReflectForbidenMethods";
@@ -47,15 +47,14 @@ function end(iobCacher: never): never {
 }
 //#endregion
 
-const __HOLDER_WM__ = new WeakMap<BFChainComlink.Holder<any>, HolderReflect<any>>();
-
 export class HolderReflect<T /* extends object */> implements BFChainComlink.HolderReflect<T> {
-  static isHolder(target: unknown): target is BFChainComlink.Holder {
-    return __HOLDER_WM__.has(target as never);
+  static isHolder = isHolder;
+  static getHolderReflect = getHolderReflect;
+
+  toHolder(): BFChainComlink.Holder<T> {
+    return getHolder(this);
   }
-  static getHolderReflect<T>(target: BFChainComlink.Holder<T>): HolderReflect<T> {
-    return __HOLDER_WM__.get(target) as HolderReflect<T>;
-  }
+
   public readonly id = ID_ACC++;
   public readonly name = `holder_${this.id}`;
   public readonly staticMode = true;
@@ -156,22 +155,6 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return iobCacher.value as never;
     }
     return this.toHolder() as never;
-  }
-
-  private _holder?: BFChainComlink.Holder<T>;
-  toHolder(): BFChainComlink.Holder<T> {
-    if (!this._holder) {
-      const holder = (this._holder = new Proxy(
-        Function(`return function ${this.name}(){}`)(),
-        createHolderProxyHanlder(this as any),
-      ) as BFChainComlink.Holder<T>);
-      __HOLDER_WM__.set(holder, this);
-    }
-    return this._holder;
-  }
-
-  toCatchedHolder() {
-    return this._getCatchedReflect().toHolder();
   }
 
   private _catchedReflect?: HolderReflect<T>;

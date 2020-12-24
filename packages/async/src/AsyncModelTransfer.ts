@@ -1,20 +1,14 @@
 import {
-  globalSymbolStore,
-  IMPORT_FUN_EXTENDS_SYMBOL,
-  IOB_EFT_Factory_Map,
-  IOB_Extends_Function_ToString_Mode,
-  IOB_Extends_Object_Status,
-  IOB_Extends_Type,
   IOB_Type,
   ModelTransfer,
   refFunctionStaticToStringFactory,
 } from "@bfchain/comlink-protocol";
-import { EmscriptenReflect, isObj, LinkObjType } from "@bfchain/comlink-typings";
+import { LinkObjType } from "@bfchain/comlink-typings";
 import type { ComlinkAsync } from "./ComlinkAsync";
-import { createHolderProxyHanlder } from "./AsyncValueProxy";
-import { helper, STORE_TYPE } from "@bfchain/comlink-core";
+import { helper } from "@bfchain/comlink-core";
 import { HolderReflect } from "./HolderReflect";
-import { safePromiseThen } from "@bfchain/util-extends-promise";
+import { getHolderReflect, isHolder } from "./Holder";
+import { IOB_CACHE_STATUS } from "./const";
 
 export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   constructor(core: ComlinkAsync) {
@@ -37,7 +31,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   ) {
     const { transfer } = this.core;
 
-    const doReq = () => {
+    const doReq = (linkInIob: ComlinkProtocol.IOB[]) => {
       port.req(
         async (ret) => {
           const bin = helper.OpenArg(ret);
@@ -70,54 +64,53 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
           type: LinkObjType.In,
           // reqId,
           targetId,
-          in: linkIn.map((a) => transfer.Any2InOutBinary(a)),
+          in: linkInIob,
           hasOut: hasOut !== undefined,
         }),
       );
     };
 
-    /// 准备开始执行任务前，要确保参数已经全部resolve了
-    const doReject = hasOut
-      ? (err: unknown) => {
-          hasOut.bindIOB(
-            {
-              type: IOB_Type.Clone,
-              data: err,
-            },
-            true,
-          );
-        }
-      : (err: unknown) => {
-          console.error("uncatch error:", err);
-        };
-
-    /// 前置任务集合
-    const preTasks = new Set<HolderReflect<unknown>>();
-    let successTaskCount = 0;
-    const tryResolve = (ret: BFChainComlink.CallbackArg<unknown>) => {
-      if (ret.isError) {
-        return doReject(ret.error);
-      }
-      successTaskCount += 1;
-      if (successTaskCount === preTasks.size) {
-        doReq();
-      }
-    };
-
-    for (const maybeHolder of linkIn) {
-      const reflect = HolderReflect.getHolderReflect(maybeHolder as never);
-      /// 寻找还没有返回结果的任务。这里先统一加完，再单独对preTasks进行循环，避免通讯是同步的，直接导致回调完成进行任务触发
-      if (reflect && reflect.isBindedIOB() === false) {
-        preTasks.add(reflect);
-      }
-    }
-
-    // 无需等待，那么直接执行任务
-    if (preTasks.size === 0) {
-      doReq();
+    /// 无参数需要解析，那么直接发送指令
+    if (linkIn.length === 0) {
+      doReq(linkIn as ComlinkProtocol.IOB[]);
     } else {
-      for (const reflect of preTasks) {
-        reflect.toValueSync(tryResolve);
+      /**结果列表 */
+      const linkInIOB: ComlinkProtocol.IOB[] = [];
+      /**结果列表的实际长度 */
+      let linkInIOBLength = 0;
+      /**是否已经完成中断 */
+      let isRejected = false;
+
+      /// 解析所有的参数
+      for (let index = 0; index < linkIn.length; index++) {
+        const item = linkIn[index];
+        transfer.Any2InOutBinary((ret) => {
+          if (isRejected) {
+            return;
+          }
+          if (ret.isError) {
+            isRejected = true;
+            if (hasOut) {
+              hasOut.bindIOB(
+                {
+                  type: IOB_Type.Clone,
+                  data: ret.error,
+                },
+                true,
+              );
+            } else {
+              console.error("uncatch error:", ret.error);
+            }
+            return;
+          }
+          /// 保存解析结果
+          linkInIOB[index] = ret.data;
+          linkInIOBLength += 1;
+          /// 完成所有任务，执行指令发送
+          if (linkInIOBLength === linkIn.length) {
+            doReq(linkInIOB);
+          }
+        }, item);
       }
     }
   }
@@ -155,6 +148,27 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   //     hasOut?: BFChainComlink.HolderReflect<R> | false,
   //   ) => this.sendLinkIn(port, refId, linkIn, hasOut);
   // }
+
+  Any2InOutBinary(cb: BFChainComlink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
+    const reflectHolder = getHolderReflect(obj);
+    if (reflectHolder !== undefined) {
+      const iob = reflectHolder.getIOB();
+      if (!iob) {
+        /// 还没有绑定，那么就等待其绑定完成
+        return reflectHolder.toValueSync((valRet) => {
+          if (valRet.isError) {
+            return cb(valRet);
+          }
+          this.Any2InOutBinary(cb, obj);
+        });
+        // throw new TypeError(`reflectHolder ${reflectHolder.name} no bind iob`);
+      }
+      if (iob.type === IOB_Type.Clone) {
+        obj = iob.data;
+      }
+    }
+    return super.Any2InOutBinary(cb, obj);
+  }
 
   InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {
     const { port, importStore, exportStore } = this.core;

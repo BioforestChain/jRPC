@@ -1,4 +1,4 @@
-import type { ComlinkCore } from "@bfchain/comlink-core";
+import { ComlinkCore, helper } from "@bfchain/comlink-core";
 import {
   IOB_Type,
   globalSymbolStore,
@@ -94,55 +94,53 @@ export abstract class ModelTransfer<
     throw new TypeError();
   }
 
-  Any2InOutBinary(obj: unknown): ComlinkProtocol.IOB {
-    const needClone = this.canClone(obj);
-    let item: ComlinkProtocol.IOB | undefined;
-    /// 可直接通过赋值而克隆的对象
-    if (needClone) {
-      item = {
-        type: IOB_Type.Clone,
-        data: obj,
-      };
-    } else {
-      /**
-       * @TODO 对于 Holder<LOCAL>，需要直接转为本地模型
-       */
-
-      /// 对象是否是导入进来的
-      const imp = this.core.importStore.getProxy(obj as object);
-      if (imp) {
+  Any2InOutBinary(cb: BFChainComlink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
+    helper.SyncForCallback(cb, () => {
+      const needClone = this.canClone(obj);
+      let item: ComlinkProtocol.IOB | undefined;
+      /// 可直接通过赋值而克隆的对象
+      if (needClone) {
         item = {
-          type: IOB_Type.Locale,
-          locId: imp.id,
+          type: IOB_Type.Clone,
+          data: obj,
         };
-      }
-      /// 符号对象需要在远端做一个克隆备份
-      else {
-        switch (typeof obj) {
-          case "symbol":
-            item = {
-              type: IOB_Type.RemoteSymbol,
-              refId: this.core.exportStore.exportSymbol(obj),
-              extends: this._getRemoteSymbolItemExtends(obj),
-            };
-            break;
-          case "function":
-          case "object":
-            if (obj !== null) {
+      } else {
+        /// 对象是否是导入进来的
+        const imp = this.core.importStore.getProxy(obj as object);
+        if (imp) {
+          item = {
+            type: IOB_Type.Locale,
+            locId: imp.id,
+          };
+        }
+        /// 符号对象需要在远端做一个克隆备份
+        else {
+          switch (typeof obj) {
+            case "symbol":
               item = {
-                type: IOB_Type.Ref,
-                refId: this.core.exportStore.exportObject(obj),
-                extends: this._getRefItemExtends(obj),
+                type: IOB_Type.RemoteSymbol,
+                refId: this.core.exportStore.exportSymbol(obj),
+                extends: this._getRemoteSymbolItemExtends(obj),
               };
-            }
+              break;
+            case "function":
+            case "object":
+              if (obj !== null) {
+                item = {
+                  type: IOB_Type.Ref,
+                  refId: this.core.exportStore.exportObject(obj),
+                  extends: this._getRefItemExtends(obj),
+                };
+              }
+          }
         }
       }
-    }
-    if (!item) {
-      throw new TypeError("Cloud not transfer to IOB");
-    }
+      if (!item) {
+        throw new TypeError("Cloud not transfer to IOB");
+      }
 
-    return item;
+      return item;
+    });
   }
   abstract InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown;
 

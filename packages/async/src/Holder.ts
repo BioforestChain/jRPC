@@ -1,15 +1,5 @@
 import type {} from "@bfchain/util-typings";
-import { EmscriptenReflect } from "@bfchain/comlink-typings";
-import { HolderReflect } from "./HolderReflect";
-import { helper } from "@bfchain/comlink-core";
-
-const noSupportHolderToPrimitive = (hint: string) =>
-  new TypeError(
-    `holder could not transfrom to ${hint} primitive, use await HolderRelect.to${hint.replace(
-      "^[a-z]",
-      (_) => _.toUpperCase(),
-    )} to alertnative.`,
-  );
+import type { HolderReflect } from "./HolderReflect";
 
 const NO_ALLOW_PROP = new Set([
   Symbol.toPrimitive,
@@ -76,7 +66,7 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
               return reject(ret.error);
             }
 
-            if (HolderReflect.isHolder(ret.data)) {
+            if (isHolder(ret.data)) {
               /// 如果是一个远端对象
               const thenFun = holderReflect.assetHolder("then");
               thenFun.Operator_typeOfHolder().toValueSync((typeNameRet) => {
@@ -90,6 +80,7 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
                       // 这个promise没人捕捉，也不需要捕捉
                     });
                 } else {
+                  /// 下面的resolve会导致再次触发then，所以这里要一次性进行then禁用
                   __THEN_DISABLED__.add(holderReflect);
                   resolve(ret.data);
                 }
@@ -146,30 +137,26 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
   return proxyHanlder;
 }
 
-// /**
-//  * 这里需要私底下自己托管一套Proxy的创建
-//  * 直接使用AsyncValue进行创建，和 ComlinkCore 内创建规则的不一样
-//  * 而且这套是会频繁被释放
-//  * @param asyncValue
-//  * @param source
-//  * @param from
-//  */
-// function createAsyncValueProxy<T>(
-//   asyncValue: BFChainComlink.AsyncValue<T> | PromiseOut<BFChainComlink.AsyncValue<T>>,
-//   source: object = function () {},
-// ) {
-//   if (!isObj(asyncValue)) {
-//     return asyncValue as T;
-//   }
-//   const asyncReflectValue = (asyncValue as unknown) as MaybeHolderReflectPromiseOut;
+const __HOLDER_REFLECT_WM__ = new WeakMap<BFChainComlink.Holder<any>, HolderReflect<any>>();
+const __REFLECT_HOLDER_WM__ = new WeakMap<HolderReflect<any>, BFChainComlink.Holder<any>>();
 
-//   let proxy = TARGET_PROXY_WM.get(asyncReflectValue);
-//   if (!proxy) {
-//     proxy = new Proxy(source, createHolderProxyHanlder(asyncReflectValue, source));
-
-//     TARGET_PROXY_WM.set(asyncReflectValue, proxy);
-//     PROXY_TARGET_WM.set(proxy, asyncReflectValue);
-//   }
-
-//   return (proxy as unknown) as T;
-// }
+export function getHolder<T>(holderReflect: HolderReflect<T>) {
+  let holder = __REFLECT_HOLDER_WM__.get(holderReflect) as BFChainComlink.Holder<T>;
+  if (holder === undefined) {
+    holder = new Proxy(
+      Function(`return function ${holderReflect.name}(){}`)(),
+      createHolderProxyHanlder(holderReflect as any),
+    );
+    __HOLDER_REFLECT_WM__.set(holder, holderReflect);
+    __REFLECT_HOLDER_WM__.set(holderReflect, holder);
+  }
+  return holder;
+}
+export function isHolder(target: unknown): target is BFChainComlink.Holder {
+  return __HOLDER_REFLECT_WM__.has(target as never);
+}
+export function getHolderReflect<T>(
+  target: BFChainComlink.Holder<T> | unknown,
+): HolderReflect<T> | undefined {
+  return __HOLDER_REFLECT_WM__.get(target as never) as HolderReflect<T> | undefined;
+}

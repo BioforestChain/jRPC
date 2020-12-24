@@ -1,5 +1,5 @@
 import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
-import { ESM_REFLECT_FUN_MAP, OpenArg, SyncForCallback, SyncPiperFactory } from "./helper";
+import { ESM_REFLECT_FUN_MAP, OpenArg, resolveCallback, SyncPiperFactory } from "./helper";
 import { ExportStore } from "./ExportStore";
 import { ImportStore } from "./ImportStore";
 
@@ -38,100 +38,88 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   }
   private _listen() {
     const { exportStore: exportStore, port } = this;
-    port.onMessage((cb, bin) =>
-      SyncForCallback(cb, () => {
-        const linkObj = this.transfer.transferableBinary2LinkObj(bin);
+    port.onMessage((cb, bin) => {
+      const out_void = () => resolveCallback(cb, undefined);
 
-        if (linkObj.type === LinkObjType.In) {
-          const obj = exportStore.getObjById(linkObj.targetId);
-          if (obj === undefined) {
-            throw new ReferenceError("no found");
-          }
-          /**预备好结果 */
-          const linkOut: BFChainComlink.LinkOutObj<IOB> = {
-            type: LinkObjType.Out,
-            // resId: linkObj.reqId,
-            out: [],
-            isThrow: false,
-          };
-          try {
-            let res;
+      const linkObj = this.transfer.transferableBinary2LinkObj(bin);
 
-            /**JS语言中，this对象不用传输。
-             * 但在Comlink协议中，它必须传输：
-             * 因为我们使用call/apply模拟，所以所有所需的对象都需要传递进来
-             */
-            const operator = this.transfer.InOutBinary2Any(linkObj.in[0]) as EmscriptenReflect;
-            const paramList = linkObj.in.slice(1).map((iob) => this.transfer.InOutBinary2Any(iob));
-
-            if (EmscriptenReflect.Multi === operator) {
-              /// 批量操作
-              res = obj;
-              for (let i = 0; i < paramList.length; ) {
-                const len = paramList[i] as number;
-                const $operator = paramList[i + 1] as EmscriptenReflect;
-                const $paramList = paramList.slice(i + 2, i + 1 + len);
-                const $handler = this.$getEsmReflectHanlder($operator);
-                res = $handler(res, $paramList);
-                i += len + 1;
-              }
-            } else {
-              /// 单项操作
-              const handler = this.$getEsmReflectHanlder(operator);
-              res = handler(obj, paramList);
-
-              // const { holderStore } = this;
-              // /// 如果可以且需要，启用占位符模式
-              // if (
-              //   holderStore &&
-              //   (operator === EmscriptenReflect.Get ||
-              //     operator === EmscriptenReflect.Apply ||
-              //     operator === EmscriptenReflect.Construct)
-              // ) {
-              //   /// 如果占位符模式下 远端对象的操作
-              //   if (this.importStore.isProxy(obj)) {
-              //     // 生成占位符
-              //     const pid = holderStore.createPid();
-              //     paramList.unshift(pid);
-              //     const shouldPid = handler(obj, paramList);
-              //     if (shouldPid !== pid) {
-              //       throw new Error("should return pid when in placehoder mode.");
-              //     }
-              //     res = holderStore.importValueByPid(pid);
-              //   }
-              //   /// 占位符模式下，本地对象的操作
-              //   else {
-              //     // 读取占位符
-              //     const pid = paramList.shift() as PlaceId;
-              //     res = handler(obj, paramList);
-              //     holderStore.exportValueAsPid(pid, res);
-              //   }
-              // } else {
-              //   res = handler(obj, paramList);
-              // }
-            }
-
-            /// 如果有返回结果的需要，那么就尝试进行返回
-            if (linkObj.hasOut) {
-              linkOut.out.push(this.transfer.Any2InOutBinary(res));
-            }
-          } catch (err) {
-            linkOut.isThrow = true;
-            // 将错误放在之后一层
-            linkOut.out.push(this.transfer.Any2InOutBinary(err));
-          }
-          return this.transfer.linkObj2TransferableBinary(linkOut);
-        } else if (linkObj.type === LinkObjType.Import) {
-          const scope = this._getInitedExportScope();
-          return this.transfer.linkObj2TransferableBinary({
-            type: LinkObjType.Export,
-            module: this.transfer.Any2InOutBinary(scope),
-          });
-        } else if (linkObj.type === LinkObjType.Release) {
-          exportStore.releaseById(linkObj.locId);
+      if (linkObj.type === LinkObjType.In) {
+        const obj = exportStore.getObjById(linkObj.targetId);
+        if (obj === undefined) {
+          throw new ReferenceError("no found");
         }
-      }),
-    );
+        /**预备好结果 */
+        const linkOut: BFChainComlink.LinkOutObj<IOB> = {
+          type: LinkObjType.Out,
+          // resId: linkObj.reqId,
+          out: [],
+          isThrow: false,
+        };
+        const out_linkOut = (anyRes: unknown) => {
+          this.transfer.Any2InOutBinary((iobRet) => {
+            if (iobRet.isError) {
+              return cb(iobRet);
+            }
+            linkOut.out.push(iobRet.data);
+            resolveCallback(cb, this.transfer.linkObj2TransferableBinary(linkOut));
+          }, anyRes);
+        };
+
+        try {
+          let res: any;
+          /**JS语言中，this对象不用传输。
+           * 但在Comlink协议中，它必须传输：
+           * 因为我们使用call/apply模拟，所以所有所需的对象都需要传递进来
+           */
+          const operator = this.transfer.InOutBinary2Any(linkObj.in[0]) as EmscriptenReflect;
+          const paramList = linkObj.in.slice(1).map((iob) => this.transfer.InOutBinary2Any(iob));
+
+          if (EmscriptenReflect.Multi === operator) {
+            /// 批量操作
+            res = obj;
+            for (let i = 0; i < paramList.length; ) {
+              const len = paramList[i] as number;
+              const $operator = paramList[i + 1] as EmscriptenReflect;
+              const $paramList = paramList.slice(i + 2, i + 1 + len);
+              const $handler = this.$getEsmReflectHanlder($operator);
+              res = $handler(res, $paramList);
+              i += len + 1;
+            }
+          } else {
+            /// 单项操作
+            const handler = this.$getEsmReflectHanlder(operator);
+            res = handler(obj, paramList);
+          }
+
+          /// 如果有返回结果的需要，那么就尝试进行返回
+          if (linkObj.hasOut) {
+            return out_linkOut(res);
+          } else {
+            return out_void();
+          }
+        } catch (err) {
+          linkOut.isThrow = true;
+          return out_linkOut(err);
+        }
+      } else if (linkObj.type === LinkObjType.Import) {
+        const scope = this._getInitedExportScope();
+        return this.transfer.Any2InOutBinary((scopeRet) => {
+          if (scopeRet.isError) {
+            return cb(scopeRet);
+          }
+          resolveCallback(
+            cb,
+            this.transfer.linkObj2TransferableBinary({
+              type: LinkObjType.Export,
+              module: scopeRet.data,
+            }),
+          );
+        }, scope);
+      } else if (linkObj.type === LinkObjType.Release) {
+        exportStore.releaseById(linkObj.locId);
+      }
+      out_void();
+    });
     this.importStore.onRelease((refId) => {
       // console.log("send release", refId);
       port.send(

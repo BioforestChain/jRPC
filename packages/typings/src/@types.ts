@@ -16,8 +16,10 @@ declare namespace BFChainComlink {
    * 传输的模型转换
    */
   interface ModelTransfer<IOB, TB> {
-    /**任意类型的对象 转换到 IOB */
-    Any2InOutBinary(obj: unknown): IOB;
+    /**任意类型的对象 转换到 IOB
+     * 因为obj的转换需要时间，所以这个接口是异步的
+     */
+    Any2InOutBinary(cb: Callback<IOB>, obj: unknown): unknown;
     /**IOB 转换到 任意类型的对象 */
     InOutBinary2Any(/* port: BinaryPort<TB>, */ bin: IOB): unknown;
 

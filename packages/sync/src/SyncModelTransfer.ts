@@ -12,6 +12,7 @@ import {
 import { EmscriptenReflect, LinkObjType } from "@bfchain/comlink-typings";
 import { CallbackToSync } from "./helper";
 import type { ComlinkSync } from "./ComlinkSync";
+import { helper } from "@bfchain/comlink-core";
 
 export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   constructor(core: ComlinkSync) {
@@ -80,7 +81,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
           type: LinkObjType.In,
           // reqId,
           targetId,
-          in: linkIn.map((a) => transfer.Any2InOutBinary(a)),
+          in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
           hasOut,
         }),
       ],

@@ -1,7 +1,6 @@
 import { ComlinkCore, STORE_TYPE, helper } from "@bfchain/comlink-core";
 import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
 import { HolderReflect } from "./HolderReflect";
-import { createHolderProxyHanlder } from "./AsyncValueProxy";
 import { CallbackToAsync } from "./helper";
 import {
   ModelTransfer,
