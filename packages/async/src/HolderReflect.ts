@@ -9,7 +9,12 @@ import {
   refFunctionStaticToStringFactory,
 } from "@bfchain/comlink-protocol";
 import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
-import { cacheGetter, cleanAllGetterCache, cleanGetterCache } from "@bfchain/util-decorator";
+import {
+  bindThis,
+  cacheGetter,
+  cleanAllGetterCache,
+  cleanGetterCache,
+} from "@bfchain/util-decorator";
 import { createHolderProxyHanlder } from "./AsyncValueProxy";
 import type { ComlinkAsync } from "./ComlinkAsync";
 import { CallbackToAsync, CallbackToAsyncBind, isNil } from "./helper";
@@ -1059,13 +1064,13 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.has(iobCacher.value, propertyKey));
   }
-  hasHolder(propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>) {
+  hasHolder(propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T> | PropertyKey) {
     return this.createSubHolder<boolean>([EmscriptenReflect.Has, propertyKey]);
   }
 
   private has_remote(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
+    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T> | PropertyKey,
   ) {
     return this.hasHolder(propertyKey).toValueSync(cb);
   }
@@ -1520,6 +1525,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
    */
 
   /**支持自定义的Symbol.iterator，本地可用for await来进行迭代 */
+  @bindThis
   async *iterator() {
     const iterable = (await this.assetHolder(Symbol.iterator).apply(
       this.toAsyncValue(),
@@ -1535,11 +1541,12 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     } while (true);
   }
   /**支持自定义的Symbol.asyncIterator，本地可用for await来进行迭代 */
+  @bindThis
   async *asyncIterator() {
-    const iterable =await this.assetHolder(Symbol.asyncIterator).apply(
+    const iterable = (await this.assetHolder(Symbol.asyncIterator).apply(
       this.toAsyncValue(),
       [] as never,
-    ) as BFChainComlink.Holder<AsyncIterator<unknown>>;
+    )) as BFChainComlink.Holder<AsyncIterator<unknown>>;
     do {
       const item = await iterable.next();
       if (await item.done) {

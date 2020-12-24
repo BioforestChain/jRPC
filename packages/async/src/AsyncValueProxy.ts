@@ -16,9 +16,9 @@ const NO_ALLOW_PROP = new Set([
   Symbol.toStringTag,
   Symbol.hasInstance,
   Symbol.species,
+  /// 不能直接支持Symbol.iterator，只能用Symbol.asyncIterator来替代Symbol.iterator
   Symbol.iterator,
-  /**@TODO 支持使用Symbol.asyncIterator替代Symbol.iterator迭代器后，可以开放 */
-  Symbol.asyncIterator,
+  // Symbol.asyncIterator,
   Symbol.isConcatSpreadable,
   Symbol.match,
   Symbol.matchAll,
@@ -58,7 +58,7 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
     },
     /**导入子模块 */
     get: <K extends keyof T>(_target: object, prop: K, r?: unknown) => {
-      // 禁止支持 Symbol.toPrimitive
+      // 禁止支持一些特定的symbol
       if (NO_ALLOW_PROP.has(prop as symbol)) {
         return;
       }
@@ -106,10 +106,16 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
           });
         };
       }
-      /**@TODO 直接支持迭代器 */
-      // if (prop === Symbol.asyncIterator) {
-      //   prop = Symbol.iterator as K;
-      // }
+      /**迭代器的支持 */
+      if (prop === Symbol.asyncIterator) {
+        return async function* () {
+          if (await holderReflect.has(Symbol.asyncIterator)) {
+            yield* holderReflect.asyncIterator();
+          } else {
+            yield* holderReflect.iterator();
+          }
+        };
+      }
 
       return holderReflect.assetHolder(prop).toAsyncValue();
     },
