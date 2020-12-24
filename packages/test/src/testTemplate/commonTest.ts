@@ -11,6 +11,17 @@ export class TestService {
   useCallback<T, R>(arg: T, cb: (arg: T) => R) {
     return cb(arg);
   }
+  /// 无泛型，类型清晰
+  useCallback2(
+    arg: { firstName: string; lastName: string },
+    cb: (arg: { firstName: string; lastName: string }) => string,
+  ) {
+    return cb(arg);
+  }
+  /// 部分类型清晰
+  useCallback3<T, R>(arg: T, cb: (arg: string) => R) {
+    return cb(String(arg));
+  }
   concat(arr1: unknown[], arr2: unknown[]) {
     return arr1.concat(arr2);
   }
@@ -123,12 +134,23 @@ export class TestService {
       (await ctxA.constructor.toString()) === `class TestService { [remote code] }`,
       "toString",
     );
-    const localArg = { k: "qaq", v: "quq" };
-    const len = await ctxA.useCallback(localArg, (_) => {
+    const localArg = { firstName: "qaq", lastName: "quq" };
+    const len = await ctxA.useCallback<number>(localArg, (_: typeof localArg) => {
       const arg = _ as typeof localArg;
-      return arg.k.length + arg.v.length;
+      return arg.firstName.length + arg.lastName.length;
     });
+
     console.assert(len === 6, "use callback");
+
+    const fullName = await ctxA.useCallback2(localArg, (arg) => {
+      return `${arg.firstName} ${arg.lastName}`;
+    });
+    console.assert(fullName === "qaq quq", "use callback");
+
+    const argLength = await ctxA.useCallback3(123, (arg) => {
+      return arg.length;
+    });
+    console.assert(argLength === 3, "use callback");
   }
   static async testFunctionType2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
     // 因为不支持实时的属性get，所以即便是 === 操作也完成不了
