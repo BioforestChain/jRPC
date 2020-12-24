@@ -19,10 +19,10 @@ export class TestService {
     return cb(arg);
   }
   /// 部分类型清晰
-  useCallback3<T, R>(arg: T, cb: (arg: string) => R) {
+  useCallback3<T, R>(arg: T, cb: (arg: string) => R, _1: number, _2: (arg: number) => void) {
     return cb(String(arg));
   }
-  concat(arr1: unknown[], arr2: unknown[]) {
+  concat<T>(arr1: T[], arr2: T[]) {
     return arr1.concat(arr2);
   }
   toPrimitive(obj: unknown, type: "number" | "string") {
@@ -147,9 +147,14 @@ export class TestService {
     });
     console.assert(fullName === "qaq quq", "use callback");
 
-    const argLength = await ctxA.useCallback3(123, (arg) => {
-      return arg.length;
-    });
+    const argLength = await ctxA.useCallback3(
+      123,
+      (arg) => {
+        return arg.length;
+      },
+      456,
+      (_) => {},
+    );
     console.assert(argLength === 3, "use callback");
   }
   static async testFunctionType2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
