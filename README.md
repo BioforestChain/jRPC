@@ -14,5 +14,8 @@
 
 ## Roadmap
 
-- [ ] v2.1 实现 HolderReflect 模块，使得支持异步操作
+- [x] v2.1 实现 HolderReflect 模块，使得支持异步操作
   > 将核心协议部分使用纯函数+回调的风格重写
+- [x] v2.2 更强类型的 ComlinkAsync 推导
+- [ ] v2.3 实现 MagicBinaryReflect，可以同时用于同步与异步通讯
+- [ ] v2.4 支持自定义 CloneAble

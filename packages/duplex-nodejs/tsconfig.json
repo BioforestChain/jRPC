@@ -6,23 +6,15 @@
   },
   "references": [
     {
-      "path": "../async/tsconfig.json"
-    },
-    {
-      "path": "../channel/tsconfig.json"
-    },
-    {
-      "path": "../core/tsconfig.json"
-    },
-    {
-      "path": "../sync/tsconfig.json"
+      "path": "../comlink/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
     }
   ],
   "files": [
-    "src/@types.ts",
+    "src/const.ts",
+    "src/duplex.ts",
     "src/index.ts"
   ]
 }

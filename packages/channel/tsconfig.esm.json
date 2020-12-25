@@ -12,10 +12,10 @@
       "path": "../async/tsconfig.esm.json"
     },
     {
-      "path": "../channel/tsconfig.esm.json"
+      "path": "../core/tsconfig.esm.json"
     },
     {
-      "path": "../core/tsconfig.esm.json"
+      "path": "../protocol/tsconfig.esm.json"
     },
     {
       "path": "../sync/tsconfig.esm.json"

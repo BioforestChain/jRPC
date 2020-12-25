@@ -9,10 +9,10 @@
       "path": "../async/tsconfig.json"
     },
     {
-      "path": "../channel/tsconfig.json"
+      "path": "../core/tsconfig.json"
     },
     {
-      "path": "../core/tsconfig.json"
+      "path": "../protocol/tsconfig.json"
     },
     {
       "path": "../sync/tsconfig.json"
@@ -23,6 +23,7 @@
   ],
   "files": [
     "src/@types.ts",
-    "src/index.ts"
+    "src/index.ts",
+    "src/MagicBinaryChannel.ts"
   ]
 }

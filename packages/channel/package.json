@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink",
+  "name": "@bfchain/comlink-channel",
   "version": "2.2.0",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -8,8 +8,8 @@
   ],
   "dependencies": {
     "@bfchain/comlink-async": "2.2.0",
-    "@bfchain/comlink-channel": "2.2.0",
     "@bfchain/comlink-core": "2.2.0",
+    "@bfchain/comlink-protocol": "2.2.0",
     "@bfchain/comlink-sync": "2.2.0",
     "@bfchain/comlink-typings": "2.2.0"
   },

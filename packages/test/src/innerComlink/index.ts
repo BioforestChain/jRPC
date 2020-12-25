@@ -1,5 +1,5 @@
-// import sourceMapSupport from "source-map-support";
-// sourceMapSupport.install();
+import sourceMapSupport from "source-map-support";
+sourceMapSupport.install();
 
 if (require("inspector").url()) {
   console.info("目前处于调试模式，进程将在任务结束后保持不死");

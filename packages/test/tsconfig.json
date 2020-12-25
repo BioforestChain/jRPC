@@ -6,6 +6,7 @@
   },
   "files": [
     "src/1-1.async.test.ts",
+    "src/1-1.mix.test.ts",
     "src/1-1.test.ts",
     "src/1-2.async.test.ts",
     "src/1-2.test.ts",
@@ -20,6 +21,7 @@
     "src/3-2.async.test.ts",
     "src/3-2.test.ts",
     "src/3-3.async.test.ts",
+    "src/envWrapper/mixEnv.ts",
     "src/envWrapper/nativeAsyncEnv.ts",
     "src/envWrapper/simpleAsyncEnv.ts",
     "src/envWrapper/simpleEnv.ts",
@@ -36,6 +38,9 @@
   "references": [
     {
       "path": "../comlink/tsconfig.json"
+    },
+    {
+      "path": "../duplex-nodejs/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"
