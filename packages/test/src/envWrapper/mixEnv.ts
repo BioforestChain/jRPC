@@ -1,12 +1,13 @@
-import { Comlink, ComlinkAsync } from "@bfchain/comlink";
+import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/comlink";
 import { PromiseOut } from "@bfchain/util-extends-promise-out";
-import { Worker, isMainThread, MessagePort, parentPort } from "worker_threads";
+import { Worker, isMainThread, MessagePort, parentPort, workerData } from "worker_threads";
 import { DuplexFactory } from "@bfchain/comlink-duplex-nodejs";
 import {} from "../innerComlink/index";
 
 export async function installMixEnv(
-  mainThreadCallback: (module: ComlinkAsync) => unknown,
+  mainThreadCallback: (module: ComlinkSync) => unknown,
   workerThreadCallback: (module: ComlinkAsync) => unknown,
+  workerThreadCallback2: (module: ComlinkSync) => unknown,
 ) {
   type Msg = {
     mcPort: MessagePort;
@@ -15,42 +16,77 @@ export async function installMixEnv(
   };
   if (isMainThread) {
     console.log("main started");
+    let finishedTestCount = 0;
+    const tryFinish = () => {
+      finishedTestCount += 1;
+      if (finishedTestCount === 2) {
+        process.exit();
+      }
+    };
 
     /// 模拟A模块作为服务模块
     try {
-      const duplexFactory = new DuplexFactory();
-      /**模块控制器 */
-      const moduleA = Comlink.asyncModuleCreater("A", duplexFactory);
+      {
+        const duplexFactory = new DuplexFactory();
+        /**模块控制器 */
+        const moduleA = Comlink.syncModuleCreater("A", duplexFactory);
 
-      // 执行回调
-      await mainThreadCallback(moduleA);
+        // 执行回调
+        await mainThreadCallback(moduleA);
+        {
+          /// 启动子线程，并将messagechannel发送给子线程
+          const worker = new Worker(process.mainModule!.filename, {
+            workerData: "async",
+          });
+          worker.once("exit", () => tryFinish);
+          // 执行发送
+          duplexFactory.asMain(worker);
+        }
+      }
 
-      /// 启动子线程，并将messagechannel发送给子线程
-      const worker = new Worker(process.mainModule!.filename, { execArgv: process.argv });
-      worker.once("exit", () => process.exit());
-      // 执行发送
-      duplexFactory.asMain(worker);
+      {
+        const duplexFactory2 = new DuplexFactory();
+
+        const moduleA2 = Comlink.syncModuleCreater("A", duplexFactory2);
+        // 执行回调
+        await mainThreadCallback(moduleA2);
+        {
+          /// 启动子线程，并将messagechannel发送给子线程
+          const worker = new Worker(process.mainModule!.filename, {
+            workerData: "sync",
+          });
+          worker.once("exit", () => tryFinish);
+          // 执行发送
+          duplexFactory2.asMain(worker);
+        }
+      }
     } catch (err) {
       console.error("❌ Main Error", err?.stack ?? err);
       return;
     }
   } else {
-    console.log("worker started");
+    const mode = workerData;
+    console.log(`worker ${mode} started`);
     if (!parentPort) {
       throw new TypeError();
     }
     try {
       /// 等待通道连接到位
       const duplex = await DuplexFactory.asCluster(parentPort);
+      if (mode === "async") {
+        /// 模拟B模块作为调用模块
+        /**模块控制器 */
+        const moduleB = Comlink.asyncModule("B", duplex);
+        // 回调
+        await workerThreadCallback(moduleB);
+      } else {
+        /**模块控制器 */
+        const moduleB2 = Comlink.syncModule("B2", duplex);
+        // 回调
+        await workerThreadCallback2(moduleB2);
+      }
 
-      /// 模拟B模块作为调用模块
-      /**模块控制器 */
-      const moduleB = Comlink.asyncModule("B", duplex);
-
-      // 回调
-      await workerThreadCallback(moduleB);
-
-      console.log("✅ ~ all test passed!");
+      console.log(`✅ ~ all ${mode} test passed!`);
     } catch (err) {
       console.error("❌ Worker Error", err?.stack ?? err);
     }

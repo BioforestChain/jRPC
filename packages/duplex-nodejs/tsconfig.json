@@ -13,6 +13,7 @@
     }
   ],
   "files": [
+    "src/AtomicsNotifyer.ts",
     "src/const.ts",
     "src/duplex.ts",
     "src/index.ts"

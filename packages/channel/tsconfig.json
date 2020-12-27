@@ -24,6 +24,7 @@
   "files": [
     "src/@types.ts",
     "src/index.ts",
-    "src/MagicBinaryChannel.ts"
+    "src/MagicBinaryChannel.ts",
+    "src/MagicBinaryPort.ts"
   ]
 }

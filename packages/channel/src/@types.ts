@@ -1,8 +1,18 @@
 declare namespace BFChainComlink {
   namespace Channel {
-    interface Duplex<TB> {
+    interface Duplex<TB> extends SyncDuplex<TB>, AsyncDuplex<TB> {
+      readonly supportModes: Set<"async" | "sync">;
+    }
+    interface AsyncDuplex<TB> {
+      readonly supportModes: Set<"async" | "sync">;
       onMessage(cb: (msg: DuplexMessage<TB>) => unknown): unknown;
-      postMessage(msg: DuplexMessage<TB>): unknown;
+      postAsyncMessage(msg: DuplexMessage<TB>): unknown;
+    }
+    interface SyncDuplex<TB> {
+      readonly supportModes: Set<"async" | "sync">;
+      onMessage(cb: (msg: DuplexMessage<TB>) => unknown): unknown;
+      postSyncMessage(msg: DuplexMessage<TB>): unknown;
+      waitMessage(): DuplexMessage<TB>;
     }
     type DuplexMessage<TB> = DuplexMessageMsg<TB> | DuplexMessageReq<TB> | DuplexMessageRes<TB>;
 

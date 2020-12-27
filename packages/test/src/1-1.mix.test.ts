@@ -33,4 +33,21 @@ installMixEnv(
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll2(ctxA);
   },
+  async (moduleB) => {
+    /**
+     * 导入服务
+     * 同语法：
+     * import {a} from port
+     * import ctx from port
+     */
+
+    /// test import
+    const a = moduleB.import<typeof A>("a");
+    Reflect.set(globalThis, "a", a);
+    console.assert(a === A, "import");
+
+    const ctxA = moduleB.import<TestService>();
+    Reflect.set(globalThis, "ctxA", ctxA);
+    await TestService.testAll(ctxA);
+  },
 );
