@@ -31,8 +31,8 @@ export class ComlinkAsync
 
   protected $getEsmReflectHanlder(opeartor: EmscriptenReflect) {
     const hanlder = super.$getEsmReflectHanlder(opeartor);
-    if (opeartor === EmscriptenReflect.Apply) {
-      const applyHanlder = (((target: Function, args: unknown[]) => {
+    if (opeartor === EmscriptenReflect.Apply || opeartor === EmscriptenReflect.SyncApply) {
+      const applyHanlder = (target: Function, args: unknown[]) => {
         if (target === Function.prototype.toString) {
           const ctx = args[0] as Function;
           const exportDescriptor = getFunctionExportDescription(ctx);
@@ -42,9 +42,9 @@ export class ComlinkAsync
             return IOB_EFT_Factory_Map.get(getFunctionType(ctx))!.toString({ name: ctx.name });
           }
         }
-        return hanlder(target, args);
-      }) as unknown) as typeof hanlder;
-      return applyHanlder;
+        return hanlder.fun(target, args);
+      };
+      return { type: hanlder.type, fun: applyHanlder };
     }
     return hanlder;
   }

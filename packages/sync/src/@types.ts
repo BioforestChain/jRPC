@@ -22,4 +22,8 @@ declare namespace BFChainComlink {
     // /**释放绑定的通道 */
     // destroy(port: BinaryPort<TB>): boolean;
   }
+  // tyope
+  type AsyncToSync<T> = T extends (...args: infer ARGS) => PromiseLike<infer Return>
+    ? (...args: ARGS) => Return
+    : T;
 }

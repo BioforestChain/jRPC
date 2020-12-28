@@ -38,7 +38,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   }
   private _listen() {
     const { exportStore: exportStore, port } = this;
-    port.onMessage((cb, bin) => {
+    port.onMessage(async (cb, bin) => {
       const out_void = () => resolveCallback(cb, undefined);
 
       const linkObj = this.transfer.transferableBinary2LinkObj(bin);
@@ -82,13 +82,19 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
               const $operator = paramList[i + 1] as EmscriptenReflect;
               const $paramList = paramList.slice(i + 2, i + 1 + len);
               const $handler = this.$getEsmReflectHanlder($operator);
-              res = $handler(res, $paramList);
+              res = $handler.fun(res, $paramList);
+              if ($handler.type === "async") {
+                res = await res;
+              }
               i += len + 1;
             }
           } else {
             /// 单项操作
             const handler = this.$getEsmReflectHanlder(operator);
-            res = handler(obj, paramList);
+            res = handler.fun(obj, paramList);
+            if (handler.type === "async") {
+              res = await res;
+            }
           }
 
           /// 如果有返回结果的需要，那么就尝试进行返回

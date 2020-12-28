@@ -88,20 +88,7 @@ class DataPkg {
   public readonly si32 = new Int32Array(this.sab);
   public readonly su8 = new Uint8Array(this.sab);
   public readonly su16 = new Uint16Array(this.sab);
-  // private static _cache = new WeakMap<SharedArrayBuffer, DataPkg>();
-  // static from(name: string, sab: SharedArrayBuffer) {
-  //   let cache = this._cache.get(sab);
-  //   if (!cache) {
-  //     cache = new DataPkg(name, sab);
-  //     this._cache.set(sab, cache);
-  //   }
-  //   return cache;
-  // }
 }
-const enum U8_OFFSET {
-  DATA_BEGIN = 4 /* Int32Array.BYTES_PER_ELEMENT */ * 2,
-}
-
 export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   static getPort(duplex: Duplex<any>) {
     return duplex._port;

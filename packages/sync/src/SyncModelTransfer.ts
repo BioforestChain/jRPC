@@ -10,7 +10,7 @@ import {
   refFunctionStaticToStringFactory,
 } from "@bfchain/comlink-protocol";
 import { EmscriptenReflect, LinkObjType } from "@bfchain/comlink-typings";
-import { CallbackToSync } from "./helper";
+import { CallbackToSync, IS_ASYNC_APPLY_FUN_MARKER } from "./helper";
 import type { ComlinkSync } from "./ComlinkSync";
 import { helper } from "@bfchain/comlink-core";
 
@@ -23,13 +23,14 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
    * ref fun statis toString
    */
   private _rfsts = refFunctionStaticToStringFactory();
-  protected $getDefaultProxyHanlder<T extends object>(
-    port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>,
-    refId: number,
-  ) {
+  private _generateSender(port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
     const send = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]], hasOut: boolean) =>
       this._sendLinkIn<R>(port, refId, linkIn, hasOut);
-
+    return send;
+  }
+  private _getDefaultProxyHanlder<T extends object>(
+    send: ReturnType<SyncModelTransfer["_generateSender"]>,
+  ) {
     const proxyHandler: BFChainComlink.EmscriptionProxyHanlder<T> = {
       getPrototypeOf: (_target) => send<object | null>([EmscriptenReflect.GetPrototypeOf], true),
       setPrototypeOf: (_target, proto) =>
@@ -136,11 +137,14 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       }
       const sourceFun = factory.factory();
 
+      /**是否是强制同步调用的函数 */
+      let is_sync_apply_fun = false;
       const funRef: BFChainComlink.ImportRefHook<Function> = {
         type: "object",
         getSource: () => sourceFun,
         getProxyHanlder: () => {
-          const defaultProxyHanlder = this.$getDefaultProxyHanlder<Function>(port, refId);
+          const send = this._generateSender(port, refId);
+          const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(send);
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
@@ -149,6 +153,9 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
               }
               if (prop === "length") {
                 return refExtends.length;
+              }
+              if (prop === IS_ASYNC_APPLY_FUN_MARKER) {
+                return is_sync_apply_fun;
               }
 
               //#region 静态的toString模式下的本地模拟
@@ -170,6 +177,19 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
 
               return defaultProxyHanlder.get(target, prop, receiver);
             },
+            set: (target, prop, value, receiver) => {
+              if (prop === IS_ASYNC_APPLY_FUN_MARKER) {
+                is_sync_apply_fun = !!value;
+                return true;
+              }
+              return defaultProxyHanlder.set(target, prop, value, receiver);
+            },
+            apply: (target: Function, thisArg: any, argArray?: any) => {
+              if (is_sync_apply_fun) {
+                return send([EmscriptenReflect.SyncApply, thisArg, ...argArray], true);
+              }
+              return defaultProxyHanlder.apply(target, thisArg, argArray);
+            },
           };
           return functionProxyHanlder;
         },
@@ -181,7 +201,8 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         type: "object",
         getSource: () => sourceObj,
         getProxyHanlder: () => {
-          const defaultProxyHanlder = this.$getDefaultProxyHanlder<object>(port, refId);
+          const send = this._generateSender(port, refId);
+          const defaultProxyHanlder = this._getDefaultProxyHanlder<object>(send);
           /**
            * 因为对象一旦被设置状态后，无法回退，所以这里可以直接根据现有的状态来判断对象的可操作性
            * @TODO 使用isExtensible isFrozen isSealed来改进

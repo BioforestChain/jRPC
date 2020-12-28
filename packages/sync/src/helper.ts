@@ -13,3 +13,5 @@ export function CallbackToSync<R, ARGS extends unknown[]>(
   cbCaller.call(ctx, (_ret) => (ret = _ret), ...args);
   return helper.OpenArg(ret);
 }
+
+export const IS_ASYNC_APPLY_FUN_MARKER = Symbol("asyncApplyFun")

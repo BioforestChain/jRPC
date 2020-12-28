@@ -49,5 +49,13 @@ installMixEnv(
     const ctxA = moduleB.import<TestService>();
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll(ctxA);
+
+    const tinkSync = moduleB.asyncToSync(ctxA.think);
+    {
+      const startTime = Date.now();
+      tinkSync(1000);
+      const endTime = Date.now();
+      console.assert(endTime - startTime, "tinkSync");
+    }
   },
 );

@@ -42,6 +42,11 @@ export const enum EmscriptenReflect {
   Asset,
   Typeof,
   Instanceof,
+  /**内置函数操作 */
+  JsonStringify,
+  JsonParse,
   /**批量操作 */
   Multi,
+  /**强制同步调用函数 */
+  SyncApply,
 }

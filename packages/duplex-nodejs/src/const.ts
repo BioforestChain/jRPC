@@ -32,17 +32,6 @@ export const enum SAB_HELPER {
   SI32_MSG_STATUS = SAB_HELPER.SI32_MSG_TYPE + 1,
 }
 
-// /**
-//  * SAB CHUNK 数据格式
-//  * [TYPE,STATUS,MSG_ID<i32>,MSG_SIZE<i32>,data<u8>]
-//  */
-// export const enum SAB_CHUNK_HELPER {
-//   SI32_MSG_ID_INDEX = SAB_HELPER.SI32_MSG_STATUS + 1,
-//   SI32_MSG_SIZE_INDEX = SAB_CHUNK_HELPER.SI32_MSG_ID_INDEX + 1,
-//   SU8_MSG_DATA_OFFSET = (SAB_CHUNK_HELPER.SI32_MSG_SIZE_INDEX + 1) *
-//     4 /* Int32Array.BYTES_PER_ELEMENT */,
-// }
-
 /**
  * SAB EVENT 数据格式
  * [TYPE,STATUS,eventId<i32>,msgTotalSize<i32>,chunkOffset,chunkSize,...chunk]

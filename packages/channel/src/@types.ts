@@ -10,7 +10,6 @@ declare namespace BFChainComlink {
     }
     interface SyncDuplex<TB> {
       readonly supportModes: Set<"async" | "sync">;
-      onMessage(cb: (msg: DuplexMessage<TB>) => unknown): unknown;
       postSyncMessage(msg: DuplexMessage<TB>): unknown;
       waitMessage(): DuplexMessage<TB>;
     }

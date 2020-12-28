@@ -1579,5 +1579,12 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   Object_seal() {}
   Object_setPrototypeOf() {}
   Object_values() {}
+
+  JSON_stringify() {
+    return this.createSubHolder<string>([EmscriptenReflect.JsonStringify]);
+  }
+  JSON_parse() {
+    return this.createSubHolder<string>([EmscriptenReflect.JsonParse]);
+  }
   //#endregion
 }

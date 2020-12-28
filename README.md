@@ -47,12 +47,13 @@ windowsModule.export((obj) => {
 ```ts
 /// windows env
 
+// 使用异步函数来进行初始化
 windowsModule.export(async function RTCPeerConnection(
   configuration: Holder<RTCConfiguration>,
   constraints: Holder<MediaConstraints>,
 ) {
   /// 将 Holder 复制成本地对象
-  const localeConfiguration = await HolderReflect.cloneAsJson(configuration);
+  const localeConfiguration = await HolderReflect.JsonStringify(configuration);
   const localeConstraints = await HolderReflect.cloneAsJson(constraints);
   return new RTCPeerConnection(localeConfiguration, localeConstraints);
 },
@@ -61,4 +62,10 @@ windowsModule.export(async function RTCPeerConnection(
 /// worker env
 const RTCPeerConnection = workerModule.importAsSync("RTCPeerConnection");
 const peerConnection = new RTCPeerConnection({ ...configuration });
+
+/// or
+{
+  const RTCPeerConnectionAsync = workerModule.import("RTCPeerConnection");
+  const RTCPeerConnection = workerModule.asyncToSync(RTCPeerConnectionAsync);
+}
 ```
