@@ -25,6 +25,7 @@
     "src/envWrapper/nativeAsyncEnv.ts",
     "src/envWrapper/simpleAsyncEnv.ts",
     "src/envWrapper/simpleEnv.ts",
+    "src/envWrapper/TaskLog.ts",
     "src/envWrapper/workerAsyncEnv.ts",
     "src/envWrapper/workerEnv.ts",
     "src/innerComlink/index.ts",

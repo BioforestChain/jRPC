@@ -3,11 +3,12 @@ import { PromiseOut } from "@bfchain/util-extends-promise-out";
 import { Worker, isMainThread, MessagePort, parentPort, workerData } from "worker_threads";
 import { DuplexFactory } from "@bfchain/comlink-duplex-nodejs";
 import {} from "../innerComlink/index";
+import { TaskLog } from "./TaskLog";
 
 export async function installMixEnv(
   mainThreadCallback: (module: ComlinkSync) => unknown,
-  workerThreadCallback: (module: ComlinkAsync) => unknown,
-  workerThreadCallback2: (module: ComlinkSync) => unknown,
+  workerThreadCallback: (module: ComlinkAsync, console: TaskLog) => unknown,
+  workerThreadCallback2: (module: ComlinkSync, console: TaskLog) => unknown,
 ) {
   type Msg = {
     mcPort: MessagePort;
@@ -66,6 +67,7 @@ export async function installMixEnv(
     }
   } else {
     const mode = workerData;
+    const console = new TaskLog(`mix-${mode}`);
     console.log(`worker ${mode} started`);
     if (!parentPort) {
       throw new TypeError();
@@ -78,22 +80,22 @@ export async function installMixEnv(
         /**模块控制器 */
         const moduleB = Comlink.asyncModule("B", duplex);
         // 回调
-        await workerThreadCallback(moduleB);
+        await workerThreadCallback(moduleB, console);
       } else {
         /**模块控制器 */
         const moduleB2 = Comlink.syncModule("B2", duplex);
         // 回调
-        await workerThreadCallback2(moduleB2);
+        await workerThreadCallback2(moduleB2, console);
       }
 
-      console.log(`✅ ~ all ${mode} test passed!`);
+      console.finish();
     } catch (err) {
       console.error("❌ Worker Error", err?.stack ?? err);
     }
     // 退出子线程
     setTimeout(() => {
       process.exit();
-    }, 1);
+    }, 10);
   }
 }
 

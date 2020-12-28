@@ -15,10 +15,7 @@ export class ComlinkSync
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
-  readonly transfer: BFChainComlink.ModelTransfer<
-    ComlinkProtocol.IOB,
-    ComlinkProtocol.TB
-  > = new SyncModelTransfer(this);
+  readonly transfer = new SyncModelTransfer(this);
 
   // /**
   //  * ref fun statis toString
@@ -52,54 +49,74 @@ export class ComlinkSync
   importAsSync<T>(key = "default") {
     return this.asyncToSync(this.import<T>(key));
   }
+  private _syncWM = new WeakMap();
   asyncToSync<T>(fun: T) {
-    if (typeof fun === "function") {
-      if (Reflect.get(fun, IS_ASYNC_APPLY_FUN_MARKER)) {
-        return fun as BFChainComlink.AsyncToSync<T>;
-      }
-      const send = Reflect.get(fun, PROTOCAL_SENDER);
-      if (send) {
-        return new Proxy(fun, {
-          get(_target, prop, r) {
-            if (prop === IS_ASYNC_APPLY_FUN_MARKER) {
-              return true;
-            }
-            return Reflect.get(fun, prop, r);
-          },
-          apply: (_target: Function, thisArg: any, argArray?: any) => {
-            return send([EmscriptenReflect.SyncApply, thisArg, ...argArray], true);
-          },
-        }) as BFChainComlink.AsyncToSync<T>;
-      }
+    if (typeof fun !== "function") {
+      throw new TypeError();
     }
-    throw new TypeError();
+    if (Reflect.get(fun, IS_ASYNC_APPLY_FUN_MARKER)) {
+      return fun as BFChainComlink.AsyncToSync<T>;
+    }
+
+    let syncFun = this._syncWM.get(fun) as BFChainComlink.AsyncToSync<T> | undefined;
+    if (!syncFun) {
+      const sender = this.transfer.getLinkInSenderByProxy(fun);
+      if (!sender) {
+        throw new TypeError();
+      }
+      syncFun = new Proxy(fun, {
+        get(_target, prop, r) {
+          if (prop === IS_ASYNC_APPLY_FUN_MARKER) {
+            return true;
+          }
+          return Reflect.get(fun, prop, r);
+        },
+        apply: (_target: Function, thisArg: any, argArray?: any) => {
+          return sender.req([EmscriptenReflect.SyncApply, thisArg, ...argArray]);
+        },
+      }) as BFChainComlink.AsyncToSync<T>;
+
+      this.importStore.backupProxyId(syncFun as Function, this.importStore.getProxy(fun)!.id);
+      this._syncWM.set(fun, syncFun);
+    }
+    return syncFun;
   }
   importAsAsync<T>(key = "default") {
     return this.syncToAsync(this.import<T>(key));
   }
+  private _asyncWM = new WeakMap();
   syncToAsync<T>(fun: T) {
-    if (typeof fun === "function") {
-      if (Reflect.get(fun, IS_SYNC_APPLY_FUN_MARKER)) {
-        return fun as BFChainComlink.SyncToAsync<T>;
-      }
-      const send = Reflect.get(fun, PROTOCAL_SENDER);
-      if (send) {
-        return new Proxy(fun, {
-          get(_target, prop, r) {
-            if (prop === IS_SYNC_APPLY_FUN_MARKER) {
-              return true;
-            }
-            return Reflect.get(fun, prop, r);
-          },
-          apply: (_target: Function, thisArg: any, argArray?: any) => {
-            /// 要使用本地的promise对任务进行包裹，不然对方接下来会进入卡死状态。
-            return new Promise((resolve, reject) => {
-              send([EmscriptenReflect.AsyncApply, resolve, reject, thisArg, ...argArray], true);
-            });
-          },
-        }) as BFChainComlink.SyncToAsync<T>;
-      }
+    if (typeof fun !== "function") {
+      throw new TypeError();
     }
-    throw new TypeError();
+    if (Reflect.get(fun, IS_SYNC_APPLY_FUN_MARKER)) {
+      return fun as BFChainComlink.SyncToAsync<T>;
+    }
+    let asyncFun = this._asyncWM.get(fun) as BFChainComlink.SyncToAsync<T> | undefined;
+    if (!asyncFun) {
+      const sender = this.transfer.getLinkInSenderByProxy(fun);
+      if (!sender) {
+        throw new TypeError();
+      }
+      asyncFun = new Proxy(fun, {
+        get(_target, prop, r) {
+          if (prop === IS_SYNC_APPLY_FUN_MARKER) {
+            return true;
+          }
+          return Reflect.get(fun, prop, r);
+        },
+        apply: (_target: Function, thisArg: any, argArray?: any) => {
+          /// 要使用本地的promise对任务进行包裹，不然对方接下来会进入卡死状态。
+          return new Promise((resolve, reject) => {
+            /* 无需返回值，所以走 .send ，这个是异步的，不会造成阻塞 */
+            sender.send([EmscriptenReflect.AsyncApply, resolve, reject, thisArg, ...argArray]);
+          });
+        },
+      }) as BFChainComlink.SyncToAsync<T>;
+
+      this.importStore.backupProxyId(asyncFun as Function, this.importStore.getProxy(fun)!.id);
+      this._asyncWM.set(fun, asyncFun);
+    }
+    return asyncFun;
   }
 }

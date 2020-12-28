@@ -36,8 +36,13 @@ declare namespace BFChainComlink {
    */
   interface BinaryPort<TB> {
     onMessage: (listener: BinaryPort.MessageListener<TB>) => void;
+    /**请求数据，如果是同步模式，要求阻塞 */
     req(cb: Callback<TB>, bin: TB): unknown;
+    /**发送数据，不要求阻塞 */
     send(bin: TB): void;
+    // /**非阻塞地传输数据 */
+    // reqAsync(cb: Callback<TB>, bin: TB): void;
+    // sendAsync(bin: TB): void;
   }
   namespace BinaryPort {
     type MessageListener<TB> = (cb: Callback<TB | undefined>, bin: TB) => unknown;

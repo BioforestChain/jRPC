@@ -1,4 +1,5 @@
 import { installMixEnv } from "./envWrapper/mixEnv";
+import { TaskLog } from "./envWrapper/TaskLog";
 import { TestService } from "./testTemplate/commonTest";
 
 const A = "~aAa~";
@@ -16,7 +17,7 @@ installMixEnv(
     moduleA.export(ctxA);
     moduleA.export(a, "a");
   },
-  async (moduleB) => {
+  async (moduleB, console) => {
     /**
      * 导入服务
      * 同语法：
@@ -33,7 +34,7 @@ installMixEnv(
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll2(ctxA);
   },
-  async (moduleB) => {
+  async (moduleB, console) => {
     /**
      * 导入服务
      * 同语法：
@@ -50,24 +51,52 @@ installMixEnv(
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll(ctxA);
 
-    console.log("start test thinkSync");
     const thinkSync = moduleB.asyncToSync(ctxA.think);
     {
       const startTime = Date.now();
       thinkSync(1000);
       const endTime = Date.now();
-      console.assert(endTime - startTime, "tinkSync");
-      console.log(`✅ test thinkSync passed (${endTime - startTime}ms)`);
+      const diffTime = endTime - startTime;
+      console.assert(diffTime >= 1000, `thinkSync (${diffTime}ms)`);
     }
-    console.log("start test fibAsync");
     const fibAsync = moduleB.syncToAsync(ctxA.work);
     {
-      let i = 0;
-      const ti = setInterval(() => (i += 1), 10);
-      await fibAsync(42);
+      const times: number[] = [Date.now()];
+      const interval = 10;
+      const ti = setInterval(() => {
+        times.push(Date.now());
+      }, interval);
+      const tick = setInterval(() => {
+        process.stdout.write(new Date().toString() + "\n");
+      }, 1000);
+      const startTime = Date.now();
+      const taskList = Array.from({ length: 10 }, (_, i) => {
+        return fibAsync(30);
+      });
+      await Promise.all(taskList);
+      const endTime = Date.now();
+      const diffTime = endTime - startTime;
       clearInterval(ti);
-      console.assert(i > 0, "fibAsync");
-      console.log(`✅ test fibAsync passed (${i * 10}ms+)`);
+      clearInterval(tick);
+
+      /// 寻找最长和最短的间隔
+      let min = Infinity;
+      let max = -Infinity;
+      for (let i = 1; i < times.length; i++) {
+        const diff = times[i] - times[i - 1];
+        if (diff < min) {
+          min = diff;
+        }
+        if (diff > max) {
+          max = diff;
+        }
+      }
+
+      console.log(`fibAsync [${min}~${max}] (${diffTime}ms)`);
+      console.assert(
+        min >= interval / 2 && max <= interval * 2,
+        `fibAsync [${min}~${max}] (${diffTime}ms)`,
+      );
     }
   },
 );

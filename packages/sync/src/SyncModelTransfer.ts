@@ -14,6 +14,8 @@ import { CallbackToSync } from "./helper";
 import { PROTOCAL_SENDER } from "./const";
 import type { ComlinkSync } from "./ComlinkSync";
 
+const SENDER_MARKER = Symbol("linkInSender");
+
 export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   constructor(core: ComlinkSync) {
     super(core);
@@ -23,71 +25,68 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
    * ref fun statis toString
    */
   private _rfsts = refFunctionStaticToStringFactory();
-  private _genSender(port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
-    const send = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]], hasOut: boolean) =>
-      this._sendLinkIn<R>(port, refId, linkIn, hasOut);
-    return send;
+  private _genLinkInSender(port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
+    const req = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]]) =>
+      this._reqLinkIn<R>(port, refId, linkIn);
+    const send = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
+      this._sendLinkIn(port, refId, linkIn);
+    return { __marker__: SENDER_MARKER, send, req };
   }
   private _getDefaultProxyHanlder<T extends object>(
-    send: ReturnType<SyncModelTransfer["_genSender"]>,
+    sender: ReturnType<SyncModelTransfer["_genLinkInSender"]>,
   ) {
     const proxyHandler: BFChainComlink.EmscriptionProxyHanlder<T> = {
-      getPrototypeOf: (_target) => send<object | null>([EmscriptenReflect.GetPrototypeOf], true),
+      getPrototypeOf: (_target) => sender.req<object | null>([EmscriptenReflect.GetPrototypeOf]),
       setPrototypeOf: (_target, proto) =>
-        send<boolean>([EmscriptenReflect.SetPrototypeOf, proto], true),
-      isExtensible: (target) => send<boolean>([EmscriptenReflect.IsExtensible], true),
-      preventExtensions: (_target) => send<boolean>([EmscriptenReflect.PreventExtensions], true),
+        sender.req<boolean>([EmscriptenReflect.SetPrototypeOf, proto]),
+      isExtensible: (target) => sender.req<boolean>([EmscriptenReflect.IsExtensible]),
+      preventExtensions: (_target) => sender.req<boolean>([EmscriptenReflect.PreventExtensions]),
       getOwnPropertyDescriptor: (_target, prop: PropertyKey) =>
-        send<PropertyDescriptor | undefined>(
-          [EmscriptenReflect.GetOwnPropertyDescriptor, prop],
-          true,
-        ),
-      has: (_target, prop: PropertyKey) => send<boolean>([EmscriptenReflect.Has], true),
+        sender.req<PropertyDescriptor | undefined>([
+          EmscriptenReflect.GetOwnPropertyDescriptor,
+          prop,
+        ]),
+      has: (_target, prop: PropertyKey) => sender.req<boolean>([EmscriptenReflect.Has]),
       /**导入子模块 */
       get: (_target, prop, _reciver) =>
         // console.log("get", prop),
-        send<boolean>([EmscriptenReflect.Get, prop], true),
+        sender.req<boolean>([EmscriptenReflect.Get, prop]),
       /**发送 set 操作 */
-      set: (_target, prop: PropertyKey, value: any, _receiver: any) => (
-        send<boolean>([EmscriptenReflect.Set, prop, value], false), true
-      ),
-      deleteProperty: (_target, prop: PropertyKey) => (
-        send([EmscriptenReflect.DeleteProperty, prop], false), true
-      ),
-      defineProperty: (_target, prop: PropertyKey, attr: PropertyDescriptor) => (
-        send([EmscriptenReflect.DefineProperty, prop, attr], false), true
-      ),
-      ownKeys: (_target) => send([EmscriptenReflect.OwnKeys], true),
+      set: (_target, prop: PropertyKey, value: any, _receiver: any) =>
+        sender.req<boolean>([EmscriptenReflect.Set, prop, value]),
+      deleteProperty: (_target, prop: PropertyKey) =>
+        sender.req<boolean>([EmscriptenReflect.DeleteProperty, prop]),
+      defineProperty: (_target, prop: PropertyKey, attr: PropertyDescriptor) =>
+        sender.req([EmscriptenReflect.DefineProperty, prop, attr]),
+      ownKeys: (_target) => sender.req([EmscriptenReflect.OwnKeys]),
       apply: (_target, thisArg, argArray) =>
-        send([EmscriptenReflect.Apply, thisArg, ...argArray], true),
+        sender.req([EmscriptenReflect.Apply, thisArg, ...argArray]),
       construct: (_target, argArray, newTarget) =>
-        send([EmscriptenReflect.Construct, newTarget, ...argArray], true),
+        sender.req([EmscriptenReflect.Construct, newTarget, ...argArray]),
     };
     return proxyHandler;
   }
 
-  private _sendLinkIn<R = unknown>(
+  /**打包指令 */
+  private _pkgLinkIn(targetId: number, linkIn: unknown[], hasOut: boolean) {
+    const { transfer } = this.core;
+    return transfer.linkObj2TransferableBinary({
+      type: LinkObjType.In,
+      // reqId,
+      targetId,
+      in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
+      hasOut,
+    });
+  }
+  private _reqLinkIn<R = unknown>(
     port: ComlinkProtocol.BinaryPort,
     targetId: number,
     linkIn: unknown[],
-    hasOut: boolean,
   ) {
     const { transfer } = this.core;
-
+    const tb = this._pkgLinkIn(targetId, linkIn, true);
     /// 执行请求
-    const bin = CallbackToSync(
-      port.req,
-      [
-        transfer.linkObj2TransferableBinary({
-          type: LinkObjType.In,
-          // reqId,
-          targetId,
-          in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
-          hasOut,
-        }),
-      ],
-      port,
-    );
+    const bin = CallbackToSync(port.req, [tb], port);
 
     /// 处理请求
     const linkObj = transfer.transferableBinary2LinkObj(bin);
@@ -101,9 +100,22 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       const err = err_iob && transfer.InOutBinary2Any(err_iob);
       throw err;
     }
-    const res_iob = hasOut && linkObj.out.slice().pop();
+    const res_iob = linkObj.out.slice().pop();
     const res = res_iob && transfer.InOutBinary2Any(res_iob);
     return res as R;
+  }
+
+  private _sendLinkIn(port: ComlinkProtocol.BinaryPort, targetId: number, linkIn: unknown[]) {
+    const { transfer } = this.core;
+
+    const tb = transfer.linkObj2TransferableBinary({
+      type: LinkObjType.In,
+      // reqId,
+      targetId,
+      in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
+      hasOut: false,
+    });
+    port.send(tb);
   }
 
   /**
@@ -120,6 +132,16 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       return proxy;
     }
     return source;
+  }
+  getLinkInSenderByProxy(obj: unknown) {
+    if (obj) {
+      const sender = (obj as any)[PROTOCAL_SENDER] as ReturnType<
+        SyncModelTransfer["_genLinkInSender"]
+      >;
+      if (sender.__marker__ === SENDER_MARKER) {
+        return sender;
+      }
+    }
   }
   private _createImportRefHook<T>(
     port: ComlinkProtocol.BinaryPort,
@@ -141,8 +163,8 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         type: "object",
         getSource: () => sourceFun,
         getProxyHanlder: () => {
-          const send = this._genSender(port, refId);
-          const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(send);
+          const sender = this._genLinkInSender(port, refId);
+          const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(sender);
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
@@ -154,21 +176,20 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
               }
 
               //#region 自定义属性
+              if (prop === IMPORT_FUN_EXTENDS_SYMBOL) {
+                return refExtends;
+              }
+              if (prop === PROTOCAL_SENDER) {
+                return sender;
+              }
+              //#endregion
 
+              //#region 静态的toString模式下的本地模拟
               /**
                * 本地模拟的toString，constructor和protoype等等属性都没有绑定远程
                * 这里纯粹是为了加速，模拟远端的返回，可以不用
                * @TODO 配置成可以可选模式
                */
-              if (prop === IMPORT_FUN_EXTENDS_SYMBOL) {
-                return refExtends;
-              }
-              if (prop === PROTOCAL_SENDER) {
-                return send;
-              }
-              //#endregion
-              //#region 静态的toString模式下的本地模拟
-
               if (
                 prop === "toString" &&
                 refExtends.toString.mode === IOB_Extends_Function_ToString_Mode.static
@@ -190,14 +211,22 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         type: "object",
         getSource: () => sourceObj,
         getProxyHanlder: () => {
-          const send = this._genSender(port, refId);
-          const defaultProxyHanlder = this._getDefaultProxyHanlder<object>(send);
+          const sender = this._genLinkInSender(port, refId);
+          const defaultProxyHanlder = this._getDefaultProxyHanlder<object>(sender);
           /**
            * 因为对象一旦被设置状态后，无法回退，所以这里可以直接根据现有的状态来判断对象的可操作性
            * @TODO 使用isExtensible isFrozen isSealed来改进
            */
           const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
+            get: (target, prop, receiver) => {
+              //#region 自定义属性
+              if (prop === PROTOCAL_SENDER) {
+                return sender;
+              }
+              //#endregion
+              return defaultProxyHanlder.get(target, prop, receiver);
+            },
             set(target, prop, value, receiver) {
               /**目前如果要实现判断是insert还是update，就要基于已经知道有多少的属性来推断，这方面还需要考虑 ArrayLike 的优化
                * 这一切可能要做成缓存的模式，缓存被禁止的属性

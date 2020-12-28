@@ -94,6 +94,10 @@ export class ImportStore<E = unknown> {
     }
     this.proxyIdStore.set(id, cache);
   }
+  /**为某一个对象记录 refId */
+  backupProxyId(proxy: object, id: number) {
+    this.proxyIdWM.set(proxy, id);
+  }
   private _fr = new FinalizationRegistry((id) => this.releaseProxyId(id as number));
   /**
    * 释放导入的引用

@@ -31,7 +31,6 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
     _port.on("message", (data) => {
       if (data instanceof Array) {
-        /// Atomic.notify
         this._checkRemote();
       }
     });
@@ -59,14 +58,14 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   postSyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
       (hook) => {
-        this._checkRemote();
+        this._checkRemoteAtomics();
         // console.debug(threadId, "+openSAB");
         Atomics.wait(hook.si32, SAB_HELPER.SI32_MSG_TYPE, hook.curMsgType);
         // console.debug(threadId, "-openSAB");
         hook.next();
       },
       (hook) => {
-        this._checkRemote();
+        this._checkRemoteAtomics();
         // console.debug(threadId, "+waitSAB");
         // 进入等待
         Atomics.wait(hook.si32, SAB_HELPER.SI32_MSG_TYPE, hook.msgType);
@@ -81,7 +80,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
       // 等待对方开始响应
       Atomics.wait(this._sync.remoteDataPkg.si32, SAB_HELPER.SI32_MSG_TYPE, SAB_MSG_TYPE.FREE);
       // 处理响应的内容
-      const msg = this._checkRemote();
+      const msg = this._checkRemoteAtomics();
       if (msg) {
         return msg;
       }
@@ -191,6 +190,13 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   }
 
   /**主动检测远端是否发来消息 */
+  private _checkRemoteAtomics() {
+    const { remoteDataPkg } = this._sync!;
+    /// 如果本地还未收到消息，而且远端的堆栈信息不为空，那么就可以开始处理
+    if (this._needOnMessageAtomics(remoteDataPkg)) {
+      return this._onMessage(remoteDataPkg);
+    }
+  }
   private _checkRemote() {
     const { remoteDataPkg } = this._sync!;
     /// 如果本地还未收到消息，而且远端的堆栈信息不为空，那么就可以开始处理
@@ -202,7 +208,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   private _chunkCollection = new Map<number, BFChainComlink.Duplex.CachedChunkInfo>();
 
   /**是否需要处理消息 */
-  private _needOnMessage(dataPkg: DataPkg) {
+  private _needOnMessageAtomics(dataPkg: DataPkg) {
     if (dataPkg.si32[SAB_HELPER.SI32_MSG_TYPE] !== SAB_MSG_TYPE.FREE) {
       do {
         const cur_msg_status = dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS];
@@ -216,6 +222,13 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
       return true;
     }
     return false;
+  }
+  /**是否需要处理消息 */
+  private _needOnMessage(dataPkg: DataPkg) {
+    return (
+      dataPkg.si32[SAB_HELPER.SI32_MSG_TYPE] !== SAB_MSG_TYPE.FREE &&
+      dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS] === SAB_MSG_STATUS.FINISH
+    );
   }
 
   /**处理消息指令 */
@@ -310,7 +323,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
           msg = {
             msgType: "SIM",
             msgId: undefined,
-            msgContent: deserialize(msgBinary.subarray(2)),
+            msgContent: deserialize(msgBinary.subarray(1)),
           };
           break;
         default:

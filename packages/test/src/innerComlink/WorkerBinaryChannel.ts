@@ -99,7 +99,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   // private _U8_DATA_BEGIN = Int32Array.BYTES_PER_ELEMENT * 2;
   req(cb: BFChainComlink.Callback<TB>, bin: TB) {
     try {
-      const resBin = this.send(bin);
+      const resBin = this.sendSync(bin);
       if (!resBin) {
         throw new TypeError();
       }
@@ -108,7 +108,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       cb({ isError: true, error });
     }
   }
-  send(bin: TB): TB | undefined {
+  private sendSync(bin: TB): TB | undefined {
     const { currentDataPkg: dataPkg } = this;
     const { si32, su8, sab } = dataPkg;
     /// 预备发起请求，将任务堆栈+1，并将请求内容写入缓冲区中
@@ -146,6 +146,9 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       // 否则就是对方在响应我们之前发起了其它请求，那么我们需要先处理请求
       this._onMessage(dataPkg);
     } while (true);
+  }
+  send(bin: TB) {
+    this.sendSync(bin);
   }
   //   readStream: AsyncIterator<TB>;
   //   write(bin: TB) {
