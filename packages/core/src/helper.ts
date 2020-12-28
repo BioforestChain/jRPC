@@ -81,6 +81,21 @@ export const ESM_REFLECT_FUN_MAP = new Map<
     },
   ],
   [
+    EmscriptenReflect.AsyncApply,
+    {
+      type: "sync",
+      fun: (target: object, [resolve, reject, ctx, ...args]: unknown[]) =>
+        queueMicrotask(async () => {
+          try {
+            const res = await Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>);
+            (resolve as any)(res);
+          } catch (err) {
+            (reject as any)(err);
+          }
+        }),
+    },
+  ],
+  [
     EmscriptenReflect.Construct,
     _SyncToCallback((target: object, [newTarget, ...args]: unknown[]) =>
       Reflect.construct(target as Function, args as ArrayLike<unknown>, newTarget),

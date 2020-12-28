@@ -88,4 +88,9 @@ declare namespace BFChainComlink {
     type: "primitive";
     getSource: () => S;
   };
+
+  namespace Util {
+    type Promisify<T> = T extends PromiseLike<unknown> ? T : PromiseLike<T>;
+    type Unpromisify<P> = P extends PromiseLike<infer T> ? T : P;
+  }
 }

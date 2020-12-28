@@ -47,6 +47,8 @@ export const enum EmscriptenReflect {
   JsonParse,
   /**批量操作 */
   Multi,
-  /**强制同步调用函数 */
+  /**强制异步转同步 */
   SyncApply,
+  /**强制同步转异步 */
+  AsyncApply,
 }

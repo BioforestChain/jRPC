@@ -50,12 +50,24 @@ installMixEnv(
     Reflect.set(globalThis, "ctxA", ctxA);
     await TestService.testAll(ctxA);
 
-    const tinkSync = moduleB.asyncToSync(ctxA.think);
+    console.log("start test thinkSync");
+    const thinkSync = moduleB.asyncToSync(ctxA.think);
     {
       const startTime = Date.now();
-      tinkSync(1000);
+      thinkSync(1000);
       const endTime = Date.now();
       console.assert(endTime - startTime, "tinkSync");
+      console.log(`✅ test thinkSync passed (${endTime - startTime}ms)`);
+    }
+    console.log("start test fibAsync");
+    const fibAsync = moduleB.syncToAsync(ctxA.work);
+    {
+      let i = 0;
+      const ti = setInterval(() => (i += 1), 10);
+      await fibAsync(42);
+      clearInterval(ti);
+      console.assert(i > 0, "fibAsync");
+      console.log(`✅ test fibAsync passed (${i * 10}ms+)`);
     }
   },
 );

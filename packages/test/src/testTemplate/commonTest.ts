@@ -43,6 +43,15 @@ export class TestService {
   think(ms: number) {
     return new Promise((cb) => setTimeout(cb, ms));
   }
+  work(n: number) {
+    const fib = (n: number): number => {
+      if (n === 0 || n === 1) {
+        return n;
+      }
+      return fib(n - 1) + fib(n - 2);
+    };
+    return fib(n);
+  }
 
   //#region 正常模式测试
 

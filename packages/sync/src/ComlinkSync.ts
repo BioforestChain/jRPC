@@ -5,7 +5,8 @@ import {
   getFunctionType,
 } from "@bfchain/comlink-protocol";
 import { EmscriptenReflect } from "@bfchain/comlink-typings";
-import { CallbackToSync, IS_ASYNC_APPLY_FUN_MARKER } from "./helper";
+import { CallbackToSync } from "./helper";
+import { PROTOCAL_SENDER, IS_ASYNC_APPLY_FUN_MARKER, IS_SYNC_APPLY_FUN_MARKER } from "./const";
 import { SyncModelTransfer } from "./SyncModelTransfer";
 
 export class ComlinkSync
@@ -53,8 +54,52 @@ export class ComlinkSync
   }
   asyncToSync<T>(fun: T) {
     if (typeof fun === "function") {
-      Reflect.set(fun, IS_ASYNC_APPLY_FUN_MARKER, true);
+      if (Reflect.get(fun, IS_ASYNC_APPLY_FUN_MARKER)) {
+        return fun as BFChainComlink.AsyncToSync<T>;
+      }
+      const send = Reflect.get(fun, PROTOCAL_SENDER);
+      if (send) {
+        return new Proxy(fun, {
+          get(_target, prop, r) {
+            if (prop === IS_ASYNC_APPLY_FUN_MARKER) {
+              return true;
+            }
+            return Reflect.get(fun, prop, r);
+          },
+          apply: (_target: Function, thisArg: any, argArray?: any) => {
+            return send([EmscriptenReflect.SyncApply, thisArg, ...argArray], true);
+          },
+        }) as BFChainComlink.AsyncToSync<T>;
+      }
     }
-    return fun as BFChainComlink.AsyncToSync<T>;
+    throw new TypeError();
+  }
+  importAsAsync<T>(key = "default") {
+    return this.syncToAsync(this.import<T>(key));
+  }
+  syncToAsync<T>(fun: T) {
+    if (typeof fun === "function") {
+      if (Reflect.get(fun, IS_SYNC_APPLY_FUN_MARKER)) {
+        return fun as BFChainComlink.SyncToAsync<T>;
+      }
+      const send = Reflect.get(fun, PROTOCAL_SENDER);
+      if (send) {
+        return new Proxy(fun, {
+          get(_target, prop, r) {
+            if (prop === IS_SYNC_APPLY_FUN_MARKER) {
+              return true;
+            }
+            return Reflect.get(fun, prop, r);
+          },
+          apply: (_target: Function, thisArg: any, argArray?: any) => {
+            /// 要使用本地的promise对任务进行包裹，不然对方接下来会进入卡死状态。
+            return new Promise((resolve, reject) => {
+              send([EmscriptenReflect.AsyncApply, resolve, reject, thisArg, ...argArray], true);
+            });
+          },
+        }) as BFChainComlink.SyncToAsync<T>;
+      }
+    }
+    throw new TypeError();
   }
 }

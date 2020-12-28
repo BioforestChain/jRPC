@@ -7,7 +7,7 @@ declare namespace BFChainComlink {
 
   type Holder<T = unknown> = T extends object
     ? AsyncUtil.Remote<T>
-    : AsyncUtil.Promisify<AsyncUtil.Remote<T>>;
+    : Util.Promisify<AsyncUtil.Remote<T>>;
 
   type AsyncValue<T> = T extends object ? Holder<T> : T;
 
@@ -129,21 +129,6 @@ declare namespace BFChainComlink {
       : never;
 
     /**
-     * Takes a type and wraps it in a Promise, if it not already is one.
-     * This is to avoid `Promise<Promise<T>>`.
-     *
-     * This is the inverse of `Unpromisify<T>`.
-     */
-    type Promisify<T> = T extends PromiseLike<unknown> ? T : PromiseLike<T>;
-    /**
-     * Takes a type that may be Promise and unwraps the Promise type.
-     * If `P` is not a Promise, it returns `P`.
-     *
-     * This is the inverse of `Promisify<T>`.
-     */
-    type Unpromisify<P> = P extends PromiseLike<infer T> ? T : P;
-
-    /**
      * Takes the raw type of a remote object in the other thread and returns the type as it is visible to the local thread
      * when proxied with `Comlink.proxy()`.
      *
@@ -181,7 +166,7 @@ declare namespace BFChainComlink {
         : SA
       : SA;
 
-    type RemoteReturn<TReturn> = Holder<Unpromisify<TReturn>>;
+    type RemoteReturn<TReturn> = Holder<Util.Unpromisify<TReturn>>;
     /**
      * Takes the raw type of a remote object, function or class in the other thread and returns the type as it is visible to
      * the local thread from the proxy return value of `Comlink.wrap()` or `Comlink.proxy()`.

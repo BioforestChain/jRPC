@@ -20,11 +20,11 @@
 - [x] v2.3 实现 MagicBinaryReflect，可以同时用于同步与异步通讯
 - [ ] v2.4 支持自定义 CloneAble
 
-## 异步模块
+## 异步与同步
 
 Comlink 支持同步与异步模块互相调度。
 
-#### 比如在浏览器前端
+#### 不支持同步的浏览器前端
 
 `main Thread`不支持`Atomics.wait`，我们可以为其注册远端的异步模块来进行编程。
 当然也可以将浏览器前端注册为模块，提供给其它线程调度，从而可以享用到主线程特有的模块，比如 `DOM-API`，`WebRTC` 等等。
@@ -68,4 +68,13 @@ const peerConnection = new RTCPeerConnection({ ...configuration });
   const RTCPeerConnectionAsync = workerModule.import("RTCPeerConnection");
   const RTCPeerConnection = workerModule.asyncToSync(RTCPeerConnectionAsync);
 }
+```
+
+#### 同步转异步
+
+我们经常看到一些需要长 CPU 时间的 nodejs 任务，在绑定到原生模块的时候，是将其注册为异步模块。
+在 Comlink 中，同样也能将一个同步函数注册成异步函数。不同的是，你可以选择是保持同步模式还是注册成异步模式。
+
+```ts
+
 ```
