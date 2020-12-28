@@ -13,9 +13,14 @@
     }
   ],
   "files": [
+    "src/@types.ts",
     "src/AtomicsNotifyer.ts",
     "src/const.ts",
-    "src/duplex.ts",
-    "src/index.ts"
+    "src/DataPkg.ts",
+    "src/Duplex.ts",
+    "src/DuplexFactory.ts",
+    "src/helper.ts",
+    "src/index.ts",
+    "src/u32.ts"
   ]
 }

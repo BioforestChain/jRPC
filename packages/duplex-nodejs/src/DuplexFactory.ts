@@ -1,0 +1,75 @@
+import { MessagePort, MessageChannel } from "worker_threads";
+import { Duplex } from "./Duplex";
+
+const PORT_SABS_WM = new WeakMap<MessagePort, BFChainComlink.Duplex.SABS>();
+
+export class DuplexFactory implements BFChainComlink.DuplexFactory {
+  /**作为子线程运作 */
+  static async asCluster(workerSelf: Pick<MessagePort, "addListener" | "removeListener">) {
+    let sabs: BFChainComlink.Duplex.SABS | undefined;
+    const port2 = await new Promise<MessagePort>((resolve, reject) => {
+      const onMessage = (data: unknown) => {
+        if (data instanceof MessagePort) {
+          resolve(data);
+          workerSelf.removeListener("message", onMessage);
+        } else if (
+          data instanceof Array &&
+          data[0] instanceof SharedArrayBuffer &&
+          data[1] instanceof SharedArrayBuffer
+        ) {
+          sabs = { locale: data[0], remote: data[1] };
+        }
+      };
+      workerSelf.addListener("message", onMessage);
+    });
+    if (!sabs) {
+      throw new TypeError();
+    }
+    PORT_SABS_WM.set(port2, sabs);
+    const duplex = new Duplex<ComlinkProtocol.TB>(port2, sabs);
+
+    return duplex;
+  }
+
+  constructor(private _mc = new MessageChannel()) {}
+  private _duplex?: Duplex<ComlinkProtocol.TB>;
+
+  private _getSabs(port: MessagePort) {
+    let sabs = PORT_SABS_WM.get(port);
+    if (undefined === sabs) {
+      try {
+        sabs = {
+          locale: new SharedArrayBuffer(1024), // 使用1kb的内存用做传输数据的带宽
+          remote: new SharedArrayBuffer(1024), // 使用1kb的内存用做传输数据的带宽
+        };
+        PORT_SABS_WM.set(port, sabs);
+      } catch (err) {
+        console.error(err);
+        throw new SyntaxError("no support use SharedArrayBuffer");
+      }
+    }
+    return sabs;
+  }
+  /**创建出专门用于传输协议数据的双工通道 */
+  create() {
+    let duplex = this._duplex;
+    if (!duplex) {
+      const sabs = this._getSabs(this._mc.port1);
+      duplex = new Duplex<ComlinkProtocol.TB>(this._mc.port1, sabs);
+      this._duplex = duplex;
+    }
+    return duplex;
+  }
+  /**作为主线程运作 */
+  asMain(workerIns: Pick<MessagePort, "postMessage">) {
+    const sabs = this._getSabs(this._mc.port1);
+    try {
+      workerIns.postMessage([sabs.remote, sabs.locale]);
+    } catch (err) {
+      console.error(err);
+      throw new SyntaxError("no support use transfer SharedArrayBuffer in channel");
+    }
+
+    workerIns.postMessage(this._mc.port2, [this._mc.port2]);
+  }
+}

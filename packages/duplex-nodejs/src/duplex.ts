@@ -1,110 +1,23 @@
-import { MessagePort, MessageChannel, threadId } from "worker_threads";
-import {
-  MESSAGE_TYPE,
-  REMOTE_MODE,
-  // SAB_CHUNK_HELPER,
-  SAB_EVENT_HELPER,
-  SAB_HELPER,
-  SAB_MSG_STATUS,
-  SAB_MSG_TYPE,
-} from "./const";
+import type { MessagePort } from "worker_threads";
+import { MESSAGE_TYPE, SAB_EVENT_HELPER, SAB_HELPER, SAB_MSG_STATUS, SAB_MSG_TYPE } from "./const";
 import { serialize, deserialize } from "v8";
 import { AtomicsNotifyer } from "./AtomicsNotifyer";
+import { u8Concat } from "./helper";
+import { DataPkg } from "./DataPkg";
+import { u32Reader } from "./u32";
 
-type SABS = { locale: SharedArrayBuffer; remote: SharedArrayBuffer };
-
-const PORT_SABS_WM = new WeakMap<MessagePort, SABS>();
-
-export class DuplexFactory implements BFChainComlink.DuplexFactory {
-  /**作为子线程运作 */
-  static async asCluster(workerSelf: Pick<MessagePort, "addListener" | "removeListener">) {
-    let sabs: SABS | undefined;
-    const port2 = await new Promise<MessagePort>((resolve, reject) => {
-      const onMessage = (data: unknown) => {
-        if (data instanceof MessagePort) {
-          resolve(data);
-          workerSelf.removeListener("message", onMessage);
-        } else if (
-          data instanceof Array &&
-          data[0] instanceof SharedArrayBuffer &&
-          data[1] instanceof SharedArrayBuffer
-        ) {
-          sabs = { locale: data[0], remote: data[1] };
-        }
-      };
-      workerSelf.addListener("message", onMessage);
-    });
-    if (sabs) {
-      PORT_SABS_WM.set(port2, sabs);
-    }
-    const duplex = new Duplex<ComlinkProtocol.TB>(port2);
-
-    return duplex;
-  }
-
-  constructor(private _mc = new MessageChannel()) {}
-  private _duplex?: Duplex<ComlinkProtocol.TB>;
-
-  private _getSabs(port: MessagePort) {
-    let sabs = PORT_SABS_WM.get(port);
-    if (undefined === sabs) {
-      try {
-        sabs = {
-          locale: new SharedArrayBuffer(1024), // 使用1kb的内存用做传输数据的带宽
-          remote: new SharedArrayBuffer(1024), // 使用1kb的内存用做传输数据的带宽
-        };
-        PORT_SABS_WM.set(port, sabs);
-      } catch {}
-    }
-    return sabs;
-  }
-  /**创建出专门用于传输协议数据的双工通道 */
-  create() {
-    let duplex = this._duplex;
-    if (!duplex) {
-      this._getSabs(this._mc.port1);
-      duplex = new Duplex<ComlinkProtocol.TB>(this._mc.port1);
-      this._duplex = duplex;
-    }
-    return duplex;
-  }
-  /**作为主线程运作 */
-  asMain(workerIns: Pick<MessagePort, "postMessage">) {
-    const sabs = this._getSabs(this._mc.port1);
-    if (sabs) {
-      try {
-        workerIns.postMessage([sabs.remote, sabs.locale]);
-      } catch {
-        PORT_SABS_WM.delete(this._mc.port1);
-      }
-    }
-
-    workerIns.postMessage(this._mc.port2, [this._mc.port2]);
-  }
-}
-
-class DataPkg {
-  constructor(public readonly name: string, public readonly sab: SharedArrayBuffer) {}
-  public readonly si32 = new Int32Array(this.sab);
-  public readonly su8 = new Uint8Array(this.sab);
-  public readonly su16 = new Uint16Array(this.sab);
-}
 export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   static getPort(duplex: Duplex<any>) {
     return duplex._port;
   }
   private _sync: {
-    sabs: SABS;
+    sabs: BFChainComlink.Duplex.SABS;
     localeDataPkg: DataPkg;
     remoteDataPkg: DataPkg;
   };
-  constructor(private _port: MessagePort) {
+  constructor(private _port: MessagePort, sabs: BFChainComlink.Duplex.SABS) {
     Reflect.set(globalThis, "duplex", this);
     this.supportModes.add("async");
-    const sabs = PORT_SABS_WM.get(_port);
-    if (sabs === undefined) {
-      throw new TypeError();
-    }
     this.supportModes.add("sync");
 
     const localeDataPkg = new DataPkg("locale", sabs.locale);
@@ -177,8 +90,8 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
   private _eventId = new Uint32Array(1);
   private _postMessageCallback(
-    onApplyWrite: (ctx: PostMessage_ApplyWrite_HookArg) => unknown,
-    onChunkReady: (ctx: PostMessage_ChunkReady_HookArg) => unknown,
+    onApplyWrite: (ctx: BFChainComlink.Duplex.PostMessage_ApplyWrite_HookArg) => unknown,
+    onChunkReady: (ctx: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg) => unknown,
     msg: BFChainComlink.Channel.DuplexMessage<TB>,
   ) {
     // console.debug("postMessage", threadId, msg);
@@ -257,7 +170,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_TYPE, SAB_HELPER.SI32_MSG_STATUS]);
 
         // 钩子参数
-        const hook: PostMessage_ChunkReady_HookArg = {
+        const hook: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg = {
           msgType: SAB_MSG_TYPE.EVENT,
           si32,
           chunkId,
@@ -286,7 +199,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     }
   }
 
-  private _chunkCollection = new Map<number, CachedChunkInfo>();
+  private _chunkCollection = new Map<number, BFChainComlink.Duplex.CachedChunkInfo>();
 
   /**是否需要处理消息 */
   private _needOnMessage(dataPkg: DataPkg) {
@@ -324,7 +237,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
             SAB_EVENT_HELPER.U8_MSG_DATA_OFFSET,
             SAB_EVENT_HELPER.U8_MSG_DATA_OFFSET + chunkSize,
           );
-          let cachedChunkInfo: CachedChunkInfo | undefined;
+          let cachedChunkInfo: BFChainComlink.Duplex.CachedChunkInfo | undefined;
           let msgBinary: Uint8Array | undefined;
           /// 单包
           if (1 === chunkCount) {
@@ -347,7 +260,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
                 for (const chunkItem of cachedChunkInfo) {
                   chunkList[chunkItem[0]] = chunkItem[1];
                 }
-                msgBinary = _u8Concat(ArrayBuffer, chunkList);
+                msgBinary = u8Concat(ArrayBuffer, chunkList);
               }
             } else {
               cachedChunkInfo = new Map();
@@ -424,9 +337,9 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   private _serializeMsg(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
     let msgBinary: Uint8Array;
     if (msg.msgType === "SIM") {
-      msgBinary = _u8Concat(ArrayBuffer, [[MESSAGE_TYPE.SIM], serialize(msg.msgContent)]);
+      msgBinary = u8Concat(ArrayBuffer, [[MESSAGE_TYPE.SIM], serialize(msg.msgContent)]);
     } else {
-      msgBinary = _u8Concat(ArrayBuffer, [
+      msgBinary = u8Concat(ArrayBuffer, [
         [msg.msgType === "REQ" ? MESSAGE_TYPE.REQ : MESSAGE_TYPE.RES],
         new Uint8Array(new Uint32Array([msg.msgId]).buffer),
         serialize(msg.msgContent),
@@ -435,45 +348,3 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     return msgBinary;
   }
 }
-
-function _u8Concat(ABC: typeof SharedArrayBuffer | typeof ArrayBuffer, u8s: ArrayLike<number>[]) {
-  let totalLen = 0;
-  for (const u8 of u8s) {
-    totalLen += u8.length;
-  }
-  const u8a = new Uint8Array(new ABC(totalLen));
-  let offsetLen = 0;
-  for (const u8 of u8s) {
-    u8a.set(u8, offsetLen);
-    offsetLen += u8.length;
-  }
-  return u8a;
-}
-
-class U32Reader {
-  private _u32 = new Uint32Array(1);
-  private _u8 = new Uint8Array(this._u32.buffer);
-  setByU8(u8: Uint8Array) {
-    this._u8.set(u8);
-    return this;
-  }
-  getU32() {
-    return this._u32[0];
-  }
-}
-const u32Reader = new U32Reader();
-
-type CachedChunkInfo = Map<number, Uint8Array>; // { chunk: Uint8Array; range: [{ start: number; end: number }] };
-type PostMessage_ApplyWrite_HookArg = {
-  si32: Int32Array;
-  msgType: SAB_MSG_TYPE;
-  curMsgType: SAB_MSG_TYPE;
-  next: () => void;
-};
-type PostMessage_ChunkReady_HookArg = {
-  si32: Int32Array;
-  msgType: SAB_MSG_TYPE;
-  chunkCount: number;
-  chunkId: number;
-  next: () => void;
-};
