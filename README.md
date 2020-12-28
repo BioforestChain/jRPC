@@ -76,5 +76,13 @@ const peerConnection = new RTCPeerConnection({ ...configuration });
 在 Comlink 中，同样也能将一个同步函数注册成异步函数。不同的是，你可以选择是保持同步模式还是注册成异步模式。
 
 ```ts
+const fibAsync = workerModule.importAsAsync("fib");
+await fibAsync(40);
+/// same other task still work in current thread.
 
+// or
+{
+  const fib = workerModule.import("fib");
+  const fibAsync = workerModule.syncToAsync(fib);
+}
 ```
