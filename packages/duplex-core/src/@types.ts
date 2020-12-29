@@ -15,5 +15,14 @@ declare namespace BFChainComlink {
       chunkId: number;
       next: () => void;
     };
+
+    type Endpoint = {
+      onMessage(listener: (data: Endpoint.Message) => unknown): void;
+      postMessage(data: Endpoint.Message, transferList?: Array<ArrayBuffer>): void;
+    };
+    namespace Endpoint {
+      type Message = Uint8Array | Array<number>;
+    }
+    // type EndpointFactory = (port: unknown) => Endpoint;
   }
 }

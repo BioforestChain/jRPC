@@ -9,4 +9,4 @@ class U32Reader {
     return this._u32[0];
   }
 }
-export const u32Reader = new U32Reader();
+export const u32 = new U32Reader();

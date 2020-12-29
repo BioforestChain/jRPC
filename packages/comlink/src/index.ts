@@ -8,21 +8,9 @@ import { ComlinkAsync } from "@bfchain/comlink-async";
 import { ComlinkSync } from "@bfchain/comlink-sync";
 
 export class Comlink {
-  constructor(options: Partial<BFChainComlink.ComlinkOptions>) {}
+  constructor(options?: Partial<BFChainComlink.ComlinkOptions>) {}
 
-  static asyncModuleCreater(moduleName: string, duplexFactory: BFChainComlink.DuplexFactory) {
-    const duplex = duplexFactory.create();
-    return this.asyncModule(moduleName, duplex);
-  }
-  static syncModuleCreater(moduleName: string, duplexFactory: BFChainComlink.DuplexFactory) {
-    const duplex = duplexFactory.create();
-    return this.syncModule(moduleName, duplex);
-  }
-
-  static asyncModule(
-    moduleName: string,
-    duplex: BFChainComlink.Channel.Duplex<ComlinkProtocol.TB>,
-  ) {
+  asyncModule(moduleName: string, duplex: BFChainComlink.Channel.Duplex<ComlinkProtocol.TB>) {
     if (!duplex.supportModes.has("async")) {
       throw new TypeError("duplex no support async mode");
     }
@@ -30,7 +18,7 @@ export class Comlink {
     return new ComlinkAsync(binaryChannel.port, moduleName);
   }
 
-  static syncModule(moduleName: string, duplex: BFChainComlink.Channel.Duplex<ComlinkProtocol.TB>) {
+  syncModule(moduleName: string, duplex: BFChainComlink.Channel.Duplex<ComlinkProtocol.TB>) {
     if (!duplex.supportModes.has("sync")) {
       throw new TypeError("duplex no support sync mode");
     }

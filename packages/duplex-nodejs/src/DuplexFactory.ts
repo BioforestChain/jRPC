@@ -1,9 +1,10 @@
 import { MessagePort, MessageChannel } from "worker_threads";
-import { Duplex } from "./Duplex";
+import { Duplex } from "@bfchain/comlink-duplex-core";
+import { Endpoint } from "./Endpoint";
 
 const PORT_SABS_WM = new WeakMap<MessagePort, BFChainComlink.Duplex.SABS>();
 
-export class DuplexFactory implements BFChainComlink.DuplexFactory {
+export class DuplexFactory {
   /**作为子线程运作 */
   static async asCluster(workerSelf: Pick<MessagePort, "addListener" | "removeListener">) {
     let sabs: BFChainComlink.Duplex.SABS | undefined;
@@ -26,7 +27,7 @@ export class DuplexFactory implements BFChainComlink.DuplexFactory {
       throw new TypeError();
     }
     PORT_SABS_WM.set(port2, sabs);
-    const duplex = new Duplex<ComlinkProtocol.TB>(port2, sabs);
+    const duplex = new Duplex<ComlinkProtocol.TB>(new Endpoint(port2), sabs);
 
     return duplex;
   }
@@ -51,11 +52,11 @@ export class DuplexFactory implements BFChainComlink.DuplexFactory {
     return sabs;
   }
   /**创建出专门用于传输协议数据的双工通道 */
-  create() {
+  getDuplex() {
     let duplex = this._duplex;
     if (!duplex) {
       const sabs = this._getSabs(this._mc.port1);
-      duplex = new Duplex<ComlinkProtocol.TB>(this._mc.port1, sabs);
+      duplex = new Duplex<ComlinkProtocol.TB>(new Endpoint(this._mc.port1), sabs);
       this._duplex = duplex;
     }
     return duplex;

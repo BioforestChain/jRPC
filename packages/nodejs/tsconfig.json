@@ -6,15 +6,7 @@
   },
   "references": [
     {
-      "path": "../duplex-core/tsconfig.json"
-    },
-    {
       "path": "../typings/tsconfig.json"
     }
-  ],
-  "files": [
-    "src/DuplexFactory.ts",
-    "src/Endpoint.ts",
-    "src/index.ts"
   ]
 }

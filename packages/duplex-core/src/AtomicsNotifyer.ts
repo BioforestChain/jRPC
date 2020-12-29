@@ -1,10 +1,9 @@
 import { cacheGetter, cleanGetterCache } from "@bfchain/util-decorator";
 import { REMOTE_MODE, SAB_HELPER } from "./const";
-import type { MessagePort } from "worker_threads";
 
 export class AtomicsNotifyer {
-  constructor(private _port: MessagePort) {
-    this._port.addListener("message", (data) => {
+  constructor(private _port: BFChainComlink.Duplex.Endpoint) {
+    this._port.onMessage((data) => {
       if (data instanceof Array) {
         for (const index of data) {
           const cbs = this._icbs.get(index);

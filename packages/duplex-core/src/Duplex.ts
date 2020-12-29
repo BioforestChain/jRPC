@@ -4,7 +4,7 @@ import { serialize, deserialize } from "v8";
 import { AtomicsNotifyer } from "./AtomicsNotifyer";
 import { u8Concat } from "./helper";
 import { DataPkg } from "./DataPkg";
-import { u32Reader } from "./u32";
+import { u32 } from "./u32";
 
 export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   static getPort(duplex: Duplex<any>) {
@@ -15,8 +15,8 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     localeDataPkg: DataPkg;
     remoteDataPkg: DataPkg;
   };
-  constructor(private _port: MessagePort, sabs: BFChainComlink.Duplex.SABS) {
-    Reflect.set(globalThis, "duplex", this);
+  constructor(private _port: BFChainComlink.Duplex.Endpoint, sabs: BFChainComlink.Duplex.SABS) {
+    // Reflect.set(globalThis, "duplex", this);
     this.supportModes.add("async");
     this.supportModes.add("sync");
 
@@ -29,7 +29,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
       remoteDataPkg,
     };
 
-    _port.on("message", (data) => {
+    _port.onMessage((data) => {
       if (data instanceof Array) {
         this._checkRemote();
       }
@@ -304,7 +304,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         case MESSAGE_TYPE.REQ:
           msg = {
             msgType: "REQ",
-            msgId: u32Reader
+            msgId: u32
               .setByU8(msgBinary.subarray(1, 5 /* Uint32Array.BYTES_PER_ELEMENT+1 */))
               .getU32(),
             msgContent: deserialize(msgBinary.subarray(5)),
@@ -313,7 +313,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         case MESSAGE_TYPE.RES:
           msg = {
             msgType: "RES",
-            msgId: u32Reader
+            msgId: u32
               .setByU8(msgBinary.subarray(1, 5 /* Uint32Array.BYTES_PER_ELEMENT+1 */))
               .getU32(),
             msgContent: deserialize(msgBinary.subarray(5)),

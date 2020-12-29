@@ -1,5 +1,3 @@
-import "./@types";
-import type {} from "@bfchain/comlink-channel";
-import type {} from "@bfchain/comlink-typings";
-import type {} from "@bfchain/comlink";
+import type {} from '@bfchain/comlink-duplex-core'
+import type {} from '@bfchain/comlink-protocol'
 export * from "./DuplexFactory";

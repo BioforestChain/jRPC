@@ -54,10 +54,10 @@ installMixEnv(
     const thinkSync = moduleB.asyncToSync(ctxA.think);
     {
       const startTime = Date.now();
-      thinkSync(1000);
+      thinkSync(200);
       const endTime = Date.now();
       const diffTime = endTime - startTime;
-      console.assert(diffTime >= 1000, `thinkSync (${diffTime}ms)`);
+      console.assert(diffTime >= 200, `thinkSync (${diffTime}ms)`);
     }
     const fibAsync = moduleB.syncToAsync(ctxA.work);
     {
