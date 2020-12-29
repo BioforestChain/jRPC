@@ -25,8 +25,8 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
       return null;
     },
     setPrototypeOf: () => {
-      console.warn("no support AsyncReflect.setPrototypeOf");
-      return false;
+      throw new Error("no support AsyncReflect.setPrototypeOf");
+      // return false;
     },
     isExtensible: () => {
       throw new Error("no support AsyncReflect.isExtensible");
@@ -112,26 +112,38 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
     },
     /**发送 set 操作 */
     set: (_target, prop: keyof T, value: any, receiver: any) => {
-      const res = holderReflect.set(prop, value);
-      if (typeof res === "boolean") {
-        return res;
-      }
-      // openAsAsyncValue(holderReflect, (asyncValue) => doSet(asyncValue, prop, value));
-      return true;
+      const setHolderReflect = holderReflect.setHolder(prop, value);
+      let res = true;
+      setHolderReflect.toValueSync((ret) => {
+        if (ret.isError === false) {
+          res = ret.data;
+        }
+      });
+      return res;
     },
     deleteProperty: (target: T, prop: keyof T) => {
-      const res = holderReflect.deleteProperty(prop);
-      if (typeof res === "boolean") {
-        return res;
-      }
-      // openAsAsyncValue(holderReflect, (asyncValue) => doDeleteProperty(asyncValue, prop));
-      return true;
+      const setHolderReflect = holderReflect.deletePropertyHolder(prop);
+      let res = true;
+      setHolderReflect.toValueSync((ret) => {
+        if (ret.isError === false) {
+          res = ret.data;
+        }
+      });
+      return res;
     },
     apply: (_target, thisArg, argArray) => {
-      return holderReflect.applyHolder(thisArg, argArray).toAsyncValue();
+      const applyHolderReflect = holderReflect.applyHolder(thisArg, argArray);
+      applyHolderReflect.toValueSync(() => {
+        ///强行调取触发指令发送
+      });
+      return applyHolderReflect.toAsyncValue();
     },
     construct: (_target, argArray, newTarget) => {
-      return holderReflect.constructHolder(argArray, newTarget).toAsyncValue();
+      const constructHolderReflect = holderReflect.constructHolder(argArray, newTarget);
+      constructHolderReflect.toValueSync(() => {
+        ///强行调取触发指令发送
+      });
+      return constructHolderReflect.toAsyncValue();
     },
   };
   return proxyHanlder;

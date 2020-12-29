@@ -179,3 +179,16 @@ export const OpenArg = <T>(arg: BFChainComlink.CallbackArg<T>) => {
   }
   return arg.data;
 };
+
+declare const queueMicrotask: (cb: Function) => void;
+
+// let _queueMicrotask: typeof queueMicrotask;
+// if (typeof queueMicrotask === "function") {
+//   /// globalThis和queueMicrotask是同个版本出现的
+//   _queueMicrotask = queueMicrotask.bind(globalThis);
+// } else {
+//   const p = Promise.resolve();
+//   _queueMicrotask = (cb) => {
+//     p.then(cb as any).catch((err) => setTimeout(() => {}, 0));
+//   };
+// }

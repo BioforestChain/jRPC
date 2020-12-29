@@ -1311,6 +1311,11 @@
   resolved "http://192.168.250.245:4873/@types%2fnode/-/node-14.0.26.tgz#22a3b8a46510da8944b67bfc27df02c34a35331c"
   integrity sha1-IqO4pGUQ2olEtnv8J98Cw0o1Mxw=
 
+"@types/node@^14.14.16":
+  version "14.14.16"
+  resolved "http://192.168.250.245:4873/@types%2fnode/-/node-14.14.16.tgz#3cc351f8d48101deadfed4c9e4f116048d437b4b"
+  integrity sha1-PMNR+NSBAd6t/tTJ5PEWBI1De0s=
+
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
   resolved "http://192.168.250.245:4873/@types%2fnormalize-package-data/-/normalize-package-data-2.4.0.tgz#e486d0d97396d79beedd0a6e33f4534ff6b4973e"

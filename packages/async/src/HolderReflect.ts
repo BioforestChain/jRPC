@@ -260,11 +260,11 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     cleanAllGetterCache(this);
 
     iobCacher?.waitter.forEach((cb) => {
-      try {
-        cb({ isError: false, data: undefined });
-      } catch (err) {
-        console.error("uncatch error", err);
-      }
+      // try {
+      cb({ isError: false, data: undefined });
+      // } catch (err) {
+      //   console.error("uncatch error", err);
+      // }
     });
   }
   getIOB(): ComlinkProtocol.IOB | undefined {
@@ -1286,7 +1286,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.set(iobCacher.value, propertyKey, value));
   }
-  private setHolder<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  setHolder<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
     propertyKey: K,
     value: BFChainComlink.AsyncValue<T[K]> | T[K],
   ) {

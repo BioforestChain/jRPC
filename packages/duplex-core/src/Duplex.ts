@@ -1,6 +1,25 @@
-import type { MessagePort } from "worker_threads";
 import { MESSAGE_TYPE, SAB_EVENT_HELPER, SAB_HELPER, SAB_MSG_STATUS, SAB_MSG_TYPE } from "./const";
-import { serialize, deserialize } from "v8";
+// import { serialize, deserialize } from "v8";
+const serialize = (data: unknown) => {
+  const json = JSON.stringify(data);
+  const u8 = new Uint8Array(json.length);
+  for (let i = 0; i < json.length; i++) {
+    const code = json.charCodeAt(i);
+    if (code > 256) {
+      throw new RangeError("");
+    }
+    u8[i] = code;
+  }
+  return u8;
+};
+const deserialize = (u8: Uint8Array) => {
+  let json = "";
+  for (const code of u8) {
+    json += String.fromCharCode(code);
+  }
+  return JSON.parse(json);
+};
+
 import { AtomicsNotifyer } from "./AtomicsNotifyer";
 import { u8Concat } from "./helper";
 import { DataPkg } from "./DataPkg";

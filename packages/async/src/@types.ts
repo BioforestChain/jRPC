@@ -7,7 +7,7 @@ declare namespace BFChainComlink {
 
   type Holder<T = unknown> = T extends object
     ? AsyncUtil.Remote<T>
-    : Util.Promisify<AsyncUtil.Remote<T>>;
+    : BFChainUtil.PromiseMaybe<AsyncUtil.Remote<T>>;
 
   type AsyncValue<T> = T extends object ? Holder<T> : T;
 

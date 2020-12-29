@@ -1,0 +1,9 @@
+{
+  "name": "@bfchain/comlink-test-web",
+  "source": "../build/esm/1-1.web.test.js",
+  "exports": "dist/1-1.web.modern.js",
+  "scripts": {
+    "build": "microbundle",
+    "dev": "microbundle watch --no-compress"
+  }
+}

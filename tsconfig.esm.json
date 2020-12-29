@@ -1,5 +1,8 @@
 {
   "files": [],
   "include": [],
-  "references": [{ "path": "packages/comlink/tsconfig.esm.json" }]
+  "references": [
+    { "path": "packages/comlink/tsconfig.esm.json" },
+    { "path": "packages/test/tsconfig.esm.json" }
+  ]
 }

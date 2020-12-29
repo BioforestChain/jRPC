@@ -7,8 +7,8 @@ export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<T
         const resId = msg.msgId;
         const output = this._resMap.get(resId);
         if (!output) {
-          console.error("no found responser");
-          return;
+          throw new TypeError("no found responser");
+          // return;
         }
         this._resMap.delete(resId);
 

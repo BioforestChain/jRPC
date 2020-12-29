@@ -9,19 +9,13 @@
   },
   "references": [
     {
-      "path": "../async/tsconfig.esm.json"
+      "path": "../comlink/tsconfig.esm.json"
     },
     {
-      "path": "../channel/tsconfig.esm.json"
+      "path": "../duplex-browser/tsconfig.esm.json"
     },
     {
-      "path": "../core/tsconfig.esm.json"
-    },
-    {
-      "path": "../duplex-core/tsconfig.esm.json"
-    },
-    {
-      "path": "../sync/tsconfig.esm.json"
+      "path": "../duplex-nodejs/tsconfig.esm.json"
     },
     {
       "path": "../typings/tsconfig.esm.json"

@@ -10,6 +10,7 @@
     "@bfchain/comlink-async": "2.3.0",
     "@bfchain/comlink-channel": "2.3.0",
     "@bfchain/comlink-core": "2.3.0",
+    "@bfchain/comlink-duplex-core": "2.3.0",
     "@bfchain/comlink-sync": "2.3.0",
     "@bfchain/comlink-typings": "2.3.0"
   },

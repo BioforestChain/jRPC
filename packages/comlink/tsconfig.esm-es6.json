@@ -18,6 +18,9 @@
       "path": "../core/tsconfig.esm-es6.json"
     },
     {
+      "path": "../duplex-core/tsconfig.esm-es6.json"
+    },
+    {
       "path": "../sync/tsconfig.esm-es6.json"
     },
     {

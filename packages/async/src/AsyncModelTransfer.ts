@@ -99,7 +99,8 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
                 true,
               );
             } else {
-              console.error("uncatch error:", ret.error);
+              throw ret.error;
+              // console.error("uncatch error:", ret.error);
             }
             return;
           }

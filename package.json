@@ -30,7 +30,7 @@
   "bdkMono": {
     "generateConfigFiles": [
       {
-        "packages": "*,-test_",
+        "packages": "*",
         "type": "mergejson",
         "from": "$ROOT_PROJECT/config/tsconfig_template/tsconfig.cjs.json",
         "to": "$PACKAGE/tsconfig.json"
@@ -42,7 +42,7 @@
         "to": "$PACKAGE/tsconfig.esm-es6.json"
       },
       {
-        "packages": "*,-test,-demo,-test_*",
+        "packages": "*",
         "type": "mergejson",
         "from": "$ROOT_PROJECT/config/tsconfig_template/tsconfig.esm.json",
         "to": "$PACKAGE/tsconfig.esm.json"

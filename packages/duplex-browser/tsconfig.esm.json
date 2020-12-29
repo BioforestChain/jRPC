@@ -9,6 +9,9 @@
   },
   "references": [
     {
+      "path": "../duplex-core/tsconfig.esm.json"
+    },
+    {
       "path": "../typings/tsconfig.esm.json"
     }
   ]

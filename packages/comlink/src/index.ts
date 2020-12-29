@@ -3,6 +3,8 @@ export * from "@bfchain/comlink-core";
 export * from "@bfchain/comlink-protocol";
 export * from "@bfchain/comlink-sync";
 export * from "@bfchain/comlink-async";
+export * from "@bfchain/comlink-duplex-core";
+
 import { AsyncBinaryChannel, SyncBinaryChannel } from "@bfchain/comlink-channel";
 import { ComlinkAsync } from "@bfchain/comlink-async";
 import { ComlinkSync } from "@bfchain/comlink-sync";

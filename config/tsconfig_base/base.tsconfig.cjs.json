@@ -4,7 +4,17 @@
     "incremental": true,
     "target": "esnext",
     "module": "commonjs",
-    "lib": ["es6", "es2015.iterable", "esnext.asynciterable", "es2020"],
+    "lib": [
+      "es5",
+      "es2015",
+      "es2017",
+      "es2018",
+      "es2019",
+      "es2020",
+      "es2015.iterable",
+      "esnext.asynciterable"
+    ],
+    "types": [],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
