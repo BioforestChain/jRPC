@@ -10,6 +10,10 @@ function testRunner(scriptUrl?: string) {
       const a = A;
       moduleA.export(a, "a");
       moduleA.export(document, "document");
+      // {
+      //   // moduleA.export(customElements, "customElements");
+      //   // moduleA.export(HTMLElement, "HTMLElement");
+      // }
     },
     async (moduleB, console) => {
       const a = await moduleB.import<typeof A>("a");
@@ -42,7 +46,6 @@ function testRunner(scriptUrl?: string) {
       console.assert(a === A, "import");
 
       const document = moduleB.import<Document>("document");
-      Reflect.set(self, "document", document);
       const div = document.createElement("div");
       const id = `id-${self.name}-${Math.random().toString(36).slice(2)}`;
       const textContent = `T~${self.name}~#${id}~T`;
@@ -52,6 +55,22 @@ function testRunner(scriptUrl?: string) {
       console.assert(div.textContent === textContent, "textContent");
       const div2 = document.querySelector<HTMLDivElement>("#" + id);
       console.assert(div2 === div, "ref");
+
+      // {
+      //   const customElements = moduleB.import<CustomElementRegistry>("customElements");
+      //   const _HTMLElement = moduleB.import<typeof HTMLElement>("HTMLElement");
+      //   class MyEle extends _HTMLElement {
+      //     constructor() {
+      //       super();
+      //       const shadow = this.attachShadow({ mode: "open" });
+      //       const text = document.createElement("span");
+      //       text.textContent = "comlink ❤ web component";
+      //       shadow.appendChild(text);
+      //     }
+      //   }
+      //   customElements.define("my-ele", MyEle);
+      //   document.body.appendChild(new MyEle());
+      // }
     },
   );
 }
