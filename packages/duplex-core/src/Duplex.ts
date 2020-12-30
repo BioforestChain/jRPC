@@ -273,7 +273,8 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
           let msgBinary: Uint8Array | undefined;
           /// 单包
           if (1 === chunkCount) {
-            msgBinary = new Uint8Array(chunk);
+            msgBinary = new Uint8Array(chunk.byteLength);
+            msgBinary.set(chunk, 0);
           } else {
             /// 分包
             cachedChunkInfo = this._chunkCollection.get(eventId);

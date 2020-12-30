@@ -18,11 +18,6 @@ export class AtomicsNotifyer {
     });
   }
   private _icbs = new Map<SAB_HELPER, Array<() => void>>();
-  waitAsync(si32: Int32Array, index: SAB_HELPER, value: number) {
-    return new Promise<void>((resolve) => {
-      this.waitCallback(si32, index, value, resolve);
-    });
-  }
   waitCallback(si32: Int32Array, index: SAB_HELPER, value: number, cb: () => void) {
     if (Atomics.load(si32, index) !== value) {
       return cb();

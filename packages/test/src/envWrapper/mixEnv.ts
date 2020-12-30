@@ -1,5 +1,4 @@
 import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/comlink";
-import { PromiseOut } from "@bfchain/util-extends-promise-out";
 import { Worker, isMainThread, MessagePort, parentPort, workerData } from "worker_threads";
 import { DuplexFactory } from "@bfchain/comlink-duplex-nodejs";
 import {} from "../innerComlink/index";
@@ -12,11 +11,6 @@ export async function installMixEnv(
   workerThreadCallback: (module: ComlinkAsync, console: TaskLog) => unknown,
   workerThreadCallback2: (module: ComlinkSync, console: TaskLog) => unknown,
 ) {
-  type Msg = {
-    mcPort: MessagePort;
-    localSab: SharedArrayBuffer;
-    remoteSab: SharedArrayBuffer;
-  };
   if (isMainThread) {
     console.log("main started");
     let finishedTestCount = 0;
@@ -99,27 +93,4 @@ export async function installMixEnv(
       process.exit();
     }, 10);
   }
-}
-
-export async function* messageStream<M>(port: MessagePort) {
-  const cacheMsg: M[] = [];
-  let po: PromiseOut<M> | undefined;
-  port.on("message", (msg) => {
-    if (po) {
-      po.resolve(msg);
-    } else {
-      cacheMsg.push(msg);
-    }
-  });
-  do {
-    if (cacheMsg.length !== 0) {
-      for (const msg of cacheMsg) {
-        yield msg;
-      }
-      cacheMsg.length = 0;
-    }
-    po = new PromiseOut();
-    yield await po.promise;
-    po = undefined;
-  } while (true);
 }
