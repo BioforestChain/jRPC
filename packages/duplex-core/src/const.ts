@@ -9,27 +9,25 @@ export const enum MESSAGE_TYPE {
 
 /**
  * SAB 数据格式：
- * [TYPE,STATUS,...data]
+ * [STATUS,TYPE,...data]
  */
-
-export const enum SAB_MSG_TYPE {
-  /**空闲、释放 */
-  FREE,
-  // /**传输数据包 */
-  // CHUNK,
-  /**传输协议事件 */
-  EVENT,
+export const enum SAB_HELPER {
+  SI32_MSG_STATUS = 0,
+  SI32_MSG_TYPE = SAB_HELPER.SI32_MSG_STATUS + 1,
 }
 export const enum SAB_MSG_STATUS {
-  /**写入中 */
-  WRITING,
-  /**写入完成，等待中响应中 */
-  FINISH,
+  /**私有*/
+  PRIVATE,
+  /**保护，非公开且写入中，可以准备读取了 */
+  PROTECTED,
+  /**共有，对方可读 */
+  PUBLIC,
 }
-
-export const enum SAB_HELPER {
-  SI32_MSG_TYPE = 0,
-  SI32_MSG_STATUS = SAB_HELPER.SI32_MSG_TYPE + 1,
+/**这个可以作为数据的VERSION来对待，比如升级版本号可以用EVENT2、EVENT3…… */
+export const enum SAB_MSG_TYPE {
+ 
+  /**传输协议事件 */
+  EVENT,
 }
 
 /**
@@ -37,7 +35,7 @@ export const enum SAB_HELPER {
  * [TYPE,STATUS,eventId<i32>,msgTotalSize<i32>,chunkOffset,chunkSize,...chunk]
  */
 export const enum SAB_EVENT_HELPER {
-  U32_EVENT_ID_INDEX = SAB_HELPER.SI32_MSG_STATUS + 1,
+  U32_EVENT_ID_INDEX = SAB_HELPER.SI32_MSG_TYPE + 1,
   /**分包的数量 */
   U16_CHUNK_COUNT_INDEX = SAB_EVENT_HELPER.U32_EVENT_ID_INDEX * 2 + 1,
   /**分包的数据包编号 */

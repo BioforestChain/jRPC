@@ -18,8 +18,9 @@ export class AtomicsNotifyer {
     });
   }
   private _icbs = new Map<SAB_HELPER, Array<() => void>>();
+
   waitCallback(si32: Int32Array, index: SAB_HELPER, value: number, cb: () => void) {
-    if (Atomics.load(si32, index) !== value) {
+    if (si32[index] !== value) {
       return cb();
     }
     let cbs = this._icbs.get(index);
@@ -60,7 +61,7 @@ export class AtomicsNotifyer {
   }
   private _notify_sync(si32: Int32Array, indexs: SAB_HELPER[]) {
     for (const index of indexs) {
-      Atomics.notify(si32, index);
+      Atomics.notify(si32, index, 1);
     }
   }
 }

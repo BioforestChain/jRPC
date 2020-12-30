@@ -50,23 +50,18 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
     _port.onMessage((data) => {
       if (data instanceof Array) {
-        this._checkRemote();
+        this._tryHandleRemoteChunk();
       }
     });
   }
   /**发送异步消息 */
   postAsyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
-      (hook) => {
-        this._notifyer.waitCallback(
-          hook.si32,
-          SAB_HELPER.SI32_MSG_TYPE,
-          hook.curMsgType,
-          hook.next,
-        );
-      },
-      (hook) => {
-        this._notifyer.waitCallback(hook.si32, SAB_HELPER.SI32_MSG_TYPE, hook.msgType, hook.next);
+      {
+        onApplyWrite: (hook) =>
+          this._notifyer.waitCallback(hook.waitI32a, hook.waitIndex, hook.waitValue, hook.next),
+        onChunkReady: (hook) =>
+          this._notifyer.waitCallback(hook.waitI32a, hook.waitIndex, hook.waitValue, hook.next),
       },
       msg,
     );
@@ -76,30 +71,48 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
   postSyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
-      (hook) => {
-        this._checkRemoteAtomics();
-        // console.debug(threadId, "+openSAB");
-        Atomics.wait(hook.si32, SAB_HELPER.SI32_MSG_TYPE, hook.curMsgType);
-        // console.debug(threadId, "-openSAB");
-        hook.next();
+      {
+        onApplyWrite: (hargs) => {
+          /**
+           * @TIP 这里循环把缓冲区的数据包全部清理掉，有且只需要清理一次。
+           *
+           * 理论上来说，两个线程使用两块共享内存是有可能在下方的wait之前出现问题，但这里使用逻辑规则进行解决：
+           *
+           * 在正常情况下，必须让两个进程共用同一个共享内存，并在同一时间内只有一个进程可以对其进行写入。这样才能使用Atomics来确保数据所有权的问题。
+           * 但这种模式会导致两个线程会有大量时间在等待彼此的写入完成。比如我要写入数据，首先对方不能再写入才行。
+           *
+           * 如果双方能够独立写入，仅仅将时间花在等待对方读取并响应，那么就能将等待的时间大大缩减。
+           *
+           * 所以这里采用了两个独立的缓冲器来进行数据的共享。并在自己线程要进入阻塞前去判定对方是否有数据给我。
+           * 同时对方也是如此，如此一来，如果我在 1.清理完一批数据 而后要 2.进入睡眠状态后，对方如果想要在则1.2.之间继续向我发来数据，必须遵守同样的规则，
+           * 就是发送前它也要先进行判断：我是否有数据给它。
+           *
+           * 所以我只需要这样做：1.我声明我有数据给它，2.我清理它给我的数据，3.我等待它处理我的数据
+           */
+          this._tryGetRemoteMessageAtomics();
+          Atomics.wait(hargs.waitI32a, hargs.waitIndex, hargs.waitValue);
+          hargs.next();
+        },
+        onChunkReady: (hargs) => {
+          this._tryGetRemoteMessageAtomics();
+          Atomics.wait(hargs.waitI32a, hargs.waitIndex, hargs.waitValue);
+          hargs.next();
+        },
       },
-      (hook) => {
-        this._checkRemoteAtomics();
-        // console.debug(threadId, "+waitSAB");
-        // 进入等待
-        Atomics.wait(hook.si32, SAB_HELPER.SI32_MSG_TYPE, hook.msgType);
-        // console.debug(threadId, "-waitSAB");
-        hook.next();
-      },
+
       msg,
     );
   }
   waitMessage() {
     do {
       // 等待对方开始响应
-      Atomics.wait(this._sync.remoteDataPkg.si32, SAB_HELPER.SI32_MSG_TYPE, SAB_MSG_TYPE.FREE);
+      Atomics.wait(
+        this._sync.remoteDataPkg.si32,
+        SAB_HELPER.SI32_MSG_STATUS,
+        SAB_MSG_STATUS.PRIVATE,
+      );
       // 处理响应的内容
-      const msg = this._checkRemoteAtomics();
+      const msg = this._tryGetRemoteMessageAtomics();
       if (msg) {
         return msg;
       }
@@ -108,11 +121,12 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
   private _eventId = new Uint32Array(1);
   private _postMessageCallback(
-    onApplyWrite: (ctx: BFChainComlink.Duplex.PostMessage_ApplyWrite_HookArg) => unknown,
-    onChunkReady: (ctx: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg) => unknown,
+    hook: {
+      onApplyWrite: (ctx: BFChainComlink.Duplex.PostMessage_ApplyWrite_HookArg) => unknown;
+      onChunkReady: (ctx: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg) => unknown;
+    },
     msg: BFChainComlink.Channel.DuplexMessage<TB>,
   ) {
-    // console.debug("postMessage", threadId, msg);
     const msgBinary = this._serializeMsg(msg);
     const sync = this._sync!;
     const { su8, si32, su16 } = sync.localeDataPkg;
@@ -139,31 +153,37 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
       };
       /**申请写入权 */
       const checkAndApplyWrite = () => {
-        // 直接申请
-        const cur_msg_type = Atomics.compareExchange(
-          si32,
-          SAB_HELPER.SI32_MSG_TYPE,
-          SAB_MSG_TYPE.FREE,
-          SAB_MSG_TYPE.EVENT,
-        );
-        /// 申请成功
-        if (cur_msg_type === SAB_MSG_TYPE.FREE) {
-          // 开始写入状态
-          Atomics.store(si32, SAB_HELPER.SI32_MSG_STATUS, SAB_MSG_STATUS.WRITING);
-          doWriteChunk();
-          return;
+        // 申请将数据的归属权定义为私有
+        if (si32[SAB_HELPER.SI32_MSG_STATUS] === SAB_MSG_STATUS.PUBLIC) {
+          // 直接申请失败，转交给外部，让外部去申请
+          return hook.onApplyWrite({
+            waitI32a: si32,
+            waitIndex: SAB_HELPER.SI32_MSG_STATUS,
+            waitValue: SAB_MSG_STATUS.PUBLIC,
+            next: checkAndApplyWrite,
+          });
         }
+        /// 申请成功，开始消息写入
+        return doWriteChunk();
 
-        // 直接申请失败，转交给外部，让外部去申请
-        onApplyWrite({
-          si32,
-          msgType: SAB_MSG_TYPE.EVENT,
-          curMsgType: cur_msg_type,
-          next: checkAndApplyWrite,
-        });
+        // // 直接申请
+        // const cur_msg_type = Atomics.compareExchange(
+        //   si32,
+        //   SAB_HELPER.SI32_MSG_TYPE,
+        //   SAB_MSG_TYPE.FREE,
+        //   SAB_MSG_TYPE.EVENT,
+        // );
+        // /// 申请成功
+        // if (cur_msg_type === SAB_MSG_TYPE.FREE) {
+        //   // 开始写入状态
+        //   si32[SAB_HELPER.SI32_MSG_STATUS] = SAB_MSG_STATUS.PRIVATE;
+        //   return doWriteChunk();
+        // }
       };
       /**获取写入权后，写入数据 */
       const doWriteChunk = () => {
+        // 写入消息类型
+        si32[SAB_HELPER.SI32_MSG_TYPE] = SAB_MSG_TYPE.EVENT;
         // 写入消息ID
         si32[SAB_EVENT_HELPER.U32_EVENT_ID_INDEX] = eventId;
         // 写入总包数
@@ -174,7 +194,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         const msgChunk = msgBinary.subarray(
           msgOffset,
           // 累加偏移量
-          Math.max(msgBinary.byteLength, (msgOffset += MSG_MAX_BYTELENGTH)),
+          Math.min(msgBinary.byteLength, (msgOffset += MSG_MAX_BYTELENGTH)),
         );
         // 写入数据包的大小
         si32[SAB_EVENT_HELPER.U32_MSG_CHUNK_SIZE_INDEX] = msgChunk.byteLength;
@@ -182,15 +202,17 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         su8.set(msgChunk, SAB_EVENT_HELPER.U8_MSG_DATA_OFFSET);
 
         // 写入完成
-        Atomics.store(si32, SAB_HELPER.SI32_MSG_STATUS, SAB_MSG_STATUS.FINISH);
+        si32[SAB_HELPER.SI32_MSG_STATUS] = SAB_MSG_STATUS.PUBLIC;
 
         // 广播变更
-        this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_TYPE, SAB_HELPER.SI32_MSG_STATUS]);
+        this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_STATUS]);
 
         // 钩子参数
-        const hook: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg = {
-          msgType: SAB_MSG_TYPE.EVENT,
-          si32,
+        const hookArg: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg = {
+          waitI32a: si32,
+          waitIndex: SAB_HELPER.SI32_MSG_STATUS,
+          waitValue: SAB_MSG_STATUS.PUBLIC,
+
           chunkId,
           chunkCount,
           next: tryWriteChunk,
@@ -198,8 +220,8 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         // 累加分包ID
         chunkId++;
 
-        // 告知外部，写入完成了
-        onChunkReady(hook);
+        // 告知外部，写入完成了。（现在是共有状态状态，等待对方读取完成，并归还所有权）
+        hook.onChunkReady(hookArg);
       };
 
       // 开始尝试写入
@@ -209,18 +231,22 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   }
 
   /**主动检测远端是否发来消息 */
-  private _checkRemoteAtomics() {
+  private _tryGetRemoteMessageAtomics() {
     const { remoteDataPkg } = this._sync!;
     /// 如果本地还未收到消息，而且远端的堆栈信息不为空，那么就可以开始处理
-    if (this._needOnMessageAtomics(remoteDataPkg)) {
-      return this._onMessage(remoteDataPkg);
+    // 如果需要处理，那么要持续交互处理才行，因为可能处理数据包的分包收发状态
+    while (this._needOnMessageAtomics(remoteDataPkg)) {
+      const msg = this._onChunk(remoteDataPkg);
+      if (msg) {
+        return msg;
+      }
     }
   }
-  private _checkRemote() {
+  private _tryHandleRemoteChunk() {
     const { remoteDataPkg } = this._sync!;
     /// 如果本地还未收到消息，而且远端的堆栈信息不为空，那么就可以开始处理
     if (this._needOnMessage(remoteDataPkg)) {
-      return this._onMessage(remoteDataPkg);
+      return this._onChunk(remoteDataPkg);
     }
   }
 
@@ -228,30 +254,26 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
   /**是否需要处理消息 */
   private _needOnMessageAtomics(dataPkg: DataPkg) {
-    if (dataPkg.si32[SAB_HELPER.SI32_MSG_TYPE] !== SAB_MSG_TYPE.FREE) {
-      do {
-        const cur_msg_status = dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS];
-        if (cur_msg_status === SAB_MSG_STATUS.FINISH) {
-          break;
-        }
-        // console.debug(threadId, "+needOnMessage");
+    do {
+      const cur_msg_status = dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS];
+      if (cur_msg_status === SAB_MSG_STATUS.PUBLIC) {
+        return true;
+      } else if (cur_msg_status === SAB_MSG_STATUS.PROTECTED) {
         Atomics.wait(dataPkg.si32, SAB_HELPER.SI32_MSG_STATUS, cur_msg_status);
-        // console.debug(threadId, "-needOnMessage");
-      } while (true);
-      return true;
-    }
-    return false;
+      } else if (cur_msg_status === SAB_MSG_STATUS.PRIVATE) {
+        return false;
+      } else {
+        throw new TypeError();
+      }
+    } while (true);
   }
   /**是否需要处理消息 */
   private _needOnMessage(dataPkg: DataPkg) {
-    return (
-      dataPkg.si32[SAB_HELPER.SI32_MSG_TYPE] !== SAB_MSG_TYPE.FREE &&
-      dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS] === SAB_MSG_STATUS.FINISH
-    );
+    return dataPkg.si32[SAB_HELPER.SI32_MSG_STATUS] === SAB_MSG_STATUS.PUBLIC;
   }
 
-  /**处理消息指令 */
-  private _onMessage(dataPkg: DataPkg) {
+  /**处理数据包 */
+  private _onChunk(dataPkg: DataPkg) {
     const { si32, su8, su16 } = dataPkg;
     switch (si32[SAB_HELPER.SI32_MSG_TYPE]) {
       case SAB_MSG_TYPE.EVENT:
@@ -301,10 +323,9 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
             }
           }
 
-          // 释放调度
-          // this._closeSAB(si32);
-          Atomics.store(si32, SAB_HELPER.SI32_MSG_TYPE, SAB_MSG_TYPE.FREE);
-          this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_TYPE]);
+          // 归还所有权，并释放调度权
+          si32[SAB_HELPER.SI32_MSG_STATUS] = SAB_MSG_STATUS.PRIVATE;
+          this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_STATUS]);
 
           /// 如果有完整的数据包，那么触发事件
           if (msgBinary) {
@@ -317,7 +338,6 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   }
 
   private _msgBinaryHandler(msgBinary: Uint8Array) {
-    // console.debug("onMessage", threadId, msgBinary);
     let msg: BFChainComlink.Channel.DuplexMessage<TB>;
     try {
       switch (msgBinary[0]) {
