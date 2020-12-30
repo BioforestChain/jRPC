@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/comlink",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
@@ -10,7 +10,7 @@
     "@bfchain/comlink-async": "2.4.0",
     "@bfchain/comlink-channel": "2.4.0",
     "@bfchain/comlink-core": "2.4.0",
-    "@bfchain/comlink-duplex-core": "2.4.1",
+    "@bfchain/comlink-duplex-core": "2.4.2",
     "@bfchain/comlink-sync": "2.4.0",
     "@bfchain/comlink-typings": "2.4.0"
   },
