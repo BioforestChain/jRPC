@@ -2,21 +2,37 @@ import { MESSAGE_TYPE, SAB_EVENT_HELPER, SAB_HELPER, SAB_MSG_STATUS, SAB_MSG_TYP
 // import { serialize, deserialize } from "v8";
 const serialize = (data: unknown) => {
   const json = JSON.stringify(data);
-  const u8 = new Uint8Array(json.length);
+  const u16 = new Uint16Array(json.length);
   for (let i = 0; i < json.length; i++) {
     const code = json.charCodeAt(i);
-    if (code > 256) {
+    if (code >= 65536) {
       throw new RangeError("");
     }
-    u8[i] = code;
+    u16[i] = code;
   }
-  return u8;
+  return new Uint8Array(u16.buffer);
+  // const u8 = new Uint8Array(json.length);
+  // for (let i = 0; i < json.length; i++) {
+  //   const code = json.charCodeAt(i);
+  //   if (code >= 256) {
+  //     throw new RangeError("");
+  //   }
+  //   u8[i] = code;
+  // }
+  // return u8;
 };
 const deserialize = (u8: Uint8Array) => {
   let json = "";
-  for (const code of u8) {
+  for (let i = 0; i < u8.byteLength; i += 2) {
+    const l = u8[i];
+    const h = u8[i + 1];
+    const code = (h << 8) + l;
     json += String.fromCharCode(code);
   }
+  // for (const code of u8) {
+  //   json += String.fromCharCode(code);
+  // }
+
   return JSON.parse(json);
 };
 
@@ -35,7 +51,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     remoteDataPkg: DataPkg;
   };
   constructor(private _port: BFChainComlink.Duplex.Endpoint, sabs: BFChainComlink.Duplex.SABS) {
-    // Reflect.set(globalThis, "duplex", this);
+    Reflect.set(globalThis, "duplex", this);
     this.supportModes.add("async");
     this.supportModes.add("sync");
 
@@ -320,6 +336,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
             } else {
               cachedChunkInfo = new Map();
               cachedChunkInfo.set(chunkId, new Uint8Array(chunk));
+              this._chunkCollection.set(eventId, cachedChunkInfo);
             }
           }
 

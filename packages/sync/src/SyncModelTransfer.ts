@@ -26,11 +26,18 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
    */
   private _rfsts = refFunctionStaticToStringFactory();
   private _genLinkInSender(port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
-    const req = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]]) =>
+    const reqSync = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]]) =>
       this._reqLinkIn<R>(port, refId, linkIn);
-    const send = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
-      this._sendLinkIn(port, refId, linkIn);
-    return { __marker__: SENDER_MARKER, send, req };
+    const reqNoOutput = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
+      this._reqLinkInNoOutput(port, refId, linkIn);
+    const sendNoBlock = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
+      this._sendLinkInNoBlock(port, refId, linkIn);
+    return {
+      __marker__: SENDER_MARKER,
+      sendNoBlock,
+      req: reqSync,
+      reqNo: reqNoOutput,
+    };
   }
   private _getDefaultProxyHanlder<T extends object>(
     sender: ReturnType<SyncModelTransfer["_genLinkInSender"]>,
@@ -101,11 +108,41 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       throw err;
     }
     const res_iob = linkObj.out.slice().pop();
-    const res = res_iob && transfer.InOutBinary2Any(res_iob);
+    if (!res_iob) {
+      throw new TypeError();
+    }
+    const res = transfer.InOutBinary2Any(res_iob);
     return res as R;
   }
+  private _reqLinkInNoOutput(
+    port: ComlinkProtocol.BinaryPort,
+    targetId: number,
+    linkIn: unknown[],
+  ) {
+    const { transfer } = this.core;
+    const tb = this._pkgLinkIn(targetId, linkIn, true);
+    /// 执行请求
+    const bin = CallbackToSync(port.req, [tb], port);
 
-  private _sendLinkIn(port: ComlinkProtocol.BinaryPort, targetId: number, linkIn: unknown[]) {
+    /// 处理请求
+    const linkObj = transfer.transferableBinary2LinkObj(bin);
+
+    if (linkObj.type !== LinkObjType.Out) {
+      throw new TypeError();
+    }
+
+    if (linkObj.isThrow) {
+      const err_iob = linkObj.out.slice().pop();
+      const err = err_iob && transfer.InOutBinary2Any(err_iob);
+      throw err;
+    }
+  }
+
+  private _sendLinkInNoBlock(
+    port: ComlinkProtocol.BinaryPort,
+    targetId: number,
+    linkIn: unknown[],
+  ) {
     const { transfer } = this.core;
 
     const tb = transfer.linkObj2TransferableBinary({

@@ -11,7 +11,6 @@ export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<T
           // return;
         }
         this._resMap.delete(resId);
-
         const ret = msg.msgContent;
         helper.SyncForCallback(output, () => {
           const resBin = helper.OpenArg(ret);
@@ -61,9 +60,9 @@ export class SyncBinaryPort<TB> extends MagicBinaryPort<TB> {
   }
   req(output: BFChainComlink.Callback<TB>, bin: TB) {
     const reqId = this._reqId[0]++;
-    let hasOutput = false;
+    let gotResponse = false;
     const reqOutput: BFChainComlink.Callback<TB> = (ret) => {
-      hasOutput = true;
+      gotResponse = true;
       output(ret);
     };
     // 先存放回调
@@ -75,7 +74,7 @@ export class SyncBinaryPort<TB> extends MagicBinaryPort<TB> {
       msgContent: bin,
     });
     /// 同步模式：发送完成后，马上就需要对方有响应才意味着 postMessage 完成
-    while (hasOutput === false) {
+    while (gotResponse === false) {
       this._duplex.waitMessage();
     }
   }

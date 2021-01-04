@@ -109,7 +109,13 @@ export class ComlinkSync
           /// 要使用本地的promise对任务进行包裹，不然对方接下来会进入卡死状态。
           return new Promise((resolve, reject) => {
             /* 无需返回值，所以走 .send ，这个是异步的，不会造成阻塞 */
-            sender.send([EmscriptenReflect.AsyncApply, resolve, reject, thisArg, ...argArray]);
+            sender.sendNoBlock([
+              EmscriptenReflect.AsyncApply,
+              resolve,
+              reject,
+              thisArg,
+              ...argArray,
+            ]);
           });
         },
       }) as BFChainComlink.SyncToAsync<T>;
