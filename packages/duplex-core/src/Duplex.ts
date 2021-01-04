@@ -317,6 +317,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
             /// 分包
             cachedChunkInfo = this._chunkCollection.get(eventId);
             if (cachedChunkInfo) {
+              /// 保存，先默认保存sab的chunk
               cachedChunkInfo.set(chunkId, chunk);
               /// 如果数据包已经完整了，那么整理出完整的数据包
               if (cachedChunkInfo.size === chunkCount) {
@@ -332,9 +333,13 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
                   chunkList[chunkItem[0]] = chunkItem[1];
                 }
                 msgBinary = u8Concat(ArrayBuffer, chunkList);
+              } else {
+                /// 数据还没有完结，所以把sab复制一份
+                cachedChunkInfo.set(chunkId, new Uint8Array(chunk));
               }
             } else {
               cachedChunkInfo = new Map();
+              // 不能直接保存sab，需要复制一份
               cachedChunkInfo.set(chunkId, new Uint8Array(chunk));
               this._chunkCollection.set(eventId, cachedChunkInfo);
             }
