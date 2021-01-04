@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/comlink-test",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "private": true,
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -9,9 +9,9 @@
   ],
   "module": "build/esm/index.js",
   "dependencies": {
-    "@bfchain/comlink": "2.4.2",
-    "@bfchain/comlink-duplex-browser": "2.4.2",
-    "@bfchain/comlink-duplex-nodejs": "2.4.2",
+    "@bfchain/comlink": "2.4.3",
+    "@bfchain/comlink-duplex-browser": "2.4.3",
+    "@bfchain/comlink-duplex-nodejs": "2.4.3",
     "@bfchain/comlink-typings": "2.4.0",
     "source-map-support": "~0.5.19"
   },

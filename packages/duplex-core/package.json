@@ -1,13 +1,13 @@
 {
   "name": "@bfchain/comlink-duplex-core",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/comlink-channel": "2.4.0",
+    "@bfchain/comlink-channel": "2.4.3",
     "@bfchain/comlink-protocol": "2.4.0",
     "@bfchain/comlink-typings": "2.4.0",
     "@bfchain/util-decorator": "^4.10.27"
