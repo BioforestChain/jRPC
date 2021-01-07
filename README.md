@@ -19,7 +19,10 @@
 - [x] v2.2 更强类型的 ComlinkAsync 推导
 - [x] v2.3 实现 MagicBinaryReflect，可以同时用于同步与异步通讯
 - [x] v2.4 支持浏览器
-- [ ] v2.5 支持自定义 CloneAble
+- [-] v2.5 支持自定义 CloneAble
+  - [x] 实现 push/pull 协议，支持传输 MessagePort、ArrayBufferView、SharedArrayBuffer 等原始可传输对象
+  - [ ] 支持自定义可传输对象
+  - [ ] 支持被标记的对象可以自动执行 push/pull 协议
 
 ## 异步与同步
 

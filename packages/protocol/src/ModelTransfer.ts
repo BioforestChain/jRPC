@@ -156,6 +156,8 @@ export abstract class ModelTransfer<
     const transfer: object[] = [];
     if (ArrayBuffer.isView(obj)) {
       transfer.push(obj.buffer);
+    } else if (obj.toString() === "[object SharedArrayBuffer]") {
+      /// 无需将SAB放到transfer中
     } else {
       transfer.push(obj);
     }
