@@ -23,7 +23,8 @@ declare namespace BFChainComlink {
       postMessage(data: Endpoint.Message): void;
     };
     namespace Endpoint {
-      type Message = Uint8Array | Array<number>;
+      type SIMPLEX_MSG_TYPE = import("./const").SIMPLEX_MSG_TYPE;
+      type Message = Uint8Array; // [SIMPLEX_MSG_TYPE,Uint8Array];// Uint8Array | Array<number>;
     }
     // type EndpointFactory = (port: unknown) => Endpoint;
   }

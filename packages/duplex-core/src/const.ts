@@ -25,7 +25,6 @@ export const enum SAB_MSG_STATUS {
 }
 /**这个可以作为数据的VERSION来对待，比如升级版本号可以用EVENT2、EVENT3…… */
 export const enum SAB_MSG_TYPE {
- 
   /**传输协议事件 */
   EVENT,
 }
@@ -50,4 +49,11 @@ export const enum REMOTE_MODE {
   SYNC = 1,
   ASYNC = 2,
   UNKNOWN = REMOTE_MODE.SYNC | REMOTE_MODE.ASYNC,
+}
+
+export const enum SIMPLEX_MSG_TYPE {
+  /**通知数据已经在sab写入，请对方查收 */
+  NOTIFY,
+  /**通知传输内存对象 */
+  TRANSFER,
 }

@@ -26,7 +26,7 @@ installSimpleEnv(
      */
 
     /// test import
-    const a = moduleB.import<typeof A >("a");
+    const a = moduleB.import<typeof A>("a");
     console.assert(a === A, "import");
 
     const ctxA = moduleB.import<TestService>();

@@ -1,8 +1,11 @@
 declare namespace BFChainComlink {
-  interface ComlinkAsync {
+  interface ComlinkAsync extends ComlinkCore {
+    /**导入
+     * 同语法：
+     * import ? from port
+     * import { key } from port
+     */
     import<T>(key?: string): PromiseLike<AsyncUtil.Remote<T>>;
-    // import<T>(key?: string): PromiseLike<AsyncValue<T>>;
-    // wrap<T>(val: HolderReflect<T>): AsyncUtil.Remote<T>;
   }
 
   type Holder<T = unknown> = T extends object

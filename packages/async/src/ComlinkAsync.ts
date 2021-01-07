@@ -1,4 +1,4 @@
-import { ComlinkCore, STORE_TYPE, helper } from "@bfchain/comlink-core";
+import { ComlinkCore, STORE_TYPE, helper, ExportStore, ImportStore } from "@bfchain/comlink-core";
 import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
 import { HolderReflect } from "./HolderReflect";
 import { CallbackToAsync } from "./helper";
@@ -22,10 +22,14 @@ export class ComlinkAsync
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
-  wrap<T>(val: BFChainComlink.HolderReflect<T>): BFChainComlink.AsyncUtil.Remote<T> {
-    throw new Error("Method not implemented.");
-  }
+
   readonly transfer = new AsyncModelTransfer(this);
+  readonly exportStore = new ExportStore(this.name);
+  readonly importStore = new ImportStore<
+    ComlinkProtocol.IOB,
+    ComlinkProtocol.TB,
+    ComlinkProtocol.IOB_E
+  >(this.name, this.port, this.transfer);
 
   // readonly holderStore = new HolderStore(this.name);
 

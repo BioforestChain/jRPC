@@ -1,4 +1,18 @@
 declare namespace BFChainComlink {
+  interface ComlinkCore {
+    /**导出
+     * 同语法：
+     * export default target
+     * export const key = target
+     */
+    export(target: unknown, key?: string): void;
+    // /**推送可传输的数据
+    //  * 这里可能需要一些时间，所以始终是异步。
+    //  * 推送完成后，本地对象会自动导入到 importStore 中，在传输后，会变成远端的对象
+    //  */
+    // pushTransferable(transferable: unknown): PromiseLike<void>;
+  }
+
   type CallbackArg<D, E = Error> =
     | {
         isError: true;
@@ -35,17 +49,15 @@ declare namespace BFChainComlink {
    * 从而可以同时适用于 同步 与 异步 的风格
    */
   interface BinaryPort<TB> {
-    onMessage: (listener: BinaryPort.MessageListener<TB>) => void;
+    onMessage(listener: BinaryPort.MessageListener<TB>): void;
     /**请求数据，如果是同步模式，要求阻塞 */
-    req(cb: Callback<TB>, bin: TB): unknown;
+    duplexMessage(cb: Callback<TB>, bin: TB): unknown;
     /**发送数据，不要求阻塞 */
-    send(bin: TB): void;
-    // /**非阻塞地传输数据 */
-    // reqAsync(cb: Callback<TB>, bin: TB): void;
-    // sendAsync(bin: TB): void;
+    simplexMessage(bin: TB): void;
   }
   namespace BinaryPort {
     type MessageListener<TB> = (cb: Callback<TB | undefined>, bin: TB) => unknown;
+    type Listener<T = unknown, R = unknown> = (obj: T) => R;
   }
 
   interface LinkImportObj {

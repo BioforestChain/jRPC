@@ -93,7 +93,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     const { transfer } = this.core;
     const tb = this._pkgLinkIn(targetId, linkIn, true);
     /// 执行请求
-    const bin = CallbackToSync(port.req, [tb], port);
+    const bin = CallbackToSync(port.duplexMessage, [tb], port);
 
     /// 处理请求
     const linkObj = transfer.transferableBinary2LinkObj(bin);
@@ -122,7 +122,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     const { transfer } = this.core;
     const tb = this._pkgLinkIn(targetId, linkIn, true);
     /// 执行请求
-    const bin = CallbackToSync(port.req, [tb], port);
+    const bin = CallbackToSync(port.duplexMessage, [tb], port);
 
     /// 处理请求
     const linkObj = transfer.transferableBinary2LinkObj(bin);
@@ -152,7 +152,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
       hasOut: false,
     });
-    port.send(tb);
+    port.simplexMessage(tb);
   }
 
   /**

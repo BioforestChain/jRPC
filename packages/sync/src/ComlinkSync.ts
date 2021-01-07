@@ -1,4 +1,4 @@
-import { ComlinkCore } from "@bfchain/comlink-core";
+import { ComlinkCore, ExportStore, ImportStore } from "@bfchain/comlink-core";
 import {
   getFunctionExportDescription,
   IOB_EFT_Factory_Map,
@@ -15,7 +15,14 @@ export class ComlinkSync
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
+
   readonly transfer = new SyncModelTransfer(this);
+  readonly exportStore = new ExportStore(this.name);
+  readonly importStore = new ImportStore<
+    ComlinkProtocol.IOB,
+    ComlinkProtocol.TB,
+    ComlinkProtocol.IOB_E
+  >(this.name, this.port, this.transfer);
 
   // /**
   //  * ref fun statis toString

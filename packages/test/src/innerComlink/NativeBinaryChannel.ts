@@ -50,12 +50,12 @@ class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       }, bin);
     });
   }
-  req(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
     const reqId = this._reqId++;
     this.remotePort.postMessage([MESSAGE_TYPE.REQ, reqId, bin]);
     this._resMap.set(reqId, output);
   }
-  send(bin: TB) {
+  simplexMessage(bin: TB) {
     this.remotePort.postMessage([MESSAGE_TYPE.REQ, undefined, bin]);
   }
   //   readStream: AsyncIterator<TB>;

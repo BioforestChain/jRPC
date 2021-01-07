@@ -4,8 +4,6 @@ import { DuplexFactory } from "@bfchain/comlink-duplex-nodejs";
 import {} from "../innerComlink/index";
 import { TaskLog } from "./TaskLog";
 
-const comlink = new Comlink();
-
 export async function installMixEnv(
   mainThreadCallback: (module: ComlinkSync) => unknown,
   workerThreadCallback: (module: ComlinkAsync, console: TaskLog) => unknown,
@@ -25,8 +23,9 @@ export async function installMixEnv(
     try {
       {
         const duplexFactory = new DuplexFactory();
+        const comlink = new Comlink(duplexFactory.getDuplex());
         /**模块控制器 */
-        const moduleA = comlink.syncModule("A", duplexFactory.getDuplex());
+        const moduleA = comlink.syncModule("A1");
 
         // 执行回调
         await mainThreadCallback(moduleA);
@@ -43,8 +42,9 @@ export async function installMixEnv(
 
       {
         const duplexFactory2 = new DuplexFactory();
+        const comlink = new Comlink(duplexFactory2.getDuplex());
 
-        const moduleA2 = comlink.syncModule("A", duplexFactory2.getDuplex());
+        const moduleA2 = comlink.syncModule("A2");
         // 执行回调
         await mainThreadCallback(moduleA2);
         {
@@ -71,15 +71,16 @@ export async function installMixEnv(
     try {
       /// 等待通道连接到位
       const duplex = await DuplexFactory.asCluster(parentPort);
+      const comlink = new Comlink(duplex);
       if (mode === "async") {
         /// 模拟B模块作为调用模块
         /**模块控制器 */
-        const moduleB = comlink.asyncModule("B", duplex);
+        const moduleB = comlink.asyncModule("B");
         // 回调
         await workerThreadCallback(moduleB, console);
       } else {
         /**模块控制器 */
-        const moduleB2 = comlink.syncModule("B2", duplex);
+        const moduleB2 = comlink.syncModule("B2");
         // 回调
         await workerThreadCallback2(moduleB2, console);
       }

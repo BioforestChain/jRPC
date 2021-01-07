@@ -1,3 +1,5 @@
+import { LinkObjType } from "@bfchain/comlink-typings";
+
 export const enum STORE_TYPE {
   Proxy,
   Symbol,
@@ -14,8 +16,12 @@ type SymbolStoreItem = {
 };
 type StoreItem = ProxyStoreItem | SymbolStoreItem;
 
-export class ImportStore<E = unknown> {
-  constructor(public readonly name: string) {}
+export class ImportStore<IOB /*  = unknown */, TB /*  = unknown */, E> {
+  constructor(
+    public readonly name: string,
+    private port: BFChainComlink.BinaryPort<TB>,
+    private transfer: BFChainComlink.ModelTransfer<IOB, TB>,
+  ) {}
   /**存储协议扩展信息 */
   idExtendsStore = new Map<number, E>();
   /**我所导入的引用对象与符号 */
@@ -121,12 +127,14 @@ export class ImportStore<E = unknown> {
     }
     return false;
   }
-  private _onReleaseCallback(id: number): unknown {
-    return;
-  }
-  /**监听一个引用被释放 */
-  onRelease(cb: (id: number) => unknown) {
-    this._onReleaseCallback = cb;
+  /**发送对象释放的消息 */
+  private _onReleaseCallback(refId: number) {
+    this.port.simplexMessage(
+      this.transfer.linkObj2TransferableBinary({
+        type: LinkObjType.Release,
+        locId: refId,
+      }),
+    );
   }
 }
 // export const importStore = new ImportStore();

@@ -16,7 +16,7 @@ class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
     this.localTurn.postMessage = listener;
   }
-  req(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
     this.remoteTurn.postMessage(
       helper.SyncPiperFactory(output, (ret) => {
         const resBin = helper.OpenArg(ret);
@@ -28,7 +28,7 @@ class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       bin,
     );
   }
-  send(bin: TB) {
+  simplexMessage(bin: TB) {
     this.remoteTurn.postMessage(() => {}, bin);
   }
   //   readStream: AsyncIterator<TB>;

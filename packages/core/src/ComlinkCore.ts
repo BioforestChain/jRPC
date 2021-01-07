@@ -1,9 +1,10 @@
 import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
 import { ESM_REFLECT_FUN_MAP, OpenArg, resolveCallback, SyncPiperFactory } from "./helper";
-import { ExportStore } from "./ExportStore";
-import { ImportStore } from "./ImportStore";
+import type { ExportStore } from "./ExportStore";
+import type { ImportStore } from "./ImportStore";
 
-export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS> {
+export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS>
+  implements BFChainComlink.ComlinkCore {
   constructor(public readonly port: BFChainComlink.BinaryPort<TB>, public readonly name: string) {
     this._listen();
   }
@@ -12,10 +13,10 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   }
 
   abstract readonly transfer: BFChainComlink.ModelTransfer<IOB, TB>;
+  abstract readonly exportStore: ExportStore;
+  abstract readonly importStore: ImportStore<IOB, TB, IMP_EXTENDS>;
 
-  readonly exportStore = new ExportStore(this.name);
-  readonly importStore = new ImportStore<IMP_EXTENDS>(this.name);
-
+  //#region 出口
   /**用于存储导出的域 */
   private _exportModule = { scope: Object.create(null), isExported: false };
   private _getInitedExportScope() {
@@ -37,14 +38,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
     return handler;
   }
   private _listen() {
-    const { exportStore: exportStore, port } = this;
-    port.onMessage(async (cb, bin) => {
+    this.port.onMessage(async (cb, bin) => {
       const out_void = () => resolveCallback(cb, undefined);
 
       const linkObj = this.transfer.transferableBinary2LinkObj(bin);
 
       if (linkObj.type === LinkObjType.In) {
-        const obj = exportStore.getObjById(linkObj.targetId);
+        const obj = this.exportStore.getObjById(linkObj.targetId);
         if (obj === undefined) {
           throw new ReferenceError("no found");
         }
@@ -122,20 +122,12 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           );
         }, scope);
       } else if (linkObj.type === LinkObjType.Release) {
-        exportStore.releaseById(linkObj.locId);
+        this.exportStore.releaseById(linkObj.locId);
       }
       out_void();
     });
-    this.importStore.onRelease((refId) => {
-      // console.log("send release", refId);
-      port.send(
-        this.transfer.linkObj2TransferableBinary({
-          type: LinkObjType.Release,
-          locId: refId,
-        }),
-      );
-    });
   }
+
   //#endregion
 
   //#region 进口
@@ -149,7 +141,8 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
      * @TODO 这里将会扩展出各类语言的传输协议
      */
     if (this._importModule === undefined) {
-      port.req(
+      debugger;
+      port.duplexMessage(
         SyncPiperFactory(output, (ret) => {
           const bin = OpenArg(ret);
           const linkObj = this.transfer.transferableBinary2LinkObj(bin);
@@ -168,4 +161,5 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
       data: this._importModule,
     });
   }
+  //#endregion
 }

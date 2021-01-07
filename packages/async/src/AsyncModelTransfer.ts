@@ -32,7 +32,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
     const { transfer } = this.core;
 
     const doReq = (linkInIob: ComlinkProtocol.IOB[]) => {
-      port.req(
+      port.duplexMessage(
         async (ret) => {
           const bin = helper.OpenArg(ret);
           const linkObj = transfer.transferableBinary2LinkObj(bin);

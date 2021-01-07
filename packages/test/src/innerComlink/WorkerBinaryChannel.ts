@@ -97,7 +97,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
     this._messageHanlder = listener;
   }
   // private _U8_DATA_BEGIN = Int32Array.BYTES_PER_ELEMENT * 2;
-  req(cb: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(cb: BFChainComlink.Callback<TB>, bin: TB) {
     try {
       const resBin = this.sendSync(bin);
       if (!resBin) {
@@ -147,7 +147,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       this._onMessage(dataPkg);
     } while (true);
   }
-  send(bin: TB) {
+  simplexMessage(bin: TB) {
     this.sendSync(bin);
   }
   //   readStream: AsyncIterator<TB>;

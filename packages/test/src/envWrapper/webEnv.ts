@@ -3,8 +3,6 @@ import { DuplexFactory } from "@bfchain/comlink-duplex-browser";
 // import {} from "../innerComlink/index";
 import { TaskLog } from "./TaskLog";
 
-const comlink = new Comlink();
-
 export async function installWebEnv(
   scriptUrl: string | undefined,
   mainThreadCallback: (module: ComlinkAsync) => unknown,
@@ -23,8 +21,9 @@ export async function installWebEnv(
     try {
       {
         const duplexFactory = new DuplexFactory();
+        const comlink = new Comlink(duplexFactory.getDuplex());
         /**模块控制器 */
-        const moduleA = comlink.asyncModule("A", duplexFactory.getDuplex());
+        const moduleA = comlink.asyncModule("A1");
 
         // 执行回调
         await mainThreadCallback(moduleA);
@@ -41,8 +40,9 @@ export async function installWebEnv(
 
       {
         const duplexFactory2 = new DuplexFactory();
+        const comlink = new Comlink(duplexFactory2.getDuplex());
 
-        const moduleA2 = comlink.asyncModule("A", duplexFactory2.getDuplex());
+        const moduleA2 = comlink.asyncModule("A2");
         // 执行回调
         await mainThreadCallback(moduleA2);
         {
@@ -67,15 +67,16 @@ export async function installWebEnv(
     try {
       /// 等待通道连接到位
       const duplex = await DuplexFactory.asCluster(self);
+      const comlink = new Comlink(duplex);
       if (mode === "async") {
         /// 模拟B模块作为调用模块
         /**模块控制器 */
-        const moduleB = comlink.asyncModule("B", duplex);
+        const moduleB = comlink.asyncModule("B");
         // 回调
         await workerThreadCallback(moduleB, console);
       } else {
         /**模块控制器 */
-        const moduleB2 = comlink.syncModule("B2", duplex);
+        const moduleB2 = comlink.syncModule("B2");
         // 回调
         await workerThreadCallback2(moduleB2, console);
       }

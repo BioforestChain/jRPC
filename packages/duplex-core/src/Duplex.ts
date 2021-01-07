@@ -1,4 +1,11 @@
-import { MESSAGE_TYPE, SAB_EVENT_HELPER, SAB_HELPER, SAB_MSG_STATUS, SAB_MSG_TYPE } from "./const";
+import {
+  MESSAGE_TYPE,
+  SAB_EVENT_HELPER,
+  SAB_HELPER,
+  SAB_MSG_STATUS,
+  SAB_MSG_TYPE,
+  SIMPLEX_MSG_TYPE,
+} from "./const";
 // import { serialize, deserialize } from "v8";
 const serialize = (data: unknown) => {
   const json = JSON.stringify(data);
@@ -52,8 +59,8 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   };
   constructor(private _port: BFChainComlink.Duplex.Endpoint, sabs: BFChainComlink.Duplex.SABS) {
     Reflect.set(globalThis, "duplex", this);
-    this.supportModes.add("async");
-    this.supportModes.add("sync");
+    this.supports.add("async");
+    this.supports.add("sync");
 
     const localeDataPkg = new DataPkg("locale", sabs.locale);
     const remoteDataPkg = new DataPkg("remote", sabs.remote);
@@ -65,12 +72,23 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     };
 
     _port.onMessage((data) => {
-      if (data instanceof Array) {
+      if (data[0] === SIMPLEX_MSG_TYPE.NOTIFY) {
         this._tryHandleRemoteChunk();
       }
     });
   }
-  /**发送异步消息 */
+  /**
+   * 传输“可传送”的对象。
+   * 即便当前这个通讯的底层协议是ws等非内存，也需要进行模拟实现
+   */
+  postTransferable(data: unknown, transfer: unknown[]): void {
+    /// 强制传输即可
+    this._port.postMessage(data as any, transfer as any);
+  }
+  /**发送异步消息
+   * 虽然是异步发送，但消息统一走sab通道，以确保对方的处理逻辑是一致的。
+   * 如果独立走nativeSimplex，对方会无法及时接收到消息，导致对方处理消息的顺序不一致。
+   */
   postAsyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
       {
@@ -401,7 +419,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     return msg;
   }
 
-  readonly supportModes = new Set<"async" | "sync">();
+  readonly supports = new Set<BFChainComlink.Channel.Supports>();
   private _cbs: Array<(data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown> = [];
   onMessage(cb: (data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown) {
     this._cbs.push(cb);

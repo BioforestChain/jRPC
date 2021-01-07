@@ -31,10 +31,10 @@ export class ReflectForbidenMethods {
   //     "defineProperty",
   //     "Cannot set property '${arguments[0]}' of ${this.name}(undefined or null)",
   //   );
-    nilGet = this._factory(
-      "defineProperty",
-      "Cannot read property '${arguments[0]}' of ${this.name}(undefined or null)",
-    );
+  nilGet = this._factory(
+    "defineProperty",
+    "Cannot read property '${arguments[0]}' of ${this.name}(undefined or null)",
+  );
   //   nilIn = this._factory(
   //     "has",
   //     "Cannot use 'in' operator to search for '${arguments[0]}' in ${this.name}(undefined or null)",
