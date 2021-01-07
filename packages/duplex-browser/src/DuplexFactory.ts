@@ -6,7 +6,8 @@ const PORT_SABS_WM = new WeakMap<MessagePort, BFChainComlink.Duplex.SABS>();
 export class DuplexFactory {
   /**作为子线程运作 */
   static async asCluster(
-    workerSelf: Pick<MessagePort, "addEventListener" | "removeEventListener">,
+    workerSelf: Pick<MessagePort, "addEventListener" | "removeEventListener"> &
+      Partial<Pick<MessagePort, "start">>,
   ) {
     let sabs: BFChainComlink.Duplex.SABS | undefined;
     const port2 = await new Promise<MessagePort>((resolve, reject) => {
@@ -24,6 +25,7 @@ export class DuplexFactory {
         }
       };
       workerSelf.addEventListener("message", onMessage);
+      workerSelf.start?.();
     });
     if (!sabs) {
       throw new TypeError();
@@ -64,8 +66,9 @@ export class DuplexFactory {
     return duplex;
   }
   /**作为主线程运作 */
-  asMain(workerIns: Pick<MessagePort, "postMessage">) {
+  asMain(workerIns: Pick<MessagePort, "postMessage"> & Partial<Pick<MessagePort, "start">>) {
     const sabs = this._getSabs(this._mc.port1);
+    workerIns.start?.();
     try {
       workerIns.postMessage([sabs.remote, sabs.locale]);
     } catch (err) {
