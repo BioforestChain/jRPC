@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/comlink-duplex-browser",
-  "version": "2.4.4",
+  "version": "2.4.5",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
