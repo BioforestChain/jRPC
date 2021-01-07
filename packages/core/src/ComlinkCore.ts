@@ -123,9 +123,42 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
         }, scope);
       } else if (linkObj.type === LinkObjType.Release) {
         this.exportStore.releaseById(linkObj.locId);
+      } else if (linkObj.type === LinkObjType.Push) {
+        const refId = recObjCache.get(linkObj.oid);
+        const out_refId = (refId: number) => {
+          resolveCallback(
+            cb,
+            this.transfer.linkObj2TransferableBinary({
+              type: LinkObjType.Pull,
+              refId,
+            }),
+          );
+        };
+        if (typeof refId === "number") {
+          recObjCache.delete(linkObj.oid);
+          out_refId(refId);
+        } else {
+          recObjCache.set(linkObj.oid, out_refId);
+        }
+        return;
       }
       out_void();
     });
+
+    /// 接收对象传输
+    this.port.onObject((objBox) => {
+      const { oid, obj } = this.transfer.transferableObject2Obj(objBox);
+      const refId = this.exportStore.exportObject(obj);
+      const cbFun = recObjCache.get(oid);
+      if (typeof cbFun === "function") {
+        recObjCache.delete(oid);
+        cbFun(refId);
+      } else {
+        recObjCache.set(oid, refId);
+      }
+    });
+
+    const recObjCache = new Map<number, number | ((refId: number) => void)>();
   }
 
   //#endregion
@@ -135,14 +168,12 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   /**用于存储导入的域 */
   private _importModule?: object;
   protected $getImportModule(output: BFChainComlink.Callback<object>) {
-    const { port } = this;
     /**
      * 进行协商握手，取得对应的 refId
      * @TODO 这里将会扩展出各类语言的传输协议
      */
     if (this._importModule === undefined) {
-      debugger;
-      port.duplexMessage(
+      this.port.duplexMessage(
         SyncPiperFactory(output, (ret) => {
           const bin = OpenArg(ret);
           const linkObj = this.transfer.transferableBinary2LinkObj(bin);
@@ -162,4 +193,23 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
     });
   }
   //#endregion
+
+  private _objIdAcc = new Uint32Array(1);
+  protected $pushToRemote(output: BFChainComlink.Callback<void>, obj: object) {
+    const { port } = this;
+    const objId = this._objIdAcc[0]++;
+    const X = this.transfer.obj2TransferableObject(objId, obj);
+    port.duplexObject(X.objBox, X.transfer);
+    port.duplexMessage(
+      SyncPiperFactory(output, (ret) => {
+        const bin = OpenArg(ret);
+        const linkObj = this.transfer.transferableBinary2LinkObj(bin);
+        if (linkObj.type !== LinkObjType.Pull) {
+          throw new TypeError();
+        }
+        this.importStore.saveProxyId(obj, linkObj.refId);
+      }),
+      this.transfer.linkObj2TransferableBinary({ type: LinkObjType.Push, oid: objId }),
+    );
+  }
 }

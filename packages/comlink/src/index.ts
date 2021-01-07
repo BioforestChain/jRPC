@@ -25,7 +25,7 @@ export class Comlink {
       throw new TypeError("duplex no support async mode");
     }
     const binaryChannel = new AsyncBinaryChannel<ComlinkProtocol.TB>(this.duplex);
-    return new ComlinkAsync(binaryChannel.port, this.name);
+    return new ComlinkAsync(binaryChannel.port, moduleName);
   }
 
   syncModule(moduleName = this.name) {

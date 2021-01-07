@@ -31,7 +31,7 @@ declare namespace BFChainComlink {
    */
   interface ModelTransfer<IOB, TB> {
     /**任意类型的对象 转换到 IOB
-     * 因为obj的转换需要时间，所以这个接口是异步的
+     * 因为obj的转换可能需要时间，所以这个接口是异步的
      */
     Any2InOutBinary(cb: Callback<IOB>, obj: unknown): unknown;
     /**IOB 转换到 任意类型的对象 */
@@ -41,6 +41,9 @@ declare namespace BFChainComlink {
     linkObj2TransferableBinary(obj: LinkObj<IOB>): TB;
     /**可传输的模型 转成 IO指令 */
     transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
+
+    obj2TransferableObject(oid: number, obj: object): { objBox: object; transfer: object[] };
+    transferableObject2Obj(objBox: object): { oid: number; obj: object };
   }
 
   /**定义数据管道的双工规范
@@ -54,9 +57,14 @@ declare namespace BFChainComlink {
     duplexMessage(cb: Callback<TB>, bin: TB): unknown;
     /**发送数据，不要求阻塞 */
     simplexMessage(bin: TB): void;
+
+    onObject(listener: BinaryPort.ObjectListener): void;
+    /**发送高级对象 */
+    duplexObject(objBox: object, transfer: object[]): void;
   }
   namespace BinaryPort {
     type MessageListener<TB> = (cb: Callback<TB | undefined>, bin: TB) => unknown;
+    type ObjectListener = Listener<object>
     type Listener<T = unknown, R = unknown> = (obj: T) => R;
   }
 
@@ -82,12 +90,22 @@ declare namespace BFChainComlink {
     type: import("./const").LinkObjType.Release;
     locId: number;
   }
+  interface LinkPushObj {
+    type: import("./const").LinkObjType.Push;
+    oid: number;
+  }
+  interface LinkPullObj {
+    type: import("./const").LinkObjType.Pull;
+    refId: number;
+  }
   type LinkObj<IOB> =
     | LinkImportObj
     | LinkExportObj<IOB>
     | LinkInObj<IOB>
     | LinkOutObj<IOB>
-    | LinkReleaseObj;
+    | LinkReleaseObj
+    | LinkPushObj
+    | LinkPullObj;
 
   type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">>;
 

@@ -17,9 +17,8 @@ declare namespace BFChainComlink {
      *
      * 可以用于一些内存对象的传输。比如 ArrayBufer、MessagePort
      * @param obj
-     * @param isRef 两端的对象是否要保持引用关系
      */
-    // push(obj: object, isRef?: boolean): boolean;
+    push(obj: object): void;
   }
 
   type AsyncToSync<T> = T extends (...args: infer ARGS) => infer Return

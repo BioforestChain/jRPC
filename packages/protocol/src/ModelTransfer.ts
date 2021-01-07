@@ -151,4 +151,17 @@ export abstract class ModelTransfer<
   transferableBinary2LinkObj(bin: ComlinkProtocol.TB) {
     return bin as ComlinkProtocol.LinkObj;
   }
+  obj2TransferableObject(oid: number, obj: object): { objBox: object; transfer: object[] } {
+    const objBox = { oid, obj };
+    const transfer: object[] = [];
+    if (ArrayBuffer.isView(obj)) {
+      transfer.push(obj.buffer);
+    } else {
+      transfer.push(obj);
+    }
+    return { objBox, transfer };
+  }
+  transferableObject2Obj(objBox: object) {
+    return objBox as { oid: number; obj: object };
+  }
 }

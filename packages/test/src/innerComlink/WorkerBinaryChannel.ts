@@ -49,6 +49,12 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       this._checkRemote();
     });
   }
+  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+    throw new Error("Method not implemented.");
+  }
+  duplexObject(objBox: object, transfer: object[]): void {
+    throw new Error("Method not implemented.");
+  }
   /**主动检测远端是否发来消息 */
   private _checkRemote() {
     /// 如果堆栈不为空，那么就可以开始处理

@@ -52,6 +52,15 @@ export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<T
       msgContent: bin,
     });
   }
+
+  onObject(listener: BFChainComlink.BinaryPort.ObjectListener): void {
+    this._duplex.onObject(listener);
+  }
+
+  protected _trsMap = new Map<number, BFChainComlink.Callback<number>>();
+  duplexObject(obj: object, transfer: object[]) {
+    this._duplex.postAsyncObject(obj, transfer);
+  }
 }
 
 export class SyncBinaryPort<TB> extends MagicBinaryPort<TB> {

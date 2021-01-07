@@ -14,7 +14,6 @@ installSimpleEnv(
      * 同语法： export const a = 1
      */
     moduleA.export(ctxA);
-    debugger;
     moduleA.export(a, "a");
   },
   (moduleB) => {

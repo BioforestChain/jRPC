@@ -12,6 +12,12 @@ class _InnerTurn<TB> {
 }
 class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
+  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+    throw new Error("Method not implemented.");
+  }
+  duplexObject(objBox: object, transfer: object[]): void {
+    throw new Error("Method not implemented.");
+  }
 
   onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
     this.localTurn.postMessage = listener;

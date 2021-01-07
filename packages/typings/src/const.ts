@@ -13,6 +13,10 @@ export const enum LinkObjType {
    * 比如引用对象的配置信息
    */
   // Notify
+  /**推送对象 */
+  Push,
+  /**响应Push */
+  Pull,
 }
 
 export const enum LinkOperatorType {

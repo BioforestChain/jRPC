@@ -88,9 +88,9 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
    * 传输“可传送”的对象。
    * 即便当前这个通讯的底层协议是ws等非内存，也需要进行模拟实现
    */
-  postTransferable(data: unknown, transfer: unknown[]): void {
+  postAsyncObject(data: object, transfer: object[]): void {
     /// 强制传输即可
-    this._port.postMessage(data as any, transfer as any);
+    this._port.postMessage([SIMPLEX_MSG_TYPE.TRANSFER, data], transfer);
   }
   /**发送异步消息
    * 虽然是异步发送，但消息统一走sab通道，以确保对方的处理逻辑是一致的。
@@ -432,7 +432,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     this._mcbs.push(cb);
   }
   private _tcbs: Array<BFChainComlink.BinaryPort.Listener<object>> = [];
-  onTransferable(cb: BFChainComlink.BinaryPort.Listener<object>) {
+  onObject(cb: BFChainComlink.BinaryPort.Listener<object>) {
     this._tcbs.push(cb);
   }
 

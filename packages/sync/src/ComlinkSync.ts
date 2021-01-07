@@ -15,6 +15,9 @@ export class ComlinkSync
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
+  push(obj: object) {
+    return CallbackToSync(this.$pushToRemote, [obj], this);
+  }
 
   readonly transfer = new SyncModelTransfer(this);
   readonly exportStore = new ExportStore(this.name);

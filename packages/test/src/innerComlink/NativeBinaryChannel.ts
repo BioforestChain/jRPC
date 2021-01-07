@@ -32,6 +32,12 @@ class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       });
     });
   }
+  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+    throw new Error("Method not implemented.");
+  }
+  duplexObject(objBox: object, transfer: object[]): void {
+    throw new Error("Method not implemented.");
+  }
 
   private _reqId = 0;
   private _resMap = new Map<number, BFChainComlink.Callback<TB>>();
