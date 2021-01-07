@@ -1,14 +1,14 @@
 {
   "name": "@bfchain/comlink-duplex-nodejs",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/comlink-duplex-core": "2.5.0",
-    "@bfchain/comlink-typings": "2.5.0"
+    "@bfchain/comlink-duplex-core": "2.5.2",
+    "@bfchain/comlink-typings": "2.5.2"
   },
   "module": "build/esm/index.js",
   "devDependencies": {
