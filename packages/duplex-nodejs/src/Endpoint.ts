@@ -7,7 +7,9 @@ export class Endpoint implements BFChainComlink.Duplex.Endpoint {
   ): void {
     this._port.addListener("message", listener);
   }
-  postMessage = this._port.postMessage.bind(this._port);
+  postMessage = this._port.postMessage.bind(
+    this._port,
+  ) as BFChainComlink.Duplex.Endpoint["postMessage"];
 }
 
 // export const EndpointFactory: BFChainComlink.Duplex.EndpointFactory = (port: MessagePort) => {
