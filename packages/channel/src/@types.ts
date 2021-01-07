@@ -6,10 +6,16 @@ declare namespace BFChainComlink {
     namespace Duplex {
       interface Base {
         readonly supports: Set<Supports>;
+        onTransferable(cb: BinaryPort.Listener<object>): void;
+        /**
+         * 传输“可传送”的对象。
+         * 即便当前这个通讯的底层协议是ws等非内存信道，也需要进行模拟实现
+         */
+        postTransferable(obj: object, transfer: object[]): void;
       }
     }
     interface AsyncDuplex<TB> extends Duplex.Base {
-      onMessage(cb: (msg: DuplexMessage<TB>) => unknown): unknown;
+      onMessage(cb: BinaryPort.Listener<DuplexMessage<TB>>): unknown;
       postAsyncMessage(msg: DuplexMessage<TB>): unknown;
     }
     interface SyncDuplex<TB> extends Duplex.Base {

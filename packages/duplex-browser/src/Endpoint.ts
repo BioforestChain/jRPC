@@ -1,6 +1,8 @@
 export class Endpoint implements BFChainComlink.Duplex.Endpoint {
   constructor(private _port: MessagePort) {}
-  onMessage(listener: (data: Uint8Array) => unknown): void {
+  onMessage(
+    listener: BFChainComlink.BinaryPort.Listener<BFChainComlink.Duplex.Endpoint.Message>,
+  ): void {
     this._port.start();
     this._port.addEventListener("message", (e) => listener(e.data));
   }

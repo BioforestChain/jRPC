@@ -15,6 +15,7 @@ export abstract class ModelTransfer<
   Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
 > implements BFChainComlink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
   constructor(protected core: Core) {}
+
   canClone(obj: unknown) {
     switch (typeof obj) {
       case "bigint":

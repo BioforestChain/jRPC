@@ -72,11 +72,18 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     };
 
     _port.onMessage((data) => {
-      if (data[0] === SIMPLEX_MSG_TYPE.NOTIFY) {
+      const simplexMsgType = data[0];
+      if (simplexMsgType === SIMPLEX_MSG_TYPE.NOTIFY) {
         this._tryHandleRemoteChunk();
+      } else if (simplexMsgType === SIMPLEX_MSG_TYPE.TRANSFER) {
+        const tobj = data[1] as object;
+        for (const cb of this._tcbs) {
+          cb(tobj);
+        }
       }
     });
   }
+
   /**
    * 传输“可传送”的对象。
    * 即便当前这个通讯的底层协议是ws等非内存，也需要进行模拟实现
@@ -413,16 +420,20 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
       debugger;
       throw err;
     }
-    for (const cb of this._cbs) {
+    for (const cb of this._mcbs) {
       cb(msg);
     }
     return msg;
   }
 
   readonly supports = new Set<BFChainComlink.Channel.Supports>();
-  private _cbs: Array<(data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown> = [];
+  private _mcbs: Array<(data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown> = [];
   onMessage(cb: (data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown) {
-    this._cbs.push(cb);
+    this._mcbs.push(cb);
+  }
+  private _tcbs: Array<BFChainComlink.BinaryPort.Listener<object>> = [];
+  onTransferable(cb: BFChainComlink.BinaryPort.Listener<object>) {
+    this._tcbs.push(cb);
   }
 
   /// 消息序列化

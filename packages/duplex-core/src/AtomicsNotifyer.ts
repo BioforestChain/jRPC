@@ -5,7 +5,7 @@ export class AtomicsNotifyer {
   constructor(private _port: BFChainComlink.Duplex.Endpoint) {
     this._port.onMessage((data) => {
       if (data[0] === SIMPLEX_MSG_TYPE.NOTIFY) {
-        const indexs = data.subarray(1);
+        const indexs = data[1];
         for (const index of indexs) {
           const cbs = this._icbs.get(index);
           if (cbs !== undefined) {
@@ -58,8 +58,8 @@ export class AtomicsNotifyer {
     this._notify_sync(si32, indexs);
   }
   private _notify_async(si32: Int32Array, indexs: SAB_HELPER[]) {
-    const simMsg = new Uint8Array([SIMPLEX_MSG_TYPE.NOTIFY, ...indexs]);
-    this._port.postMessage(simMsg, [simMsg.buffer]);
+    const simMsg = new Uint8Array(indexs);
+    this._port.postMessage([SIMPLEX_MSG_TYPE.NOTIFY, simMsg], [simMsg.buffer]);
   }
   private _notify_sync(si32: Int32Array, indexs: SAB_HELPER[]) {
     for (const index of indexs) {
