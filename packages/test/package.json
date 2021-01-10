@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-test",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -13,7 +13,7 @@
     "@bfchain/comlink-duplex-browser": "2.5.2",
     "@bfchain/comlink-duplex-nodejs": "2.5.2",
     "@bfchain/comlink-typings": "2.5.2",
-    "@bfchain/link": "1.0.1",
+    "@bfchain/link": "1.0.2",
     "@bfchain/link-duplex-browser": "1.0.1",
     "@bfchain/link-duplex-nodejs": "1.0.1",
     "@bfchain/link-typings": "1.0.1",
