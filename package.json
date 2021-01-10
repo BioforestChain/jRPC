@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink",
+  "name": "@bfchain/link",
   "version": "mono",
   "private": true,
   "workspaces": [

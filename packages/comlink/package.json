@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink",
+  "name": "@bfchain/link-comlink",
   "version": "2.5.2",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -12,7 +12,13 @@
     "@bfchain/comlink-core": "2.5.2",
     "@bfchain/comlink-duplex-core": "2.5.2",
     "@bfchain/comlink-sync": "2.5.2",
-    "@bfchain/comlink-typings": "2.5.2"
+    "@bfchain/comlink-typings": "2.5.2",
+    "@bfchain/link-async": "2.5.2",
+    "@bfchain/link-channel": "2.5.2",
+    "@bfchain/link-core": "2.5.2",
+    "@bfchain/link-duplex-core": "2.5.2",
+    "@bfchain/link-sync": "2.5.2",
+    "@bfchain/link-typings": "2.5.2"
   },
   "module": "build/esm/index.js"
 }

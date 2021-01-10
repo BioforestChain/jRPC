@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink-duplex-core",
+  "name": "@bfchain/link-duplex-core",
   "version": "2.5.2",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -10,6 +10,9 @@
     "@bfchain/comlink-channel": "2.5.2",
     "@bfchain/comlink-protocol": "2.5.2",
     "@bfchain/comlink-typings": "2.5.2",
+    "@bfchain/link-channel": "2.5.2",
+    "@bfchain/link-protocol": "2.5.2",
+    "@bfchain/link-typings": "2.5.2",
     "@bfchain/util-decorator": "^4.10.27"
   },
   "module": "build/esm/index.js"

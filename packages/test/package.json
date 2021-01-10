@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink-test",
+  "name": "@bfchain/link-test",
   "version": "2.5.2",
   "private": true,
   "main": "build/cjs/index.js",
@@ -13,6 +13,10 @@
     "@bfchain/comlink-duplex-browser": "2.5.2",
     "@bfchain/comlink-duplex-nodejs": "2.5.2",
     "@bfchain/comlink-typings": "2.5.2",
+    "@bfchain/link-comlink": "2.5.2",
+    "@bfchain/link-duplex-browser": "2.5.2",
+    "@bfchain/link-duplex-nodejs": "2.5.2",
+    "@bfchain/link-typings": "2.5.2",
     "source-map-support": "~0.5.19"
   },
   "devDependencies": {
