@@ -9,13 +9,13 @@
   },
   "references": [
     {
-      "path": "../comlink/tsconfig.esm.json"
-    },
-    {
       "path": "../duplex-browser/tsconfig.esm.json"
     },
     {
       "path": "../duplex-nodejs/tsconfig.esm.json"
+    },
+    {
+      "path": "../link/tsconfig.esm.json"
     },
     {
       "path": "../typings/tsconfig.esm.json"

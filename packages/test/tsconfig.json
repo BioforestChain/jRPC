@@ -56,13 +56,13 @@
   ],
   "references": [
     {
-      "path": "../comlink/tsconfig.json"
-    },
-    {
       "path": "../duplex-browser/tsconfig.json"
     },
     {
       "path": "../duplex-nodejs/tsconfig.json"
+    },
+    {
+      "path": "../link/tsconfig.json"
     },
     {
       "path": "../typings/tsconfig.json"

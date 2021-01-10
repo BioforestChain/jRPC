@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/link-comlink",
+  "name": "@bfchain/link",
   "version": "1.0.1",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
