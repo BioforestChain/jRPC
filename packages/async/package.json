@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-async",
-  "version": "2.5.2",
+  "version": "1.0.0",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
@@ -10,9 +10,9 @@
     "@bfchain/comlink-core": "2.5.2",
     "@bfchain/comlink-protocol": "2.5.2",
     "@bfchain/comlink-typings": "2.5.2",
-    "@bfchain/link-core": "2.5.2",
-    "@bfchain/link-protocol": "2.5.2",
-    "@bfchain/link-typings": "2.5.2",
+    "@bfchain/link-core": "1.0.0",
+    "@bfchain/link-protocol": "1.0.0",
+    "@bfchain/link-typings": "1.0.0",
     "@bfchain/util-decorator": "^4.10.27",
     "@bfchain/util-extends-promise": "^4.10.27"
   },

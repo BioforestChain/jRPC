@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-typings",
-  "version": "2.5.2",
+  "version": "1.0.0",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
