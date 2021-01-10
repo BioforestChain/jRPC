@@ -1,16 +1,14 @@
 {
   "name": "@bfchain/link-protocol",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-core": "2.5.2",
-    "@bfchain/link-typings": "2.5.2",
-    "@bfchain/link-core": "1.0.1",
-    "@bfchain/link-typings": "1.0.1"
+    "@bfchain/link-core": "1.0.3",
+    "@bfchain/link-typings": "1.0.3"
   },
   "module": "build/esm/index.js"
 }
