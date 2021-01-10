@@ -1,4 +1,4 @@
-import { HolderReflect } from "@bfchain/comlink";
+import { HolderReflect } from "@bfchain/link";
 import { installWebEnv } from "./envWrapper/webEnv";
 
 function testRunner(scriptUrl?: string) {

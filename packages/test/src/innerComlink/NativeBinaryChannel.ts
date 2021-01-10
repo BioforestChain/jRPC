@@ -1,4 +1,4 @@
-import { helper } from "@bfchain/comlink";
+import { helper } from "@bfchain/link";
 import { MessageChannel, MessagePort } from "worker_threads";
 
 export class NativeBinaryChannel<TB> {
@@ -10,7 +10,7 @@ const enum MESSAGE_TYPE {
   REQ,
   RES,
 }
-class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
+class NativeBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   constructor(protected remotePort: MessagePort) {
     this.remotePort.addListener("message", (data) => {
       const [type, resId, ret] = data;
@@ -32,7 +32,7 @@ class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       });
     });
   }
-  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+  onObject(listener: BFChainLink.BinaryPort.Listener<object, unknown>): void {
     throw new Error("Method not implemented.");
   }
   duplexObject(objBox: object, transfer: object[]): void {
@@ -40,8 +40,8 @@ class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
   }
 
   private _reqId = 0;
-  private _resMap = new Map<number, BFChainComlink.Callback<TB>>();
-  onMessage(handler: BFChainComlink.BinaryPort.MessageListener<TB>) {
+  private _resMap = new Map<number, BFChainLink.Callback<TB>>();
+  onMessage(handler: BFChainLink.BinaryPort.MessageListener<TB>) {
     this.remotePort.addListener("message", (data) => {
       const [type, reqId, bin] = data;
       if (type !== MESSAGE_TYPE.REQ) {
@@ -56,7 +56,7 @@ class NativeBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       }, bin);
     });
   }
-  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainLink.Callback<TB>, bin: TB) {
     const reqId = this._reqId++;
     this.remotePort.postMessage([MESSAGE_TYPE.REQ, reqId, bin]);
     this._resMap.set(reqId, output);

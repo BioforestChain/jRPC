@@ -2,7 +2,7 @@ export class ReflectForbidenMethods {
   private _factory(method: keyof typeof Reflect, errorMessage: string) {
     return Function(
       `return function ${method}Forbiden(){throw new TypeError(\`${errorMessage}\`)}`,
-    ) as (this: BFChainComlink.HolderReflect<unknown>) => never;
+    ) as (this: BFChainLink.HolderReflect<unknown>) => never;
   }
 
   // nullOrUndefine: reflectForbidenFactory('')

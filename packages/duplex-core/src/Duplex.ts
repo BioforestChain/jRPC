@@ -48,16 +48,16 @@ import { u8Concat } from "./helper";
 import { DataPkg } from "./DataPkg";
 import { u32 } from "./u32";
 
-export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
+export class Duplex<TB> implements BFChainLink.Channel.Duplex<TB> {
   static getPort(duplex: Duplex<any>) {
     return duplex._port;
   }
   private _sync: {
-    sabs: BFChainComlink.Duplex.SABS;
+    sabs: BFChainLink.Duplex.SABS;
     localeDataPkg: DataPkg;
     remoteDataPkg: DataPkg;
   };
-  constructor(private _port: BFChainComlink.Duplex.Endpoint, sabs: BFChainComlink.Duplex.SABS) {
+  constructor(private _port: BFChainLink.Duplex.Endpoint, sabs: BFChainLink.Duplex.SABS) {
     Reflect.set(globalThis, "duplex", this);
     this.supports.add("async");
     this.supports.add("sync");
@@ -96,7 +96,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
    * 虽然是异步发送，但消息统一走sab通道，以确保对方的处理逻辑是一致的。
    * 如果独立走nativeSimplex，对方会无法及时接收到消息，导致对方处理消息的顺序不一致。
    */
-  postAsyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
+  postAsyncMessage(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
       {
         onApplyWrite: (hook) =>
@@ -110,7 +110,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
 
   private _notifyer = new AtomicsNotifyer(this._port);
 
-  postSyncMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
+  postSyncMessage(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     this._postMessageCallback(
       {
         onApplyWrite: (hargs) => {
@@ -163,10 +163,10 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   private _eventId = new Uint32Array(1);
   private _postMessageCallback(
     hook: {
-      onApplyWrite: (ctx: BFChainComlink.Duplex.PostMessage_ApplyWrite_HookArg) => unknown;
-      onChunkReady: (ctx: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg) => unknown;
+      onApplyWrite: (ctx: BFChainLink.Duplex.PostMessage_ApplyWrite_HookArg) => unknown;
+      onChunkReady: (ctx: BFChainLink.Duplex.PostMessage_ChunkReady_HookArg) => unknown;
     },
-    msg: BFChainComlink.Channel.DuplexMessage<TB>,
+    msg: BFChainLink.Channel.DuplexMessage<TB>,
   ) {
     const msgBinary = this._serializeMsg(msg);
     const sync = this._sync!;
@@ -249,7 +249,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
         this._notifyer.notify(si32, [SAB_HELPER.SI32_MSG_STATUS]);
 
         // 钩子参数
-        const hookArg: BFChainComlink.Duplex.PostMessage_ChunkReady_HookArg = {
+        const hookArg: BFChainLink.Duplex.PostMessage_ChunkReady_HookArg = {
           waitI32a: si32,
           waitIndex: SAB_HELPER.SI32_MSG_STATUS,
           waitValue: SAB_MSG_STATUS.PUBLIC,
@@ -291,7 +291,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     }
   }
 
-  private _chunkCollection = new Map<number, BFChainComlink.Duplex.CachedChunkInfo>();
+  private _chunkCollection = new Map<number, BFChainLink.Duplex.CachedChunkInfo>();
 
   /**是否需要处理消息 */
   private _needOnMessageAtomics(dataPkg: DataPkg) {
@@ -332,7 +332,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
             SAB_EVENT_HELPER.U8_MSG_DATA_OFFSET,
             SAB_EVENT_HELPER.U8_MSG_DATA_OFFSET + chunkSize,
           );
-          let cachedChunkInfo: BFChainComlink.Duplex.CachedChunkInfo | undefined;
+          let cachedChunkInfo: BFChainLink.Duplex.CachedChunkInfo | undefined;
           let msgBinary: Uint8Array | undefined;
           /// 单包
           if (1 === chunkCount) {
@@ -385,7 +385,7 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
   }
 
   private _msgBinaryHandler(msgBinary: Uint8Array) {
-    let msg: BFChainComlink.Channel.DuplexMessage<TB>;
+    let msg: BFChainLink.Channel.DuplexMessage<TB>;
     try {
       switch (msgBinary[0]) {
         case MESSAGE_TYPE.REQ:
@@ -426,19 +426,19 @@ export class Duplex<TB> implements BFChainComlink.Channel.Duplex<TB> {
     return msg;
   }
 
-  readonly supports = new Set<BFChainComlink.Channel.Supports>();
-  private _mcbs: Array<(data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown> = [];
-  onMessage(cb: (data: BFChainComlink.Channel.DuplexMessage<TB>) => unknown) {
+  readonly supports = new Set<BFChainLink.Channel.Supports>();
+  private _mcbs: Array<(data: BFChainLink.Channel.DuplexMessage<TB>) => unknown> = [];
+  onMessage(cb: (data: BFChainLink.Channel.DuplexMessage<TB>) => unknown) {
     this._mcbs.push(cb);
   }
-  private _tcbs: Array<BFChainComlink.BinaryPort.Listener<object>> = [];
-  onObject(cb: BFChainComlink.BinaryPort.Listener<object>) {
+  private _tcbs: Array<BFChainLink.BinaryPort.Listener<object>> = [];
+  onObject(cb: BFChainLink.BinaryPort.Listener<object>) {
     this._tcbs.push(cb);
   }
 
   /// 消息序列化
   // private _msg_ABC: typeof SharedArrayBuffer | typeof ArrayBuffer = ArrayBuffer;
-  private _serializeMsg(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
+  private _serializeMsg(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     let msgBinary: Uint8Array;
     if (msg.msgType === "SIM") {
       msgBinary = u8Concat(ArrayBuffer, [[MESSAGE_TYPE.SIM], serialize(msg.msgContent)]);

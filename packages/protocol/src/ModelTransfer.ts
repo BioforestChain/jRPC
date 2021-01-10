@@ -1,4 +1,4 @@
-import { ComlinkCore, helper } from "@bfchain/comlink-core";
+import { ComlinkCore, helper } from "@bfchain/link-core";
 import {
   IOB_Type,
   globalSymbolStore,
@@ -13,7 +13,7 @@ import {
 
 export abstract class ModelTransfer<
   Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
-> implements BFChainComlink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
+> implements BFChainLink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
   constructor(protected core: Core) {}
 
   canClone(obj: unknown) {
@@ -95,7 +95,7 @@ export abstract class ModelTransfer<
     throw new TypeError();
   }
 
-  Any2InOutBinary(cb: BFChainComlink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
+  Any2InOutBinary(cb: BFChainLink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
     helper.SyncForCallback(cb, () => {
       const needClone = this.canClone(obj);
       let item: ComlinkProtocol.IOB | undefined;

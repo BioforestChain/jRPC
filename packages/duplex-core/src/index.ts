@@ -1,4 +1,4 @@
 import "./@types";
-import type {} from "@bfchain/comlink-channel";
-import type {} from "@bfchain/comlink-typings";
+import type {} from "@bfchain/link-channel";
+import type {} from "@bfchain/link-typings";
 export * from "./Duplex";

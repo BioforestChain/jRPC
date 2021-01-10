@@ -1,10 +1,10 @@
-import { helper } from "@bfchain/comlink-core";
+import { helper } from "@bfchain/link-core";
 export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
-  cbCaller: (cb: BFChainComlink.Callback<R>, ...args: ARGS) => void,
+  cbCaller: (cb: BFChainLink.Callback<R>, ...args: ARGS) => void,
   args: ARGS,
   ctx: unknown,
 ) {
-  let syncRet: BFChainComlink.CallbackArg<R> | undefined;
+  let syncRet: BFChainLink.CallbackArg<R> | undefined;
 
   /// 默认是同步模式
   let syncResolve = (data: R) => {
@@ -54,7 +54,7 @@ export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
  * 但是这种推导也是**有条件的**
  * 举个例子:
  * ```ts
- * cbCaller = <A1>(cb: BFChainComlink.Callback<Result<A1>>, arg1: A1) => void
+ * cbCaller = <A1>(cb: BFChainLink.Callback<Result<A1>>, arg1: A1) => void
  * type Result<T> = ...
  * ```
  * 在上面这个例子中,终点在于 `Result<T>`，
@@ -64,7 +64,7 @@ export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
  * 此时如果我们是这样定义 `type Result<T extends ...>` 就会可能出现问题。
  * 比如：
  * ```ts
- * cbCaller = <A1 extends keyof T>(cb: BFChainComlink.Callback<Result<T, A1>>, arg1: A1) => void
+ * cbCaller = <A1 extends keyof T>(cb: BFChainLink.Callback<Result<T, A1>>, arg1: A1) => void
  * type Result<T, K extends keyof T> = T[K]
  * ```
  * 因为我们把原本有关系的 `Result<T,A1>` 和 `A1`，分解成了`R`与`ARGS`两个没有关系的类型。
@@ -73,7 +73,7 @@ export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
  * 编译器无法认证到底要使用哪一种。
  */
 export function CallbackToAsyncBind<R, ARGS extends readonly unknown[]>(
-  cbCaller: (cb: BFChainComlink.Callback<R>, ...args: ARGS) => void,
+  cbCaller: (cb: BFChainLink.Callback<R>, ...args: ARGS) => void,
   ctx: unknown,
 ) {
   return <R2 extends R>(...args: ARGS) => CallbackToAsync<R2, ARGS>(cbCaller as any, args, ctx);

@@ -1,5 +1,5 @@
-import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/comlink";
-import { DuplexFactory } from "@bfchain/comlink-duplex-browser";
+import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/link";
+import { DuplexFactory } from "@bfchain/link-duplex-browser";
 // import {} from "../innerComlink/index";
 import { TaskLog } from "./TaskLog";
 

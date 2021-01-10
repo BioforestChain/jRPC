@@ -1,5 +1,5 @@
 {
   "files": [],
   "include": [],
-  "references": [{ "path": "packages/comlink/tsconfig.esm-es6.json" }]
+  "references": [{ "path": "packages/link/tsconfig.esm-es6.json" }]
 }

@@ -1,4 +1,4 @@
-import { EmscriptenReflect } from "@bfchain/comlink-typings";
+import { EmscriptenReflect } from "@bfchain/link-typings";
 
 type EsmReflectSyncFun = {
   type: "sync";
@@ -123,17 +123,17 @@ function _SyncToCallback<T, ARGS extends unknown[]>(handler: (target: any, ...ar
   } as EsmReflectSyncFun;
 }
 
-export const SyncForCallback = <T>(cb: BFChainComlink.Callback<T>, handler: () => T) => {
+export const SyncForCallback = <T>(cb: BFChainLink.Callback<T>, handler: () => T) => {
   try {
     cb({ isError: false, data: handler() });
   } catch (error) {
     cb({ isError: true, error });
   }
 };
-export function resolveCallback<T>(cb: BFChainComlink.Callback<T>, data: T) {
+export function resolveCallback<T>(cb: BFChainLink.Callback<T>, data: T) {
   cb({ isError: false, data });
 }
-export function rejectCallback<E>(cb: BFChainComlink.Callback<never, E>, error: E) {
+export function rejectCallback<E>(cb: BFChainLink.Callback<never, E>, error: E) {
   cb({ isError: true, error });
 }
 
@@ -143,7 +143,7 @@ export function rejectCallback<E>(cb: BFChainComlink.Callback<never, E>, error: 
  * @param transformer
  */
 export const SyncPiperFactory = <ARG extends unknown[], T>(
-  output: BFChainComlink.Callback<T>,
+  output: BFChainLink.Callback<T>,
   transformer: (...args: ARG) => T,
 ) => {
   return (...args: ARG) => {
@@ -161,7 +161,7 @@ export const SyncPiperFactory = <ARG extends unknown[], T>(
  * @param transformer
  */
 export const AsyncPiperFactory = <ARG extends unknown[], T>(
-  output: BFChainComlink.Callback<T>,
+  output: BFChainLink.Callback<T>,
   transformer: (...args: ARG) => PromiseLike<T>,
 ) => {
   return async (...args: ARG) => {
@@ -173,7 +173,7 @@ export const AsyncPiperFactory = <ARG extends unknown[], T>(
   };
 };
 
-export const OpenArg = <T>(arg: BFChainComlink.CallbackArg<T>) => {
+export const OpenArg = <T>(arg: BFChainLink.CallbackArg<T>) => {
   if (arg.isError) {
     throw arg.error;
   }

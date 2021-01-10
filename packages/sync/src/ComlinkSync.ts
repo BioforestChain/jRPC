@@ -1,17 +1,17 @@
-import { ComlinkCore, ExportStore, ImportStore } from "@bfchain/comlink-core";
+import { ComlinkCore, ExportStore, ImportStore } from "@bfchain/link-core";
 import {
   getFunctionExportDescription,
   IOB_EFT_Factory_Map,
   getFunctionType,
-} from "@bfchain/comlink-protocol";
-import { EmscriptenReflect } from "@bfchain/comlink-typings";
+} from "@bfchain/link-protocol";
+import { EmscriptenReflect } from "@bfchain/link-typings";
 import { CallbackToSync } from "./helper";
 import { PROTOCAL_SENDER, IS_ASYNC_APPLY_FUN_MARKER, IS_SYNC_APPLY_FUN_MARKER } from "./const";
 import { SyncModelTransfer } from "./SyncModelTransfer";
 
 export class ComlinkSync
   extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
-  implements BFChainComlink.ComlinkSync {
+  implements BFChainLink.ComlinkSync {
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
@@ -65,10 +65,10 @@ export class ComlinkSync
       throw new TypeError();
     }
     if (Reflect.get(fun, IS_ASYNC_APPLY_FUN_MARKER)) {
-      return fun as BFChainComlink.AsyncToSync<T>;
+      return fun as BFChainLink.AsyncToSync<T>;
     }
 
-    let syncFun = this._syncWM.get(fun) as BFChainComlink.AsyncToSync<T> | undefined;
+    let syncFun = this._syncWM.get(fun) as BFChainLink.AsyncToSync<T> | undefined;
     if (!syncFun) {
       const sender = this.transfer.getLinkInSenderByProxy(fun);
       if (!sender) {
@@ -84,7 +84,7 @@ export class ComlinkSync
         apply: (_target: Function, thisArg: any, argArray?: any) => {
           return sender.req([EmscriptenReflect.SyncApply, thisArg, ...argArray]);
         },
-      }) as BFChainComlink.AsyncToSync<T>;
+      }) as BFChainLink.AsyncToSync<T>;
 
       this.importStore.backupProxyId(syncFun as Function, this.importStore.getProxy(fun)!.id);
       this._syncWM.set(fun, syncFun);
@@ -100,9 +100,9 @@ export class ComlinkSync
       throw new TypeError();
     }
     if (Reflect.get(fun, IS_SYNC_APPLY_FUN_MARKER)) {
-      return fun as BFChainComlink.SyncToAsync<T>;
+      return fun as BFChainLink.SyncToAsync<T>;
     }
-    let asyncFun = this._asyncWM.get(fun) as BFChainComlink.SyncToAsync<T> | undefined;
+    let asyncFun = this._asyncWM.get(fun) as BFChainLink.SyncToAsync<T> | undefined;
     if (!asyncFun) {
       const sender = this.transfer.getLinkInSenderByProxy(fun);
       if (!sender) {
@@ -128,7 +128,7 @@ export class ComlinkSync
             ]);
           });
         },
-      }) as BFChainComlink.SyncToAsync<T>;
+      }) as BFChainLink.SyncToAsync<T>;
 
       this.importStore.backupProxyId(asyncFun as Function, this.importStore.getProxy(fun)!.id);
       this._asyncWM.set(fun, asyncFun);

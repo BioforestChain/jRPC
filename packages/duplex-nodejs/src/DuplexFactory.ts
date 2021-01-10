@@ -1,8 +1,8 @@
 import { MessagePort, MessageChannel } from "worker_threads";
-import { Duplex } from "@bfchain/comlink-duplex-core";
+import { Duplex } from "@bfchain/link-duplex-core";
 import { Endpoint } from "./Endpoint";
 
-const PORT_SABS_WM = new WeakMap<MessagePort, BFChainComlink.Duplex.SABS>();
+const PORT_SABS_WM = new WeakMap<MessagePort, BFChainLink.Duplex.SABS>();
 
 export class DuplexFactory {
   /**作为子线程运作 */
@@ -10,7 +10,7 @@ export class DuplexFactory {
     workerSelf: Pick<MessagePort, "addListener" | "removeListener"> &
       Partial<Pick<MessagePort, "start">>,
   ) {
-    let sabs: BFChainComlink.Duplex.SABS | undefined;
+    let sabs: BFChainLink.Duplex.SABS | undefined;
     const port2 = await new Promise<MessagePort>((resolve, reject) => {
       const onMessage = (data: unknown) => {
         if (data instanceof MessagePort) {

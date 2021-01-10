@@ -39,7 +39,7 @@ const enum U8_OFFSET {
   DATA_BEGIN = 4 /* Int32Array.BYTES_PER_ELEMENT */ * 2,
 }
 
-class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
+class ShareBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   constructor(
     private _notifyer: MessagePort,
     private localSab: SharedArrayBuffer,
@@ -49,7 +49,7 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       this._checkRemote();
     });
   }
-  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+  onObject(listener: BFChainLink.BinaryPort.Listener<object, unknown>): void {
     throw new Error("Method not implemented.");
   }
   duplexObject(objBox: object, transfer: object[]): void {
@@ -98,12 +98,12 @@ class ShareBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
       Atomics.notify(si32, 0, 1);
     }, bin);
   }
-  private _messageHanlder!: BFChainComlink.BinaryPort.MessageListener<TB>;
-  onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
+  private _messageHanlder!: BFChainLink.BinaryPort.MessageListener<TB>;
+  onMessage(listener: BFChainLink.BinaryPort.MessageListener<TB>) {
     this._messageHanlder = listener;
   }
   // private _U8_DATA_BEGIN = Int32Array.BYTES_PER_ELEMENT * 2;
-  duplexMessage(cb: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(cb: BFChainLink.Callback<TB>, bin: TB) {
     try {
       const resBin = this.sendSync(bin);
       if (!resBin) {

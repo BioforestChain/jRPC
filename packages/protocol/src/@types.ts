@@ -1,10 +1,10 @@
 declare namespace ComlinkProtocol {
   type IOB = EmscriptionLinkRefExtends.InOutObj;
   type IOB_E = EmscriptionLinkRefExtends.IOB_Extends;
-  type TB = BFChainComlink.LinkObj<IOB>;
+  type TB = BFChainLink.LinkObj<IOB>;
   type LinkObj = TB;
-  type BinaryPort = BFChainComlink.BinaryPort<TB>;
-  //   type LinkRefItem = BFChainComlink.LinkRefItem<REF_E>;
+  type BinaryPort = BFChainLink.BinaryPort<TB>;
+  //   type LinkRefItem = BFChainLink.LinkRefItem<REF_E>;
 }
 
 /**js语言的引用扩展格式 */

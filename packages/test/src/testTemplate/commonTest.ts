@@ -137,7 +137,7 @@ export class TestService {
 
   //#region 异步模式测试
 
-  static async testApply2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testApply2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     console.assert((await ctxA.say("qaq")) === "Gaubee: xxxx-qaq-xxxx", "call say");
     console.assert(
       (await ctxA.constructor.toString()) === `class TestService { [remote code] }`,
@@ -166,7 +166,7 @@ export class TestService {
     );
     console.assert(argLength === 3, "use callback");
   }
-  static async testFunctionType2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testFunctionType2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     // 因为不支持实时的属性get，所以即便是 === 操作也完成不了
     // console.assert(ctxA.constructor.toString === ctxA.say.toString, "Function.prototype.toString");
     console.assert(
@@ -175,7 +175,7 @@ export class TestService {
     );
     console.assert(typeof ctxA.constructor === "function", "ctor is function");
   }
-  static async testSymbol2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testSymbol2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     const arr = [1];
     console.assert(
       format(await ctxA.concat(arr, [2])) === "[ 1, 2 ]",
@@ -187,7 +187,7 @@ export class TestService {
       "isConcatSpreadable === false",
     );
   }
-  static async testThrow2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testThrow2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     try {
       await ctxA.throwLocal("qaq3");
     } catch (err) {
@@ -200,11 +200,11 @@ export class TestService {
       console.assert((await err.message) === "qaq4", "throw 4");
     }
   }
-  static async testPromise2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testPromise2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
   }
 
-  static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<TestService>) {
+  static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     await this.testApply2(ctxA);
     await this.testFunctionType2(ctxA);
     await this.testSymbol2(ctxA);

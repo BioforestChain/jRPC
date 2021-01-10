@@ -1,5 +1,5 @@
 {
-  "name": "@bfchain/comlink-test-web",
+  "name": "@bfchain/link-test-web",
   "source": "../build/esm/1-1.web.test.js",
   "exports": "dist/1-1.web.modern.js",
   "scripts": {

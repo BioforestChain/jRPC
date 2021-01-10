@@ -1,5 +1,5 @@
-import { helper } from "@bfchain/comlink";
-import { CallbackToSync } from "@bfchain/comlink-sync";
+import { helper } from "@bfchain/link";
+import { CallbackToSync } from "@bfchain/link-sync";
 
 export class SimpleBinaryChannel<TB> {
   private _turnA = new _InnerTurn<TB>();
@@ -8,21 +8,21 @@ export class SimpleBinaryChannel<TB> {
   public readonly portB = new SimpleBinaryPort<TB>(this._turnB, this._turnA);
 }
 class _InnerTurn<TB> {
-  postMessage!: BFChainComlink.BinaryPort.MessageListener<TB>;
+  postMessage!: BFChainLink.BinaryPort.MessageListener<TB>;
 }
-class SimpleBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
+class SimpleBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
-  onObject(listener: BFChainComlink.BinaryPort.Listener<object, unknown>): void {
+  onObject(listener: BFChainLink.BinaryPort.Listener<object, unknown>): void {
     throw new Error("Method not implemented.");
   }
   duplexObject(objBox: object, transfer: object[]): void {
     throw new Error("Method not implemented.");
   }
 
-  onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
+  onMessage(listener: BFChainLink.BinaryPort.MessageListener<TB>) {
     this.localTurn.postMessage = listener;
   }
-  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainLink.Callback<TB>, bin: TB) {
     this.remoteTurn.postMessage(
       helper.SyncPiperFactory(output, (ret) => {
         const resBin = helper.OpenArg(ret);

@@ -2,7 +2,7 @@ import { AsyncBinaryPort, MagicBinaryPort, SyncBinaryPort } from "./MagicBinaryP
 
 abstract class MagicBinaryChannel<TB> {
   constructor(
-    protected _duplex: BFChainComlink.Channel.Duplex<TB>,
+    protected _duplex: BFChainLink.Channel.Duplex<TB>,
     public readonly localSab = new SharedArrayBuffer(1024),
     public readonly remoteSab = new SharedArrayBuffer(1024),
   ) {}

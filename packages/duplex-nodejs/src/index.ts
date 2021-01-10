@@ -1,4 +1,4 @@
-import type {} from "@bfchain/comlink-duplex-core";
-import type {} from "@bfchain/comlink-protocol";
+import type {} from "@bfchain/link-duplex-core";
+import type {} from "@bfchain/link-protocol";
 export * from "./DuplexFactory";
 export * from "./Endpoint";

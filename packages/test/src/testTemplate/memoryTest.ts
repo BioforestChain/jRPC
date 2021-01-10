@@ -1,4 +1,4 @@
-import { HolderReflect } from "@bfchain/comlink";
+import { HolderReflect } from "@bfchain/link";
 
 export class MyItem {
   constructor(public readonly value: number) {}
@@ -43,7 +43,7 @@ export class CGService {
     console.assert(myItem.value === 0);
   }
 
-  static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<CGService>, UTIMES: number) {
+  static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<CGService>, UTIMES: number) {
     let myItem = await (await ctxA.getList(1))[0];
     ctxA.clear();
 

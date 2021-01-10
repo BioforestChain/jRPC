@@ -1,4 +1,4 @@
 import "./@types";
-import {} from "@bfchain/comlink-typings";
-import {} from "@bfchain/comlink-protocol";
+import {} from "@bfchain/link-typings";
+import {} from "@bfchain/link-protocol";
 export * from "./MagicBinaryChannel";

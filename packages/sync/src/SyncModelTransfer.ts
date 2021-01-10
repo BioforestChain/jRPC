@@ -8,8 +8,8 @@ import {
   IOB_Type,
   ModelTransfer,
   refFunctionStaticToStringFactory,
-} from "@bfchain/comlink-protocol";
-import { EmscriptenReflect, LinkObjType } from "@bfchain/comlink-typings";
+} from "@bfchain/link-protocol";
+import { EmscriptenReflect, LinkObjType } from "@bfchain/link-typings";
 import { CallbackToSync } from "./helper";
 import { PROTOCAL_SENDER } from "./const";
 import type { ComlinkSync } from "./ComlinkSync";
@@ -25,7 +25,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
    * ref fun statis toString
    */
   private _rfsts = refFunctionStaticToStringFactory();
-  private _genLinkInSender(port: BFChainComlink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
+  private _genLinkInSender(port: BFChainLink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
     const reqSync = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]]) =>
       this._reqLinkIn<R>(port, refId, linkIn);
     const reqNoOutput = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
@@ -42,7 +42,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   private _getDefaultProxyHanlder<T extends object>(
     sender: ReturnType<SyncModelTransfer["_genLinkInSender"]>,
   ) {
-    const proxyHandler: BFChainComlink.EmscriptionProxyHanlder<T> = {
+    const proxyHandler: BFChainLink.EmscriptionProxyHanlder<T> = {
       getPrototypeOf: (_target) => sender.req<object | null>([EmscriptenReflect.GetPrototypeOf]),
       setPrototypeOf: (_target, proto) =>
         sender.req<boolean>([EmscriptenReflect.SetPrototypeOf, proto]),
@@ -183,12 +183,12 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   private _createImportRefHook<T>(
     port: ComlinkProtocol.BinaryPort,
     refId: number,
-  ): BFChainComlink.ImportRefHook<T> {
+  ): BFChainLink.ImportRefHook<T> {
     const refExtends = this.core.importStore.idExtendsStore.get(refId);
     if (!refExtends) {
       throw new ReferenceError();
     }
-    let ref: BFChainComlink.ImportRefHook<T> | undefined;
+    let ref: BFChainLink.ImportRefHook<T> | undefined;
     if (refExtends.type === IOB_Extends_Type.Function) {
       const factory = IOB_EFT_Factory_Map.get(refExtends.funType);
       if (!factory) {
@@ -196,13 +196,13 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       }
       const sourceFun = factory.factory();
 
-      const funRef: BFChainComlink.ImportRefHook<Function> = {
+      const funRef: BFChainLink.ImportRefHook<Function> = {
         type: "object",
         getSource: () => sourceFun,
         getProxyHanlder: () => {
           const sender = this._genLinkInSender(port, refId);
           const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(sender);
-          const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
+          const functionProxyHanlder: BFChainLink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
               if (prop === "name") {
@@ -241,10 +241,10 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
           return functionProxyHanlder;
         },
       };
-      ref = (funRef as unknown) as BFChainComlink.ImportRefHook<T>;
+      ref = (funRef as unknown) as BFChainLink.ImportRefHook<T>;
     } else if (refExtends.type === IOB_Extends_Type.Object) {
       const sourceObj = {};
-      const objRef: BFChainComlink.ImportRefHook<object> = {
+      const objRef: BFChainLink.ImportRefHook<object> = {
         type: "object",
         getSource: () => sourceObj,
         getProxyHanlder: () => {
@@ -254,7 +254,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
            * 因为对象一旦被设置状态后，无法回退，所以这里可以直接根据现有的状态来判断对象的可操作性
            * @TODO 使用isExtensible isFrozen isSealed来改进
            */
-          const functionProxyHanlder: BFChainComlink.EmscriptionProxyHanlder<Function> = {
+          const functionProxyHanlder: BFChainLink.EmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
               //#region 自定义属性
@@ -284,7 +284,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
           return functionProxyHanlder;
         },
       };
-      ref = (objRef as unknown) as BFChainComlink.ImportRefHook<T>;
+      ref = (objRef as unknown) as BFChainLink.ImportRefHook<T>;
     } else if (refExtends.type === IOB_Extends_Type.Symbol) {
       let sourceSym: symbol;
       if (refExtends.global) {
@@ -298,11 +298,11 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
           ? Symbol.for(refExtends.description)
           : Symbol(refExtends.description);
       }
-      const symRef: BFChainComlink.ImportRefHook<symbol> = {
+      const symRef: BFChainLink.ImportRefHook<symbol> = {
         type: "primitive",
         getSource: () => sourceSym,
       };
-      ref = (symRef as unknown) as BFChainComlink.ImportRefHook<T>;
+      ref = (symRef as unknown) as BFChainLink.ImportRefHook<T>;
     }
     if (!ref) {
       throw new TypeError();

@@ -1,6 +1,6 @@
-import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/comlink";
+import { Comlink, ComlinkAsync, ComlinkSync } from "@bfchain/link";
 import { Worker, isMainThread, MessagePort, parentPort, workerData } from "worker_threads";
-import { DuplexFactory } from "@bfchain/comlink-duplex-nodejs";
+import { DuplexFactory } from "@bfchain/link-duplex-nodejs";
 import {} from "../innerComlink/index";
 import { TaskLog } from "./TaskLog";
 

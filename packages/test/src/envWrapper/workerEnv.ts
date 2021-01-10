@@ -1,4 +1,4 @@
-import { ComlinkSync } from "@bfchain/comlink";
+import { ComlinkSync } from "@bfchain/link";
 import { ShareBinaryChannel } from "../innerComlink/index";
 import { PromiseOut } from "@bfchain/util-extends-promise-out";
 import {

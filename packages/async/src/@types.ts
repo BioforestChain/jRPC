@@ -1,4 +1,4 @@
-declare namespace BFChainComlink {
+declare namespace BFChainLink {
   interface ComlinkAsync extends ComlinkCore {
     /**导入
      * 同语法：
@@ -21,9 +21,9 @@ declare namespace BFChainComlink {
   interface HolderReflect<T /* extends object */> {
     // readonly linkIn:
     //   | readonly []
-    //   | readonly [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]];
+    //   | readonly [import("@bfchain/link-typings").EmscriptenReflect, ...unknown[]];
     createSubHolder<R>(
-      linkIn: [import("@bfchain/comlink-typings").EmscriptenReflect, ...unknown[]],
+      linkIn: [import("@bfchain/link-typings").EmscriptenReflect, ...unknown[]],
     ): HolderReflect<R>;
     toHolder(): Holder<T>;
     toValue(): BFChainUtil.PromiseMaybe<AsyncValue<T>>;
@@ -205,7 +205,7 @@ declare namespace BFChainComlink {
 
     interface IOB_CacherWaiting {
       type: import("./const").IOB_CACHE_STATUS.WAITING;
-      waitter: BFChainComlink.Callback<void>[]; // PromiseOut<void>;
+      waitter: BFChainLink.Callback<void>[]; // PromiseOut<void>;
     }
 
     interface IOB_CacherThrow<T> {

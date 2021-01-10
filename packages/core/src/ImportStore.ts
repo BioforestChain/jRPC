@@ -1,4 +1,4 @@
-import { LinkObjType } from "@bfchain/comlink-typings";
+import { LinkObjType } from "@bfchain/link-typings";
 
 export const enum STORE_TYPE {
   Proxy,
@@ -19,8 +19,8 @@ type StoreItem = ProxyStoreItem | SymbolStoreItem;
 export class ImportStore<IOB /*  = unknown */, TB /*  = unknown */, E> {
   constructor(
     public readonly name: string,
-    private port: BFChainComlink.BinaryPort<TB>,
-    private transfer: BFChainComlink.ModelTransfer<IOB, TB>,
+    private port: BFChainLink.BinaryPort<TB>,
+    private transfer: BFChainLink.ModelTransfer<IOB, TB>,
   ) {}
   /**存储协议扩展信息 */
   idExtendsStore = new Map<number, E>();

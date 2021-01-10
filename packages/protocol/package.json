@@ -7,8 +7,8 @@
     "build"
   ],
   "dependencies": {
-    "@bfchain/comlink-core": "2.5.2",
-    "@bfchain/comlink-typings": "2.5.2",
+    "@bfchain/link-core": "2.5.2",
+    "@bfchain/link-typings": "2.5.2",
     "@bfchain/link-core": "1.0.1",
     "@bfchain/link-typings": "1.0.1"
   },

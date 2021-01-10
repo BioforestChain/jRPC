@@ -11,7 +11,7 @@ try {
   }
 } catch {}
 
-import "@bfchain/comlink-typings";
+import "@bfchain/link-typings";
 export * from "./SimpleBinaryChannel";
 export * from "./WorkerBinaryChannel";
 export * from "./NativeBinaryChannel";

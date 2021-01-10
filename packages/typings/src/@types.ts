@@ -1,4 +1,4 @@
-declare namespace BFChainComlink {
+declare namespace BFChainLink {
   interface ComlinkCore {
     /**导出
      * 同语法：
@@ -116,7 +116,7 @@ declare namespace BFChainComlink {
   type ImportObjectRefHook<S, O extends ToObject<S> = ToObject<S>> = {
     type: "object";
     getSource: () => O;
-    getProxyHanlder: () => BFChainComlink.EmscriptionProxyHanlder<O>;
+    getProxyHanlder: () => BFChainLink.EmscriptionProxyHanlder<O>;
     // onProxyCreated?: (proxy: O) => unknown;
   };
   type ImportPrimitiveRefHook<S> = {

@@ -1,5 +1,5 @@
-import { ComlinkCore, STORE_TYPE, helper, ExportStore, ImportStore } from "@bfchain/comlink-core";
-import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
+import { ComlinkCore, STORE_TYPE, helper, ExportStore, ImportStore } from "@bfchain/link-core";
+import { EmscriptenReflect, isObj } from "@bfchain/link-typings";
 import { HolderReflect } from "./HolderReflect";
 import { CallbackToAsync } from "./helper";
 import {
@@ -13,12 +13,12 @@ import {
   getFunctionExportDescription,
   IMPORT_FUN_EXTENDS_SYMBOL,
   refFunctionStaticToStringFactory,
-} from "@bfchain/comlink-protocol";
+} from "@bfchain/link-protocol";
 import { AsyncModelTransfer } from "./AsyncModelTransfer";
 
 export class ComlinkAsync
   extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
-  implements BFChainComlink.ComlinkAsync {
+  implements BFChainLink.ComlinkAsync {
   constructor(port: ComlinkProtocol.BinaryPort, name: string) {
     super(port, name);
   }
@@ -53,7 +53,7 @@ export class ComlinkAsync
     return hanlder;
   }
 
-  async import<T>(key = "default"): Promise<BFChainComlink.AsyncUtil.Remote<T>> {
+  async import<T>(key = "default"): Promise<BFChainLink.AsyncUtil.Remote<T>> {
     const importModule = await CallbackToAsync(this.$getImportModule, [], this);
     return Reflect.get(importModule, key);
   }

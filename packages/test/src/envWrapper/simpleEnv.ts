@@ -1,4 +1,4 @@
-import { ComlinkSync } from "@bfchain/comlink";
+import { ComlinkSync } from "@bfchain/link";
 import { SimpleBinaryChannel } from "../innerComlink/index";
 
 export async function installSimpleEnv(

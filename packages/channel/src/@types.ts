@@ -1,4 +1,4 @@
-declare namespace BFChainComlink {
+declare namespace BFChainLink {
   namespace Channel {
     type TransferModes = "async" | "sync" /* sharedArrayBuffer */;
     type Supports = TransferModes;
@@ -37,7 +37,7 @@ declare namespace BFChainComlink {
     type DuplexMessageRes<TB> = {
       msgType: "RES";
       msgId: number;
-      msgContent: BFChainComlink.CallbackArg<TB | undefined>;
+      msgContent: BFChainLink.CallbackArg<TB | undefined>;
     };
   }
 }

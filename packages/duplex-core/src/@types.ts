@@ -1,4 +1,4 @@
-declare namespace BFChainComlink {
+declare namespace BFChainLink {
   namespace Duplex {
     type SABS = { locale: SharedArrayBuffer; remote: SharedArrayBuffer };
     type CachedChunkInfo = Map<number, Uint8Array>; // { chunk: Uint8Array; range: [{ start: number; end: number }] };

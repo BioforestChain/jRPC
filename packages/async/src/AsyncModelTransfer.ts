@@ -2,10 +2,10 @@ import {
   IOB_Type,
   ModelTransfer,
   refFunctionStaticToStringFactory,
-} from "@bfchain/comlink-protocol";
-import { LinkObjType } from "@bfchain/comlink-typings";
+} from "@bfchain/link-protocol";
+import { LinkObjType } from "@bfchain/link-typings";
 import type { ComlinkAsync } from "./ComlinkAsync";
-import { helper } from "@bfchain/comlink-core";
+import { helper } from "@bfchain/link-core";
 import { HolderReflect } from "./HolderReflect";
 import { getHolderReflect, isHolder } from "./Holder";
 import { IOB_CACHE_STATUS } from "./const";
@@ -27,7 +27,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
     port: ComlinkProtocol.BinaryPort,
     targetId: number,
     linkIn: readonly unknown[],
-    hasOut?: BFChainComlink.HolderReflect<R> | false,
+    hasOut?: BFChainLink.HolderReflect<R> | false,
   ) {
     const { transfer } = this.core;
 
@@ -146,11 +146,11 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   // linkInSenderFactory(port: ComlinkProtocol.BinaryPort, refId: number) {
   //   return <R>(
   //     linkIn: readonly [EmscriptenReflect, ...unknown[]],
-  //     hasOut?: BFChainComlink.HolderReflect<R> | false,
+  //     hasOut?: BFChainLink.HolderReflect<R> | false,
   //   ) => this.sendLinkIn(port, refId, linkIn, hasOut);
   // }
 
-  Any2InOutBinary(cb: BFChainComlink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
+  Any2InOutBinary(cb: BFChainLink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
     const reflectHolder = getHolderReflect(obj);
     if (reflectHolder !== undefined) {
       const iob = reflectHolder.getIOB();

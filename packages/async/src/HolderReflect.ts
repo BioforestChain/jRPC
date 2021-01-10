@@ -1,4 +1,4 @@
-import { helper } from "@bfchain/comlink-core";
+import { helper } from "@bfchain/link-core";
 import {
   globalSymbolStore,
   IMPORT_FUN_EXTENDS_SYMBOL,
@@ -7,8 +7,8 @@ import {
   IOB_Extends_Type,
   IOB_Type,
   refFunctionStaticToStringFactory,
-} from "@bfchain/comlink-protocol";
-import { EmscriptenReflect, isObj } from "@bfchain/comlink-typings";
+} from "@bfchain/link-protocol";
+import { EmscriptenReflect, isObj } from "@bfchain/link-typings";
 import {
   bindThis,
   cacheGetter,
@@ -24,7 +24,7 @@ import { IOB_CACHE_STATUS } from "./const";
 
 let ID_ACC = 0;
 
-type CallbackAsyncValue<T> = BFChainComlink.Callback<BFChainComlink.AsyncValue<T>>;
+type CallbackAsyncValue<T> = BFChainLink.Callback<BFChainLink.AsyncValue<T>>;
 
 //#region 一些辅助性函数
 
@@ -47,11 +47,11 @@ function end(iobCacher: never): never {
 }
 //#endregion
 
-export class HolderReflect<T /* extends object */> implements BFChainComlink.HolderReflect<T> {
+export class HolderReflect<T /* extends object */> implements BFChainLink.HolderReflect<T> {
   static isHolder = isHolder;
   static getHolderReflect = getHolderReflect;
 
-  toHolder(): BFChainComlink.Holder<T> {
+  toHolder(): BFChainLink.Holder<T> {
     return getHolder(this);
   }
 
@@ -66,7 +66,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     }>,
     // public linkInSender: <R>(
     //   linkIn: readonly [EmscriptenReflect, ...unknown[]],
-    //   hasOut?: BFChainComlink.HolderReflect<R> | false,
+    //   hasOut?: BFChainLink.HolderReflect<R> | false,
     // ) => unknown,
     public readonly core: ComlinkAsync, // public readonly linkIn: readonly [] | readonly [EmscriptenReflect, ...unknown[]],
   ) {}
@@ -120,12 +120,12 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       iobCacher.type === IOB_CACHE_STATUS.LOCAL ||
       iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL
     ) {
-      cb({ isError: false, data: iobCacher.value as BFChainComlink.AsyncValue<T> });
+      cb({ isError: false, data: iobCacher.value as BFChainLink.AsyncValue<T> });
       return;
     }
 
     if (iobCacher.type === IOB_CACHE_STATUS.REMOTE_REF) {
-      cb({ isError: false, data: this.toHolder() as BFChainComlink.AsyncValue<T> });
+      cb({ isError: false, data: this.toHolder() as BFChainLink.AsyncValue<T> });
       return;
     }
 
@@ -145,7 +145,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     return CallbackToAsyncBind(this.toValueSync, this);
   }
 
-  toAsyncValue(): BFChainComlink.AsyncValue<T> {
+  toAsyncValue(): BFChainLink.AsyncValue<T> {
     const iobCacher = this._iobCacher;
     if (
       iobCacher &&
@@ -171,7 +171,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     return _catched;
   }
 
-  private _iobCacher?: BFChainComlink.HolderReflect.IOB_Cacher<T>;
+  private _iobCacher?: BFChainLink.HolderReflect.IOB_Cacher<T>;
   // private _isError?
 
   bindIOB(iob: ComlinkProtocol.IOB, isError = false, port = this.core.port): void {
@@ -184,7 +184,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const { exportStore, importStore } = this.core;
 
     let remoteIob: EmscriptionLinkRefExtends.InOutObj.Remote | undefined;
-    let newIobCacher: BFChainComlink.HolderReflect.IOB_Cacher<T>;
+    let newIobCacher: BFChainLink.HolderReflect.IOB_Cacher<T>;
     /// 解析iob，将之定义成local或者remote两种模式
     switch (iob.type) {
       case IOB_Type.Locale:
@@ -347,7 +347,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region throw
 
   private throw_binded(cb: CallbackAsyncValue<never>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherBinded<T>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherBinded<T>;
     if (
       iobCacher.type === IOB_CACHE_STATUS.LOCAL ||
       iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL
@@ -372,22 +372,22 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.apply
 
   private apply_local(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.ReturnType<T>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.ReturnType<T>>,
     thisArgument: unknown,
-    argumentsList: BFChainComlink.AsyncUtil.Parameters<T>,
+    argumentsList: BFChainLink.AsyncUtil.Parameters<T>,
   ) {
     helper.resolveCallback(
       cb,
       Reflect.apply(
-        ((this._iobCacher as unknown) as BFChainComlink.HolderReflect.IOB_CacherLocal<Function>)
+        ((this._iobCacher as unknown) as BFChainLink.HolderReflect.IOB_CacherLocal<Function>)
           .value,
         thisArgument,
         argumentsList,
       ),
     );
   }
-  applyHolder(thisArgument: unknown, argumentsList: BFChainComlink.AsyncUtil.Parameters<T>) {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.ReturnType<T>>([
+  applyHolder(thisArgument: unknown, argumentsList: BFChainLink.AsyncUtil.Parameters<T>) {
+    return this.createSubHolder<BFChainLink.AsyncUtil.ReturnType<T>>([
       EmscriptenReflect.Apply,
       thisArgument,
       ...argumentsList,
@@ -395,9 +395,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
 
   private apply_remote(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.ReturnType<T>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.ReturnType<T>>,
     thisArgument: unknown,
-    argumentsList: BFChainComlink.AsyncUtil.Parameters<T>,
+    argumentsList: BFChainLink.AsyncUtil.Parameters<T>,
   ) {
     this.applyHolder(thisArgument, argumentsList).toValueSync(cb);
   }
@@ -447,14 +447,14 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.construct
 
   private construct_local(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.InstanceType<T>>,
-    argumentsList: BFChainComlink.AsyncUtil.ConstructorParameters<T>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.InstanceType<T>>,
+    argumentsList: BFChainLink.AsyncUtil.ConstructorParameters<T>,
     newTarget?: unknown,
   ) {
     helper.resolveCallback(
       cb,
       Reflect.construct(
-        ((this._iobCacher as unknown) as BFChainComlink.HolderReflect.IOB_CacherLocal<Function>)
+        ((this._iobCacher as unknown) as BFChainLink.HolderReflect.IOB_CacherLocal<Function>)
           .value,
         argumentsList,
         newTarget,
@@ -463,10 +463,10 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
 
   constructHolder(
-    argumentsList: BFChainComlink.AsyncUtil.ConstructorParameters<T>,
+    argumentsList: BFChainLink.AsyncUtil.ConstructorParameters<T>,
     newTarget?: unknown,
   ) {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.InstanceType<T>>([
+    return this.createSubHolder<BFChainLink.AsyncUtil.InstanceType<T>>([
       EmscriptenReflect.Construct,
       newTarget,
       ...argumentsList,
@@ -474,8 +474,8 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
 
   private construct_remote(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.InstanceType<T>>,
-    argumentsList: BFChainComlink.AsyncUtil.ConstructorParameters<T>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.InstanceType<T>>,
+    argumentsList: BFChainLink.AsyncUtil.ConstructorParameters<T>,
     newTarget?: unknown,
   ) {
     this.constructHolder(argumentsList, newTarget).toValueSync(cb);
@@ -532,23 +532,23 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect.defineProperty
 
-  private defineProperty_local<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  private defineProperty_local<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     cb: CallbackAsyncValue<boolean>,
     propertyKey: K,
-    attributes: BFChainComlink.AsyncUtil.PropertyDescriptor<T, K>,
+    attributes: BFChainLink.AsyncUtil.PropertyDescriptor<T, K>,
   ) {
     helper.resolveCallback(
       cb,
       Reflect.defineProperty(
-        (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T>).value as never,
+        (this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T>).value as never,
         propertyKey,
         attributes,
       ),
     );
   }
-  definePropertyHolder<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  definePropertyHolder<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     propertyKey: K,
-    attributes: BFChainComlink.AsyncUtil.PropertyDescriptor<T, K>,
+    attributes: BFChainLink.AsyncUtil.PropertyDescriptor<T, K>,
   ) {
     return this.createSubHolder<boolean>([
       EmscriptenReflect.DefineProperty,
@@ -557,10 +557,10 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     ]);
   }
 
-  private defineProperty_remote<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  private defineProperty_remote<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     cb: CallbackAsyncValue<boolean>,
     propertyKey: K,
-    attributes: BFChainComlink.AsyncUtil.PropertyDescriptor<T, K>,
+    attributes: BFChainLink.AsyncUtil.PropertyDescriptor<T, K>,
   ) {
     return this.definePropertyHolder(propertyKey, attributes).toValueSync(cb);
   }
@@ -606,23 +606,23 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   private deleteProperty_localObject(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
+    propertyKey: BFChainLink.AsyncUtil.PropertyKey<T>,
   ) {
     helper.resolveCallback(
       cb,
       Reflect.deleteProperty(
-        (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T>).value as never,
+        (this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T>).value as never,
         propertyKey,
       ),
     );
   }
-  deletePropertyHolder(propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>) {
+  deletePropertyHolder(propertyKey: BFChainLink.AsyncUtil.PropertyKey<T>) {
     return this.createSubHolder<boolean>([EmscriptenReflect.DeleteProperty, propertyKey]);
   }
 
   private deleteProperty_remote(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
+    propertyKey: BFChainLink.AsyncUtil.PropertyKey<T>,
   ) {
     this.deletePropertyHolder(propertyKey).toValueSync(cb);
   }
@@ -669,10 +669,10 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.get
 
   private get_remoteFunction<K extends PropertyKey>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainLink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
     /// 自定义属性
@@ -718,27 +718,27 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     }
     /**
      * function.prototype 属性不是只读，所以跳过，使用远端获取
-     * @TODO 改进 BFChainComlink.AsyncUtil.Remote 的规则
+     * @TODO 改进 BFChainLink.AsyncUtil.Remote 的规则
      */
     return this.get_remote(cb, propertyKey);
   }
 
   private get_local<K extends PropertyKey>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.get(iobCacher.value, propertyKey));
   }
 
   getHolder<K extends PropertyKey>(propertyKey: K) {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.Get<T, K>>([
+    return this.createSubHolder<BFChainLink.AsyncUtil.Get<T, K>>([
       EmscriptenReflect.Get,
       propertyKey,
     ]);
   }
   private get_remote<K extends PropertyKey>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
     this.getHolder(propertyKey).toValueSync(cb);
@@ -797,12 +797,12 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.getOwnPropertyDescriptor
 
   private getOwnPropertyDescriptor_remoteFunction<
-    K extends BFChainComlink.AsyncUtil.PropertyKey<T>
+    K extends BFChainLink.AsyncUtil.PropertyKey<T>
   >(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
     propertyKey: K,
   ) {
-    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainLink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
 
@@ -854,32 +854,32 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     }
     /**
      * function.prototype 属性不是只读，所以跳过，使用远端获取
-     * @TODO 改进 BFChainComlink.AsyncUtil.Remote 的规则
+     * @TODO 改进 BFChainLink.AsyncUtil.Remote 的规则
      */
     return this.getOwnPropertyDescriptor_remote(cb, propertyKey);
   }
-  private getOwnPropertyDescriptor_local<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
+  private getOwnPropertyDescriptor_local<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(
       cb,
       Reflect.getOwnPropertyDescriptor(iobCacher.value, propertyKey) as never,
     );
   }
 
-  getOwnPropertyDescriptorHolder<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  getOwnPropertyDescriptorHolder<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     propertyKey: K,
   ) {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>([
+    return this.createSubHolder<BFChainLink.AsyncUtil.PropertyDescriptor<T, K> | undefined>([
       EmscriptenReflect.GetOwnPropertyDescriptor,
       propertyKey,
     ]);
   }
 
-  private getOwnPropertyDescriptor_remote<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
+  private getOwnPropertyDescriptor_remote<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.PropertyDescriptor<T, K> | undefined>,
     propertyKey: K,
   ) {
     this.getOwnPropertyDescriptorHolder(propertyKey).toValueSync(cb);
@@ -920,14 +920,14 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     end(iobCacher);
   }
 
-  getOwnPropertyDescriptor<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(propertyKey: K) {
+  getOwnPropertyDescriptor<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(propertyKey: K) {
     return CallbackToAsync(this.getOwnPropertyDescriptorCallback, [propertyKey], this);
   }
   //#endregion
 
   //#region getPrototypeOf
   getPrototypeOf_local<P = unknown>(cb: CallbackAsyncValue<P>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.getPrototypeOf(iobCacher.value) as never);
   }
   getPrototypeOfHolder<P = unknown>() {
@@ -980,7 +980,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   private has_remoteFunction(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
+    propertyKey: BFChainLink.AsyncUtil.PropertyKey<T>,
   ) {
     /**
      * 只要是函数（不论是否是箭头函数），就必然有这些属性
@@ -993,7 +993,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
       return helper.resolveCallback(cb, true);
     }
 
-    const iobExtends = (this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote<
+    const iobExtends = (this._iobCacher as BFChainLink.HolderReflect.IOB_CacherRemote<
       EmscriptionLinkRefExtends.RefItem<EmscriptionLinkRefExtends.RefFunctionItemExtends>
     >).iob.extends;
 
@@ -1042,18 +1042,18 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
   private has_local(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T>,
+    propertyKey: BFChainLink.AsyncUtil.PropertyKey<T>,
   ) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.has(iobCacher.value, propertyKey));
   }
-  hasHolder(propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T> | PropertyKey) {
+  hasHolder(propertyKey: BFChainLink.AsyncUtil.PropertyKey<T> | PropertyKey) {
     return this.createSubHolder<boolean>([EmscriptenReflect.Has, propertyKey]);
   }
 
   private has_remote(
     cb: CallbackAsyncValue<boolean>,
-    propertyKey: BFChainComlink.AsyncUtil.PropertyKey<T> | PropertyKey,
+    propertyKey: BFChainLink.AsyncUtil.PropertyKey<T> | PropertyKey,
   ) {
     return this.hasHolder(propertyKey).toValueSync(cb);
   }
@@ -1101,7 +1101,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#region Reflect.isExtensible
 
   private isExtensible_local(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.isExtensible(iobCacher.value));
   }
 
@@ -1154,17 +1154,17 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect.ownKeys
 
-  private ownKeys_local(cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyKey<T>[]>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+  private ownKeys_local(cb: CallbackAsyncValue<BFChainLink.AsyncUtil.PropertyKey<T>[]>) {
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.ownKeys(iobCacher.value) as never);
   }
 
   ownKeysHolder() {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.PropertyKey<T>[]>([
+    return this.createSubHolder<BFChainLink.AsyncUtil.PropertyKey<T>[]>([
       EmscriptenReflect.OwnKeys,
     ]);
   }
-  private ownKeys_remote(cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.PropertyKey<T>[]>) {
+  private ownKeys_remote(cb: CallbackAsyncValue<BFChainLink.AsyncUtil.PropertyKey<T>[]>) {
     this.ownKeysHolder().toValueSync(cb);
   }
   get ownKeysCallback(): HolderReflect<T>["ownKeys_remote"] {
@@ -1205,7 +1205,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect.preventExtensions
   private preventExtensions_local(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.preventExtensions(iobCacher.value));
   }
 
@@ -1218,7 +1218,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   }
 
   private preventExtensions_onceRemote(cb: CallbackAsyncValue<boolean>) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherRemote;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherRemote;
     iobCacher.iob.extends.status &= IOB_Extends_Object_Status.preventedExtensions;
     cleanGetterCache(this, "preventExtensionsCallback");
     cleanGetterCache(this, "preventExtensions");
@@ -1278,25 +1278,25 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
 
   //#region Reflect.set
 
-  private set_local<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  private set_local<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     cb: CallbackAsyncValue<boolean>,
     propertyKey: K,
-    value: BFChainComlink.AsyncValue<T[K]> | T[K],
+    value: BFChainLink.AsyncValue<T[K]> | T[K],
   ) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.set(iobCacher.value, propertyKey, value));
   }
-  setHolder<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  setHolder<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     propertyKey: K,
-    value: BFChainComlink.AsyncValue<T[K]> | T[K],
+    value: BFChainLink.AsyncValue<T[K]> | T[K],
   ) {
     return this.createSubHolder<boolean>([EmscriptenReflect.Set, propertyKey, value]);
   }
 
-  private set_remote<K extends BFChainComlink.AsyncUtil.PropertyKey<T>>(
+  private set_remote<K extends BFChainLink.AsyncUtil.PropertyKey<T>>(
     cb: CallbackAsyncValue<boolean>,
     propertyKey: K,
-    value: BFChainComlink.AsyncValue<T[K]> | T[K],
+    value: BFChainLink.AsyncValue<T[K]> | T[K],
   ) {
     return this.setHolder(propertyKey, value).toValueSync(cb);
   }
@@ -1346,7 +1346,7 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   //#endregion
 
   private setPrototypeOf_local(cb: CallbackAsyncValue<boolean>, proto: unknown) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherLocal<T & object>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherLocal<T & object>;
     helper.resolveCallback(cb, Reflect.setPrototypeOf(iobCacher.value, proto));
   }
 
@@ -1406,22 +1406,22 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
    * @WARN 不支持 with 操作符与对应的 Symbol.unscopables
    */
   private asset_value<K extends PropertyKey>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
-    const iobCacher = this._iobCacher as BFChainComlink.HolderReflect.IOB_CacherHasValue<T>;
+    const iobCacher = this._iobCacher as BFChainLink.HolderReflect.IOB_CacherHasValue<T>;
     helper.resolveCallback(cb, iobCacher.value[propertyKey as never]);
   }
 
   assetHolder<K extends PropertyKey>(propertyKey: K) {
-    return this.createSubHolder<BFChainComlink.AsyncUtil.Get<T, K>>([
+    return this.createSubHolder<BFChainLink.AsyncUtil.Get<T, K>>([
       EmscriptenReflect.Asset,
       propertyKey,
     ]);
   }
 
   private asset_remote<K extends PropertyKey>(
-    cb: CallbackAsyncValue<BFChainComlink.AsyncUtil.Get<T, K>>,
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.Get<T, K>>,
     propertyKey: K,
   ) {
     this.assetHolder(propertyKey).toValueSync(cb);
@@ -1484,9 +1484,9 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
   /**支持自定义的Symbol.toPrimitive以及Symbol.toStringTag，前者优先级更高 */
   toPrimitive(hint: string) {}
   /**instanceof 的操作符，支持自定义的Symbol.hasInstance */
-  Operator_instanceOf<C extends BFChainUtil.Constructor<unknown>>(Ctor: BFChainComlink.Holder<C>) {}
+  Operator_instanceOf<C extends BFChainUtil.Constructor<unknown>>(Ctor: BFChainLink.Holder<C>) {}
   Operator_instanceOfHolder<C extends BFChainUtil.Constructor<unknown>>(
-    Ctor: BFChainComlink.Holder<C>,
+    Ctor: BFChainLink.Holder<C>,
   ) {
     return this.createSubHolder<boolean>([EmscriptenReflect.Instanceof, Ctor]);
   }
@@ -1513,14 +1513,14 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const iterable = (await this.assetHolder(Symbol.iterator).apply(
       this.toAsyncValue(),
       [] as never,
-    )) as BFChainComlink.Holder<IterableIterator<unknown>>;
+    )) as BFChainLink.Holder<IterableIterator<unknown>>;
 
     do {
       const item = await iterable.next();
       if (await item.done) {
         break;
       }
-      yield item.value as BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.IteratorType<T>>;
+      yield item.value as BFChainLink.AsyncValue<BFChainLink.AsyncUtil.IteratorType<T>>;
     } while (true);
   }
   /**支持自定义的Symbol.asyncIterator，本地可用for await来进行迭代 */
@@ -1529,13 +1529,13 @@ export class HolderReflect<T /* extends object */> implements BFChainComlink.Hol
     const iterable = (await this.assetHolder(Symbol.asyncIterator).apply(
       this.toAsyncValue(),
       [] as never,
-    )) as BFChainComlink.Holder<AsyncIterator<unknown>>;
+    )) as BFChainLink.Holder<AsyncIterator<unknown>>;
     do {
       const item = await iterable.next();
       if (await item.done) {
         break;
       }
-      yield item.value as BFChainComlink.AsyncValue<BFChainComlink.AsyncUtil.AsyncIteratorType<T>>;
+      yield item.value as BFChainLink.AsyncValue<BFChainLink.AsyncUtil.AsyncIteratorType<T>>;
     } while (true);
   }
 

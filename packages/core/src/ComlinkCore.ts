@@ -1,18 +1,18 @@
-import { LinkObjType, EmscriptenReflect } from "@bfchain/comlink-typings";
+import { LinkObjType, EmscriptenReflect } from "@bfchain/link-typings";
 import { ESM_REFLECT_FUN_MAP, OpenArg, resolveCallback, SyncPiperFactory } from "./helper";
 import type { ExportStore } from "./ExportStore";
 import type { ImportStore } from "./ImportStore";
 
 export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS>
-  implements BFChainComlink.ComlinkCore {
-  constructor(public readonly port: BFChainComlink.BinaryPort<TB>, public readonly name: string) {
+  implements BFChainLink.ComlinkCore {
+  constructor(public readonly port: BFChainLink.BinaryPort<TB>, public readonly name: string) {
     this._listen();
   }
   $destroy(): boolean {
     throw new Error("Method not implemented.");
   }
 
-  abstract readonly transfer: BFChainComlink.ModelTransfer<IOB, TB>;
+  abstract readonly transfer: BFChainLink.ModelTransfer<IOB, TB>;
   abstract readonly exportStore: ExportStore;
   abstract readonly importStore: ImportStore<IOB, TB, IMP_EXTENDS>;
 
@@ -49,7 +49,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           throw new ReferenceError("no found");
         }
         /**预备好结果 */
-        const linkOut: BFChainComlink.LinkOutObj<IOB> = {
+        const linkOut: BFChainLink.LinkOutObj<IOB> = {
           type: LinkObjType.Out,
           // resId: linkObj.reqId,
           out: [],
@@ -167,7 +167,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
 
   /**用于存储导入的域 */
   private _importModule?: object;
-  protected $getImportModule(output: BFChainComlink.Callback<object>) {
+  protected $getImportModule(output: BFChainLink.Callback<object>) {
     /**
      * 进行协商握手，取得对应的 refId
      * @TODO 这里将会扩展出各类语言的传输协议
@@ -195,7 +195,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   //#endregion
 
   private _objIdAcc = new Uint32Array(1);
-  protected $pushToRemote(output: BFChainComlink.Callback<void>, obj: object) {
+  protected $pushToRemote(output: BFChainLink.Callback<void>, obj: object) {
     const { port } = this;
     const objId = this._objIdAcc[0]++;
     const X = this.transfer.obj2TransferableObject(objId, obj);

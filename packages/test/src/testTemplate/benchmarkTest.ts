@@ -67,7 +67,7 @@ export class ConfigService {
     }
     return performance.now() - s;
   }
-  static async testAll2(ctxA: BFChainComlink.AsyncUtil.Remote<ConfigService>, TIMES: number) {
+  static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<ConfigService>, TIMES: number) {
     const s = performance.now();
     for (let i = 0; i < TIMES; i++) {
       // freedom mode

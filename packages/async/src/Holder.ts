@@ -20,7 +20,7 @@ const NO_ALLOW_PROP = new Set([
 const __THEN_DISABLED__ = new WeakSet();
 
 export function createHolderProxyHanlder<T extends object>(holderReflect: HolderReflect<T>) {
-  const proxyHanlder: BFChainComlink.EmscriptionProxyHanlder<T> = {
+  const proxyHanlder: BFChainLink.EmscriptionProxyHanlder<T> = {
     getPrototypeOf: () => {
       return null;
     },
@@ -58,7 +58,7 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
           return;
         }
         return (
-          resolve: (v: BFChainComlink.AsyncUtil.Get<T, K> | BFChainComlink.AsyncValue<T>) => void,
+          resolve: (v: BFChainLink.AsyncUtil.Get<T, K> | BFChainLink.AsyncValue<T>) => void,
           reject: (err: unknown) => void,
         ) => {
           holderReflect.toValueSync((ret) => {
@@ -89,7 +89,7 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
               /// 如果是一个本地对象
               if (ret.data && typeof (ret.data as never)["then"] === "function") {
                 // 这个promise没人捕捉，也不需要捕捉
-                (ret.data as PromiseLike<BFChainComlink.AsyncUtil.Get<T, K>>).then(resolve, reject);
+                (ret.data as PromiseLike<BFChainLink.AsyncUtil.Get<T, K>>).then(resolve, reject);
               } else {
                 resolve(ret.data);
               }
@@ -149,11 +149,11 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
   return proxyHanlder;
 }
 
-const __HOLDER_REFLECT_WM__ = new WeakMap<BFChainComlink.Holder<any>, HolderReflect<any>>();
-const __REFLECT_HOLDER_WM__ = new WeakMap<HolderReflect<any>, BFChainComlink.Holder<any>>();
+const __HOLDER_REFLECT_WM__ = new WeakMap<BFChainLink.Holder<any>, HolderReflect<any>>();
+const __REFLECT_HOLDER_WM__ = new WeakMap<HolderReflect<any>, BFChainLink.Holder<any>>();
 
 export function getHolder<T>(holderReflect: HolderReflect<T>) {
-  let holder = __REFLECT_HOLDER_WM__.get(holderReflect) as BFChainComlink.Holder<T>;
+  let holder = __REFLECT_HOLDER_WM__.get(holderReflect) as BFChainLink.Holder<T>;
   if (holder === undefined) {
     holder = new Proxy(
       Function(`return function ${holderReflect.name}(){}`)(),
@@ -164,11 +164,11 @@ export function getHolder<T>(holderReflect: HolderReflect<T>) {
   }
   return holder;
 }
-export function isHolder(target: unknown): target is BFChainComlink.Holder {
+export function isHolder(target: unknown): target is BFChainLink.Holder {
   return __HOLDER_REFLECT_WM__.has(target as never);
 }
 export function getHolderReflect<T>(
-  target: BFChainComlink.Holder<T> | unknown,
+  target: BFChainLink.Holder<T> | unknown,
 ): HolderReflect<T> | undefined {
   return __HOLDER_REFLECT_WM__.get(target as never) as HolderReflect<T> | undefined;
 }

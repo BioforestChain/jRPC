@@ -1,7 +1,7 @@
-import { helper } from "@bfchain/comlink-core";
+import { helper } from "@bfchain/link-core";
 
-export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<TB> {
-  constructor(protected _duplex: BFChainComlink.Channel.Duplex<TB>) {
+export abstract class MagicBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
+  constructor(protected _duplex: BFChainLink.Channel.Duplex<TB>) {
     _duplex.onMessage((msg) => {
       if (msg.msgType === "RES") {
         const resId = msg.msgId;
@@ -37,14 +37,14 @@ export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<T
   }
 
   protected _reqId = new Uint32Array(1);
-  protected _resMap = new Map<number, BFChainComlink.Callback<TB>>();
+  protected _resMap = new Map<number, BFChainLink.Callback<TB>>();
 
-  private _reqHandler!: BFChainComlink.BinaryPort.MessageListener<TB>;
-  onMessage(listener: BFChainComlink.BinaryPort.MessageListener<TB>) {
+  private _reqHandler!: BFChainLink.BinaryPort.MessageListener<TB>;
+  onMessage(listener: BFChainLink.BinaryPort.MessageListener<TB>) {
     this._reqHandler = listener;
   }
-  protected abstract _postModeMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>): void;
-  abstract duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB): void;
+  protected abstract _postModeMessage(msg: BFChainLink.Channel.DuplexMessage<TB>): void;
+  abstract duplexMessage(output: BFChainLink.Callback<TB>, bin: TB): void;
   simplexMessage(bin: TB) {
     this._duplex.postAsyncMessage({
       msgType: "SIM",
@@ -53,24 +53,24 @@ export abstract class MagicBinaryPort<TB> implements BFChainComlink.BinaryPort<T
     });
   }
 
-  onObject(listener: BFChainComlink.BinaryPort.ObjectListener): void {
+  onObject(listener: BFChainLink.BinaryPort.ObjectListener): void {
     this._duplex.onObject(listener);
   }
 
-  protected _trsMap = new Map<number, BFChainComlink.Callback<number>>();
+  protected _trsMap = new Map<number, BFChainLink.Callback<number>>();
   duplexObject(obj: object, transfer: object[]) {
     this._duplex.postAsyncObject(obj, transfer);
   }
 }
 
 export class SyncBinaryPort<TB> extends MagicBinaryPort<TB> {
-  protected _postModeMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
+  protected _postModeMessage(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     this._duplex.postSyncMessage(msg);
   }
-  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainLink.Callback<TB>, bin: TB) {
     const reqId = this._reqId[0]++;
     let gotResponse = false;
-    const reqOutput: BFChainComlink.Callback<TB> = (ret) => {
+    const reqOutput: BFChainLink.Callback<TB> = (ret) => {
       gotResponse = true;
       output(ret);
     };
@@ -89,10 +89,10 @@ export class SyncBinaryPort<TB> extends MagicBinaryPort<TB> {
   }
 }
 export class AsyncBinaryPort<TB> extends MagicBinaryPort<TB> {
-  protected _postModeMessage(msg: BFChainComlink.Channel.DuplexMessage<TB>) {
+  protected _postModeMessage(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     this._duplex.postAsyncMessage(msg);
   }
-  duplexMessage(output: BFChainComlink.Callback<TB>, bin: TB) {
+  duplexMessage(output: BFChainLink.Callback<TB>, bin: TB) {
     const reqId = this._reqId[0]++;
     this._resMap.set(reqId, output);
     this._postModeMessage({

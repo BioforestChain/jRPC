@@ -1,19 +1,19 @@
 import "./@types";
-export * from "@bfchain/comlink-core";
-export * from "@bfchain/comlink-protocol";
-export * from "@bfchain/comlink-sync";
-export * from "@bfchain/comlink-async";
-export * from "@bfchain/comlink-duplex-core";
+export * from "@bfchain/link-core";
+export * from "@bfchain/link-protocol";
+export * from "@bfchain/link-sync";
+export * from "@bfchain/link-async";
+export * from "@bfchain/link-duplex-core";
 
-import { AsyncBinaryChannel, SyncBinaryChannel } from "@bfchain/comlink-channel";
-import { ComlinkAsync } from "@bfchain/comlink-async";
-import { ComlinkSync } from "@bfchain/comlink-sync";
-import { ExportStore, ImportStore } from "@bfchain/comlink-core";
+import { AsyncBinaryChannel, SyncBinaryChannel } from "@bfchain/link-channel";
+import { ComlinkAsync } from "@bfchain/link-async";
+import { ComlinkSync } from "@bfchain/link-sync";
+import { ExportStore, ImportStore } from "@bfchain/link-core";
 
 export class Comlink {
   constructor(
-    private duplex: BFChainComlink.Channel.Duplex<ComlinkProtocol.TB>,
-    private options: Partial<BFChainComlink.ComlinkOptions> = {},
+    private duplex: BFChainLink.Channel.Duplex<ComlinkProtocol.TB>,
+    private options: Partial<BFChainLink.ComlinkOptions> = {},
   ) {}
   transfer(transferable: unknown) {
     // this.duplex.simplexBinary();

@@ -1,4 +1,4 @@
-declare namespace BFChainComlink {
+declare namespace BFChainLink {
   /**
    * IOB : InOutBinary
    * TB : TransferableBinary

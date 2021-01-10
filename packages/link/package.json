@@ -7,12 +7,12 @@
     "build"
   ],
   "dependencies": {
-    "@bfchain/comlink-async": "2.5.2",
-    "@bfchain/comlink-channel": "2.5.2",
-    "@bfchain/comlink-core": "2.5.2",
-    "@bfchain/comlink-duplex-core": "2.5.2",
-    "@bfchain/comlink-sync": "2.5.2",
-    "@bfchain/comlink-typings": "2.5.2",
+    "@bfchain/link-async": "2.5.2",
+    "@bfchain/link-channel": "2.5.2",
+    "@bfchain/link-core": "2.5.2",
+    "@bfchain/link-duplex-core": "2.5.2",
+    "@bfchain/link-sync": "2.5.2",
+    "@bfchain/link-typings": "2.5.2",
     "@bfchain/link-async": "1.0.1",
     "@bfchain/link-channel": "1.0.1",
     "@bfchain/link-core": "1.0.1",

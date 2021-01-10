@@ -2,7 +2,7 @@ import { cacheGetter, cleanGetterCache } from "@bfchain/util-decorator";
 import { REMOTE_MODE, SAB_HELPER, SIMPLEX_MSG_TYPE } from "./const";
 
 export class AtomicsNotifyer {
-  constructor(private _port: BFChainComlink.Duplex.Endpoint) {
+  constructor(private _port: BFChainLink.Duplex.Endpoint) {
     this._port.onMessage((data) => {
       if (data[0] === SIMPLEX_MSG_TYPE.NOTIFY) {
         const indexs = data[1];
