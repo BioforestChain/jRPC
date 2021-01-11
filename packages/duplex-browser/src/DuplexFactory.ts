@@ -3,7 +3,7 @@ import { Endpoint } from "./Endpoint";
 
 const PORT_SABS_WM = new WeakMap<MessagePort, BFChainLink.Duplex.SABS>();
 
-export class DuplexFactory {
+export class DuplexFactory implements BFChainLink.Duplex.Factory {
   /**作为子线程运作 */
   static async asCluster(
     workerSelf: Pick<MessagePort, "addEventListener" | "removeEventListener"> &

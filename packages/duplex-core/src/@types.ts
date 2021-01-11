@@ -1,5 +1,20 @@
 declare namespace BFChainLink {
+  interface Duplex extends Channel.Duplex<ComlinkProtocol.TB> {}
   namespace Duplex {
+    type _ = typeof import("@bfchain/link-protocol");
+    interface Factory {
+      getDuplex(): Duplex;
+      asMain(worker: unknown): void;
+    }
+    namespace Factory {
+      interface Ctor {
+        new (): Factory;
+        asCluster: AsCluster;
+        prototype: Factory;
+      }
+      type AsCluster = (worker: unknown) => PromiseLike<Factory>;
+    }
+
     type SABS = { locale: SharedArrayBuffer; remote: SharedArrayBuffer };
     type CachedChunkInfo = Map<number, Uint8Array>; // { chunk: Uint8Array; range: [{ start: number; end: number }] };
     type PostMessage_ApplyWrite_HookArg = {
