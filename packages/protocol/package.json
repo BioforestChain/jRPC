@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-protocol",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
