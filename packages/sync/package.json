@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-sync",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [

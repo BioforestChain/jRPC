@@ -1,13 +1,13 @@
 {
   "name": "@bfchain/link-duplex-core",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-channel": "1.0.4",
+    "@bfchain/link-channel": "1.0.6",
     "@bfchain/link-protocol": "1.0.4",
     "@bfchain/link-typings": "1.0.3",
     "@bfchain/util-decorator": "^4.10.27"
