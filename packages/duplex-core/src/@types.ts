@@ -4,7 +4,7 @@ declare namespace BFChainLink {
     type _ = typeof import("@bfchain/link-protocol");
     interface Factory {
       getDuplex(): Duplex;
-      asMain(worker: unknown): void;
+      asMain(worker: any): void;
     }
     namespace Factory {
       interface Ctor {
@@ -12,7 +12,7 @@ declare namespace BFChainLink {
         asCluster: AsCluster;
         prototype: Factory;
       }
-      type AsCluster = (worker: unknown) => PromiseLike<Factory>;
+      type AsCluster = (worker: any) => PromiseLike<Duplex>;
     }
 
     type SABS = { locale: SharedArrayBuffer; remote: SharedArrayBuffer };
