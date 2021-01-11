@@ -183,8 +183,8 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     const source = refHook.getSource();
     if (refHook.type === "object") {
       const proxyHanlder = refHook.getProxyHanlder();
-      this._refProxyHanlderCache.set(source as never, proxyHanlder);
       const proxy = new Proxy(source as never, proxyHanlder);
+      this._refProxyHanlderCache.set(proxy, proxyHanlder);
       return proxy;
     }
     return source;
