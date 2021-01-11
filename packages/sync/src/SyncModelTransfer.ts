@@ -46,14 +46,14 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       getPrototypeOf: (_target) => sender.req<object | null>([EmscriptenReflect.GetPrototypeOf]),
       setPrototypeOf: (_target, proto) =>
         sender.req<boolean>([EmscriptenReflect.SetPrototypeOf, proto]),
-      isExtensible: (target) => sender.req<boolean>([EmscriptenReflect.IsExtensible]),
+      isExtensible: (_target) => sender.req<boolean>([EmscriptenReflect.IsExtensible]),
       preventExtensions: (_target) => sender.req<boolean>([EmscriptenReflect.PreventExtensions]),
       getOwnPropertyDescriptor: (_target, prop: PropertyKey) =>
         sender.req<PropertyDescriptor | undefined>([
           EmscriptenReflect.GetOwnPropertyDescriptor,
           prop,
         ]),
-      has: (_target, prop: PropertyKey) => sender.req<boolean>([EmscriptenReflect.Has]),
+      has: (_target, prop: PropertyKey) => sender.req<boolean>([EmscriptenReflect.Has, prop]),
       /**导入子模块 */
       get: (_target, prop, _reciver) =>
         // console.log("get", prop),
