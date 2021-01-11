@@ -64,7 +64,7 @@ declare namespace BFChainLink {
   }
   namespace BinaryPort {
     type MessageListener<TB> = (cb: Callback<TB | undefined>, bin: TB) => unknown;
-    type ObjectListener = Listener<object>
+    type ObjectListener = Listener<object>;
     type Listener<T = unknown, R = unknown> = (obj: T) => R;
   }
 
@@ -107,7 +107,12 @@ declare namespace BFChainLink {
     | LinkPushObj
     | LinkPullObj;
 
-  type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">>;
+  type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">> & {
+    asset(target: T, p: PropertyKey): any;
+    typeOf(target: T): string;
+    instanceOf(target: T, Ctor: unknown): boolean;
+    jsonStringify(target: T): string;
+  };
 
   type ImportRefHook<S> =
     | ImportObjectRefHook<S> //(S extends object ? ImportObjectRefHook<S> : ImportPrimitiveRefHook<S>)

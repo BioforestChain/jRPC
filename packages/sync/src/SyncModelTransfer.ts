@@ -57,7 +57,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       /**导入子模块 */
       get: (_target, prop, _reciver) =>
         // console.log("get", prop),
-        sender.req<boolean>([EmscriptenReflect.Get, prop]),
+        sender.req([EmscriptenReflect.Get, prop]),
       /**发送 set 操作 */
       set: (_target, prop: PropertyKey, value: any, _receiver: any) =>
         sender.req<boolean>([EmscriptenReflect.Set, prop, value]),
@@ -70,6 +70,15 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         sender.req([EmscriptenReflect.Apply, thisArg, ...argArray]),
       construct: (_target, argArray, newTarget) =>
         sender.req([EmscriptenReflect.Construct, newTarget, ...argArray]),
+
+      asset: (_target, prop) => sender.req([EmscriptenReflect.Asset, prop]),
+      typeOf: (_target) => {
+        const typeName = typeof _target;
+        return sender.req<typeof typeName>([EmscriptenReflect.Typeof]);
+      },
+      instanceOf: (_target, Ctor: unknown) =>
+        sender.req<boolean>([EmscriptenReflect.Instanceof, Ctor]),
+      jsonStringify: (_target) => sender.req<string>([EmscriptenReflect.JsonStringify]),
     };
     return proxyHandler;
   }
@@ -155,6 +164,15 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     port.simplexMessage(tb);
   }
 
+  private _refProxyHanlderCache = new WeakMap<
+    object,
+    BFChainLink.EmscriptionProxyHanlder<object>
+  >();
+  getRefProxyHanlder<T>(refObj: T) {
+    return this._refProxyHanlderCache.get(refObj as never) as
+      | BFChainLink.EmscriptionProxyHanlder<BFChainLink.ToObject<T>>
+      | undefined;
+  }
   /**
    * 主动生成引用代理
    * @param port
@@ -165,6 +183,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     const source = refHook.getSource();
     if (refHook.type === "object") {
       const proxyHanlder = refHook.getProxyHanlder();
+      this._refProxyHanlderCache.set(source as never, proxyHanlder);
       const proxy = new Proxy(source as never, proxyHanlder);
       return proxy;
     }

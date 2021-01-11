@@ -1,4 +1,4 @@
-import { ComlinkCore, ExportStore, ImportStore } from "@bfchain/link-core";
+import { ComlinkCore, ExportStore, ImportStore, STORE_TYPE } from "@bfchain/link-core";
 import {
   getFunctionExportDescription,
   IOB_EFT_Factory_Map,
@@ -134,5 +134,13 @@ export class ComlinkSync
       this._asyncWM.set(fun, asyncFun);
     }
     return asyncFun;
+  }
+
+  JSON_stringify(target: unknown) {
+    const proxyHandler = this.transfer.getRefProxyHanlder(target);
+    if (proxyHandler) {
+      return proxyHandler.jsonStringify(target as never);
+    }
+    return JSON.stringify(target);
   }
 }
