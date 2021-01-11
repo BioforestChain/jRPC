@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
@@ -10,7 +10,7 @@
     "@bfchain/link-async": "1.0.4",
     "@bfchain/link-channel": "1.0.4",
     "@bfchain/link-core": "1.0.3",
-    "@bfchain/link-duplex-core": "1.0.4",
+    "@bfchain/link-duplex-core": "1.0.5",
     "@bfchain/link-sync": "1.0.4",
     "@bfchain/link-typings": "1.0.3"
   },
