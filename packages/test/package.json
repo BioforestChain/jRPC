@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-test",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
@@ -9,10 +9,10 @@
   ],
   "module": "build/esm/index.js",
   "dependencies": {
-    "@bfchain/link": "1.0.6",
-    "@bfchain/link-duplex-browser": "1.0.6",
-    "@bfchain/link-duplex-nodejs": "1.0.6",
-    "@bfchain/link-typings": "1.0.3",
+    "@bfchain/link": "1.0.7",
+    "@bfchain/link-duplex-browser": "1.0.7",
+    "@bfchain/link-duplex-nodejs": "1.0.7",
+    "@bfchain/link-typings": "1.0.7",
     "source-map-support": "~0.5.19"
   },
   "devDependencies": {
