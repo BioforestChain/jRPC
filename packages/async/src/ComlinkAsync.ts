@@ -3,16 +3,9 @@ import { EmscriptenReflect, isObj } from "@bfchain/link-typings";
 import { HolderReflect } from "./HolderReflect";
 import { CallbackToAsync } from "./helper";
 import {
-  ModelTransfer,
-  globalSymbolStore,
-  IOB_Extends_Type,
   IOB_EFT_Factory_Map,
   getFunctionType,
-  IOB_Extends_Object_Status,
-  IOB_Extends_Function_ToString_Mode,
   getFunctionExportDescription,
-  IMPORT_FUN_EXTENDS_SYMBOL,
-  refFunctionStaticToStringFactory,
 } from "@bfchain/link-protocol";
 import { AsyncModelTransfer } from "./AsyncModelTransfer";
 

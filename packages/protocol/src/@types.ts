@@ -46,6 +46,7 @@ declare namespace EmscriptionLinkRefExtends {
   type RefObjectItemExtends = {
     type: import("./const").IOB_Extends_Type.Object;
     status: import("./const").IOB_Extends_Object_Status;
+    objType: import("./const").IOB_Extends_Object_Type;
   };
 
   type RemoteSymbolItemExtends = {

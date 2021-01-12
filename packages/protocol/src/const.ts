@@ -180,6 +180,11 @@ export const enum IOB_Extends_Object_Status {
   frozen = 0,
 }
 
+export const enum IOB_Extends_Object_Type {
+  Object,
+  Array,
+}
+
 export function getObjectStatus(obj: Object) {
   if (Object.isFrozen(obj)) {
     return IOB_Extends_Object_Status.frozen;

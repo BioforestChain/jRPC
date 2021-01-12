@@ -9,6 +9,7 @@ import {
   IOB_Extends_Function_ToString_Mode,
   getFunctionExportDescription,
   IOB_Extends_Function_Type,
+  IOB_Extends_Object_Type,
 } from "./const";
 
 export abstract class ModelTransfer<
@@ -61,6 +62,8 @@ export abstract class ModelTransfer<
       return {
         type: IOB_Extends_Type.Object,
         status: getObjectStatus(obj),
+        objType:
+          obj instanceof Array ? IOB_Extends_Object_Type.Array : IOB_Extends_Object_Type.Object,
       };
     }
     if (typeof obj === "function") {

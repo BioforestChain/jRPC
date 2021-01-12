@@ -4,6 +4,7 @@ import {
   IOB_EFT_Factory_Map,
   IOB_Extends_Function_ToString_Mode,
   IOB_Extends_Object_Status,
+  IOB_Extends_Object_Type,
   IOB_Extends_Type,
   IOB_Type,
   ModelTransfer,
@@ -262,7 +263,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       };
       ref = (funRef as unknown) as BFChainLink.ImportRefHook<T>;
     } else if (refExtends.type === IOB_Extends_Type.Object) {
-      const sourceObj = {};
+      const sourceObj = refExtends.objType === IOB_Extends_Object_Type.Array ? [] : {};
       const objRef: BFChainLink.ImportRefHook<object> = {
         type: "object",
         getSource: () => sourceObj,
