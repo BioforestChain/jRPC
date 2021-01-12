@@ -1,4 +1,5 @@
 import { LinkObjType } from "@bfchain/link-typings";
+import { EsmBuildInObjectKeyValueList, EsmBuildInObject_VK } from "./const";
 
 export const enum STORE_TYPE {
   Proxy,
@@ -21,7 +22,16 @@ export class ImportStore<IOB /*  = unknown */, TB /*  = unknown */, E> {
     public readonly name: string,
     private port: BFChainLink.BinaryPort<TB>,
     private transfer: BFChainLink.ModelTransfer<IOB, TB>,
-  ) {}
+    /** 共享内建对象 */
+    public readonly isShareBuildIn: boolean,
+  ) {
+    if (isShareBuildIn) {
+      /// 导入内建对象
+      for (const item of EsmBuildInObjectKeyValueList) {
+        this.saveProxyId(item[1], item[0]);
+      }
+    }
+  }
   /**存储协议扩展信息 */
   idExtendsStore = new Map<number, E>();
   /**我所导入的引用对象与符号 */

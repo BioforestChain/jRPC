@@ -33,7 +33,7 @@ export async function installWorkerEnv(
     /// 模拟A模块作为服务模块
     try {
       /**模块控制器 */
-      const moduleA = new ComlinkAsync(portA, "A");
+      const moduleA = new ComlinkAsync(portA, "A", false);
 
       // 执行回调
       await mainThreadCallback(moduleA);
@@ -65,7 +65,7 @@ export async function installWorkerEnv(
         );
         /// 模拟B模块作为调用模块
         /**模块控制器 */
-        const moduleB = new ComlinkAsync(portB, "B");
+        const moduleB = new ComlinkAsync(portB, "B", false);
 
         // 回调
         await workerThreadCallback(moduleB);

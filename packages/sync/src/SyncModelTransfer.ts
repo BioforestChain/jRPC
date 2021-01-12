@@ -42,7 +42,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   private _getDefaultProxyHanlder<T extends object>(
     sender: ReturnType<SyncModelTransfer["_genLinkInSender"]>,
   ) {
-    const proxyHandler: BFChainLink.EmscriptionProxyHanlder<T> = {
+    const proxyHandler: BFChainLink.FullEmscriptionProxyHanlder<T> = {
       getPrototypeOf: (_target) => sender.req<object | null>([EmscriptenReflect.GetPrototypeOf]),
       setPrototypeOf: (_target, proto) =>
         sender.req<boolean>([EmscriptenReflect.SetPrototypeOf, proto]),
@@ -170,7 +170,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
   >();
   getRefProxyHanlder<T>(refObj: T) {
     return this._refProxyHanlderCache.get(refObj as never) as
-      | BFChainLink.EmscriptionProxyHanlder<BFChainLink.ToObject<T>>
+      | BFChainLink.FullEmscriptionProxyHanlder<BFChainLink.ToObject<T>>
       | undefined;
   }
   /**
@@ -221,7 +221,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         getProxyHanlder: () => {
           const sender = this._genLinkInSender(port, refId);
           const defaultProxyHanlder = this._getDefaultProxyHanlder<Function>(sender);
-          const functionProxyHanlder: BFChainLink.EmscriptionProxyHanlder<Function> = {
+          const functionProxyHanlder: BFChainLink.FullEmscriptionProxyHanlder<Function> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
               if (prop === "name") {
@@ -273,7 +273,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
            * 因为对象一旦被设置状态后，无法回退，所以这里可以直接根据现有的状态来判断对象的可操作性
            * @TODO 使用isExtensible isFrozen isSealed来改进
            */
-          const functionProxyHanlder: BFChainLink.EmscriptionProxyHanlder<Function> = {
+          const objectProxyHanlder: BFChainLink.FullEmscriptionProxyHanlder<object> = {
             ...defaultProxyHanlder,
             get: (target, prop, receiver) => {
               //#region 自定义属性
@@ -300,7 +300,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
               return false;
             },
           };
-          return functionProxyHanlder;
+          return objectProxyHanlder;
         },
       };
       ref = (objRef as unknown) as BFChainLink.ImportRefHook<T>;

@@ -13,7 +13,7 @@ export async function installSimpleEnv(
   /// 模拟A模块作为服务模块
   try {
     /**模块控制器 */
-    const moduleA = new ComlinkAsync(portA, "A");
+    const moduleA = new ComlinkAsync(portA, "A", false);
     (global as any).moduleA = moduleA;
 
     // 执行回调
@@ -26,7 +26,7 @@ export async function installSimpleEnv(
   /// 模拟B模块作为调用模块
   try {
     /**模块控制器 */
-    const moduleB = new ComlinkAsync(portB, "B");
+    const moduleB = new ComlinkAsync(portB, "B", false);
     (global as any).moduleB = moduleB;
 
     // 执行回调

@@ -12,20 +12,20 @@ import { SyncModelTransfer } from "./SyncModelTransfer";
 export class ComlinkSync
   extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
   implements BFChainLink.ComlinkSync {
-  constructor(port: ComlinkProtocol.BinaryPort, name: string) {
-    super(port, name);
+  constructor(port: ComlinkProtocol.BinaryPort, name: string, isShareBuildIn: boolean) {
+    super(port, name, isShareBuildIn);
   }
   push(obj: object) {
     return CallbackToSync(this.$pushToRemote, [obj], this);
   }
 
   readonly transfer = new SyncModelTransfer(this);
-  readonly exportStore = new ExportStore(this.name);
+  readonly exportStore = new ExportStore(this.name, this.isShareBuildIn);
   readonly importStore = new ImportStore<
     ComlinkProtocol.IOB,
     ComlinkProtocol.TB,
     ComlinkProtocol.IOB_E
-  >(this.name, this.port, this.transfer);
+  >(this.name, this.port, this.transfer, this.isShareBuildIn);
 
   // /**
   //  * ref fun statis toString

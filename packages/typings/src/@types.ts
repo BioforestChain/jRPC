@@ -107,7 +107,8 @@ declare namespace BFChainLink {
     | LinkPushObj
     | LinkPullObj;
 
-  type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">> & {
+  type EmscriptionProxyHanlder<T extends object> = Required<Omit<ProxyHandler<T>, "enumerate">>;
+  type FullEmscriptionProxyHanlder<T extends object> = EmscriptionProxyHanlder<T> & {
     asset(target: T, p: PropertyKey): any;
     typeOf(target: T): string;
     instanceOf(target: T, Ctor: unknown): boolean;
@@ -121,7 +122,7 @@ declare namespace BFChainLink {
   type ImportObjectRefHook<S, O extends ToObject<S> = ToObject<S>> = {
     type: "object";
     getSource: () => O;
-    getProxyHanlder: () => BFChainLink.EmscriptionProxyHanlder<O>;
+    getProxyHanlder: () => BFChainLink.FullEmscriptionProxyHanlder<O>;
     // onProxyCreated?: (proxy: O) => unknown;
   };
   type ImportPrimitiveRefHook<S> = {

@@ -19,17 +19,17 @@ import { AsyncModelTransfer } from "./AsyncModelTransfer";
 export class ComlinkAsync
   extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
   implements BFChainLink.ComlinkAsync {
-  constructor(port: ComlinkProtocol.BinaryPort, name: string) {
-    super(port, name);
+  constructor(port: ComlinkProtocol.BinaryPort, name: string, isShareBuildIn: boolean) {
+    super(port, name, isShareBuildIn);
   }
 
   readonly transfer = new AsyncModelTransfer(this);
-  readonly exportStore = new ExportStore(this.name);
+  readonly exportStore = new ExportStore(this.name, this.isShareBuildIn);
   readonly importStore = new ImportStore<
     ComlinkProtocol.IOB,
     ComlinkProtocol.TB,
     ComlinkProtocol.IOB_E
-  >(this.name, this.port, this.transfer);
+  >(this.name, this.port, this.transfer, this.isShareBuildIn);
 
   // readonly holderStore = new HolderStore(this.name);
 

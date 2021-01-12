@@ -5,7 +5,12 @@ import type { ImportStore } from "./ImportStore";
 
 export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS>
   implements BFChainLink.ComlinkCore {
-  constructor(public readonly port: BFChainLink.BinaryPort<TB>, public readonly name: string) {
+  constructor(
+    public readonly port: BFChainLink.BinaryPort<TB>,
+    public readonly name: string,
+    /** 共享内建对象 */
+    public readonly isShareBuildIn: boolean,
+  ) {
     this._listen();
   }
   $destroy(): boolean {
@@ -157,7 +162,6 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
         recObjCache.set(oid, refId);
       }
     });
-
     const recObjCache = new Map<number, number | ((refId: number) => void)>();
   }
 

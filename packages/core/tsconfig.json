@@ -10,7 +10,9 @@
     }
   ],
   "files": [
+    "src/@types.ts",
     "src/ComlinkCore.ts",
+    "src/const.ts",
     "src/ExportStore.ts",
     "src/helper.ts",
     "src/ImportStore.ts",

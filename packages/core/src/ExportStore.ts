@@ -15,14 +15,28 @@ type SymbolStoreItem = {
   // hid?: number;
 };
 type StoreItem = ObjectStoreItem | SymbolStoreItem;
+import { EsmBuildInObjectKeyValueList } from "./const";
 
 export class ExportStore {
-  constructor(public readonly name: string) {}
+  constructor(
+    public readonly name: string,
+    /** 共享内建对象 */
+    public readonly isShareBuildIn: boolean,
+  ) {
+    if (isShareBuildIn) {
+      for (const item of EsmBuildInObjectKeyValueList) {
+        this.saveObjId(item[1], item[0]);
+      }
+    }
+  }
   /**
    * 提供给远端的 refId|symId
    * 远端可以使用 locId 来进行访问本地
+   *
+   * 从1000开始，0~999留给内建对象
+   * @WARN 如果类型是uint32，要注意溢出后从0开始累计时，需绕过0~999
    */
-  accId = 0;
+  accId = 1000;
   /**我所导出的引用对象与符号 */
   private objIdStore = new Map<number | object | symbol, StoreItem>();
   getObjById(id: number) {

@@ -1,5 +1,4 @@
 import { helper } from "@bfchain/link";
-import { CallbackToSync } from "@bfchain/link-sync";
 
 export class SimpleBinaryChannel<TB> {
   private _turnA = new _InnerTurn<TB>();
@@ -13,10 +12,10 @@ class _InnerTurn<TB> {
 class SimpleBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
   onObject(listener: BFChainLink.BinaryPort.Listener<object, unknown>): void {
-    throw new Error("Method not implemented.");
+    return;
   }
   duplexObject(objBox: object, transfer: object[]): void {
-    throw new Error("Method not implemented.");
+    return;
   }
 
   onMessage(listener: BFChainLink.BinaryPort.MessageListener<TB>) {
