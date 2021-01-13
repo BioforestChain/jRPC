@@ -58,9 +58,7 @@ export const ESM_REFLECT_FUN_MAP = new Map<EmscriptenReflect, EsmReflectHanlder>
     EmscriptenReflect.GetOwnPropertyDescriptor,
     _SyncToCallback(
       (target: object, [prop]: unknown[]) =>
-        propertyDescriptorSerialization(
-          Reflect.getOwnPropertyDescriptor(target, prop as PropertyKey),
-        ),
+        Reflect.getOwnPropertyDescriptor(target, prop as PropertyKey),
       undefined,
       propertyDescriptorSerialization,
     ),
@@ -146,21 +144,25 @@ export const ESM_REFLECT_FUN_MAP = new Map<EmscriptenReflect, EsmReflectHanlder>
 
 function _SyncToCallback<T, ARGS extends unknown[]>(
   handler: (target: any, ...args: ARGS) => T,
-  before?: EsmReflectHanlder["paramListDeserialization"],
-  after?: EsmReflectHanlder["resultSerialization"],
+  paramListDeserialization?: EsmReflectHanlder["paramListDeserialization"],
+  resultSerialization?: EsmReflectHanlder["resultSerialization"],
 ) {
   return {
     isAsync: false,
+    paramListDeserialization,
+    resultSerialization,
     fun: handler,
   } as EsmReflectHanlder;
 }
 function _AsyncToCallback<T, ARGS extends unknown[]>(
   handler: (target: any, ...args: ARGS) => PromiseLike<T>,
-  before?: EsmReflectHanlder["paramListDeserialization"],
-  after?: EsmReflectHanlder["resultSerialization"],
+  paramListDeserialization?: EsmReflectHanlder["paramListDeserialization"],
+  resultSerialization?: EsmReflectHanlder["resultSerialization"],
 ) {
   return {
     isAsync: true,
+    paramListDeserialization,
+    resultSerialization,
     fun: handler,
   } as EsmReflectHanlder;
 }

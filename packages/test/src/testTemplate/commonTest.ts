@@ -52,6 +52,10 @@ export class TestService {
     };
     return fib(n);
   }
+  static JsonAbleObj = { a: 1, b: ["c", true] };
+  jsonAble() {
+    return TestService.JsonAbleObj;
+  }
 
   //#region 正常模式测试
 
@@ -122,6 +126,12 @@ export class TestService {
       console.assert(String(err).startsWith("SyntaxError: qaq2"), "throw 2");
     }
   }
+  static testJSON(ctxA: TestService) {
+    console.assert(
+      JSON.stringify(ctxA.jsonAble()) === JSON.stringify(TestService.JsonAbleObj),
+      "JSON.stringify",
+    );
+  }
   static testPromise(ctxA: TestService) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
   }
@@ -131,6 +141,7 @@ export class TestService {
     this.testFunctionType(ctxA);
     this.testSymbol(ctxA);
     this.testThrow(ctxA);
+    this.testJSON(ctxA);
     await this.testPromise(ctxA);
   }
   //#endregion
