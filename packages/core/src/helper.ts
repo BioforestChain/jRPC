@@ -1,18 +1,43 @@
 import { EmscriptenReflect } from "@bfchain/link-typings";
 
-type EsmReflectSyncFun = {
-  type: "sync";
-  fun: (target: any, ...args: any[]) => any;
-};
-type EsmReflectAsyncFun = {
-  type: "async";
+type EsmReflectHanlder = {
+  isAsync: boolean;
+  paramListDeserialization?: (resList: readonly any[]) => any[];
+  resultSerialization?: (res?: any) => readonly any[];
   fun: (target: any, ...args: any[]) => any;
 };
 
-export const ESM_REFLECT_FUN_MAP = new Map<
-  EmscriptenReflect,
-  EsmReflectSyncFun | EsmReflectAsyncFun
->([
+export function propertyDescriptorSerialization(propDes?: PropertyDescriptor) {
+  if (propDes === undefined) {
+    return [];
+  }
+  return [
+    propDes.configurable,
+    propDes.enumerable,
+    propDes.get,
+    propDes.set,
+    propDes.value,
+    propDes.writable,
+  ] as const;
+}
+
+type SerializatedPropertyDescriptor = ReturnType<typeof propertyDescriptorSerialization>;
+export function propertyDescriptorDeserialization(propSed: SerializatedPropertyDescriptor) {
+  if (propSed.length === 0) {
+    return;
+  }
+  const propDes: PropertyDescriptor = {};
+  /// 注意这里要避免产生隐式转换，因为肯能是ComlinkAsync的Holder对象
+  propSed[0] !== undefined && (propDes.configurable = propSed[0]);
+  propSed[1] !== undefined && (propDes.enumerable = propSed[1]);
+  propSed[2] !== undefined && (propDes.get = propSed[2]);
+  propSed[3] !== undefined && (propDes.set = propSed[3]);
+  propSed[4] !== undefined && (propDes.value = propSed[4]);
+  propSed[5] !== undefined && (propDes.writable = propSed[5]);
+  return propDes;
+}
+
+export const ESM_REFLECT_FUN_MAP = new Map<EmscriptenReflect, EsmReflectHanlder>([
   [
     EmscriptenReflect.GetPrototypeOf,
     _SyncToCallback((target: object) => Reflect.getPrototypeOf(target)),
@@ -31,8 +56,13 @@ export const ESM_REFLECT_FUN_MAP = new Map<
   ],
   [
     EmscriptenReflect.GetOwnPropertyDescriptor,
-    _SyncToCallback((target: object, [prop]: unknown[]) =>
-      Reflect.getOwnPropertyDescriptor(target, prop as PropertyKey),
+    _SyncToCallback(
+      (target: object, [prop]: unknown[]) =>
+        propertyDescriptorSerialization(
+          Reflect.getOwnPropertyDescriptor(target, prop as PropertyKey),
+        ),
+      undefined,
+      propertyDescriptorSerialization,
     ),
   ],
   [
@@ -61,8 +91,10 @@ export const ESM_REFLECT_FUN_MAP = new Map<
   ],
   [
     EmscriptenReflect.DefineProperty,
-    _SyncToCallback((target: object, [prop, attr]: unknown[]) =>
-      Reflect.defineProperty(target, prop as PropertyKey, attr as PropertyDescriptor),
+    _SyncToCallback(
+      (target: object, [prop, attr]: unknown[]) =>
+        Reflect.defineProperty(target, prop as PropertyKey, attr as never),
+      ([prop, ...propSed]) => [prop, propertyDescriptorDeserialization(propSed as never)],
     ),
   ],
   [EmscriptenReflect.OwnKeys, _SyncToCallback((target: object) => Reflect.ownKeys(target))],
@@ -74,26 +106,22 @@ export const ESM_REFLECT_FUN_MAP = new Map<
   ],
   [
     EmscriptenReflect.SyncApply,
-    {
-      type: "async",
-      fun: (target: object, [ctx, ...args]: unknown[]) =>
-        Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>),
-    },
+    _AsyncToCallback((target: object, [ctx, ...args]: unknown[]) =>
+      Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>),
+    ),
   ],
   [
     EmscriptenReflect.AsyncApply,
-    {
-      type: "sync",
-      fun: (target: object, [resolve, reject, ctx, ...args]: unknown[]) =>
-        queueMicrotask(async () => {
-          try {
-            const res = await Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>);
-            (resolve as any)(res);
-          } catch (err) {
-            (reject as any)(err);
-          }
-        }),
-    },
+    _SyncToCallback((target: object, [resolve, reject, ctx, ...args]: unknown[]) =>
+      queueMicrotask(async () => {
+        try {
+          const res = await Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>);
+          (resolve as any)(res);
+        } catch (err) {
+          (reject as any)(err);
+        }
+      }),
+    ),
   ],
   [
     EmscriptenReflect.Construct,
@@ -116,11 +144,25 @@ export const ESM_REFLECT_FUN_MAP = new Map<
   [EmscriptenReflect.JsonParse, _SyncToCallback((target: unknown) => JSON.parse(target as string))],
 ]);
 
-function _SyncToCallback<T, ARGS extends unknown[]>(handler: (target: any, ...args: ARGS) => T) {
+function _SyncToCallback<T, ARGS extends unknown[]>(
+  handler: (target: any, ...args: ARGS) => T,
+  before?: EsmReflectHanlder["paramListDeserialization"],
+  after?: EsmReflectHanlder["resultSerialization"],
+) {
   return {
-    type: "sync",
+    isAsync: false,
     fun: handler,
-  } as EsmReflectSyncFun;
+  } as EsmReflectHanlder;
+}
+function _AsyncToCallback<T, ARGS extends unknown[]>(
+  handler: (target: any, ...args: ARGS) => PromiseLike<T>,
+  before?: EsmReflectHanlder["paramListDeserialization"],
+  after?: EsmReflectHanlder["resultSerialization"],
+) {
+  return {
+    isAsync: true,
+    fun: handler,
+  } as EsmReflectHanlder;
 }
 
 export const SyncForCallback = <T>(cb: BFChainLink.Callback<T>, handler: () => T) => {

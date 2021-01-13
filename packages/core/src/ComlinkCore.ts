@@ -60,14 +60,25 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           out: [],
           isThrow: false,
         };
-        const out_linkOut = (anyRes: unknown) => {
-          this.transfer.Any2InOutBinary((iobRet) => {
-            if (iobRet.isError) {
-              return cb(iobRet);
+        const out_linkOut = (anyResList: unknown[]) => {
+          let resolved = 0;
+          const tryResolve = () => {
+            resolved += 1;
+            if (resolved === anyResList.length) {
+              resolveCallback(cb, this.transfer.linkObj2TransferableBinary(linkOut));
             }
-            linkOut.out.push(iobRet.data);
-            resolveCallback(cb, this.transfer.linkObj2TransferableBinary(linkOut));
-          }, anyRes);
+          };
+          const outStartIndex = linkOut.out.length;
+          for (let i = 0; i < anyResList.length; i++) {
+            const anyRes = anyResList[i];
+            this.transfer.Any2InOutBinary((iobRet) => {
+              if (iobRet.isError) {
+                return cb(iobRet);
+              }
+              linkOut.out[outStartIndex + i] = iobRet.data;
+              tryResolve();
+            }, anyRes);
+          }
         };
 
         try {
@@ -82,24 +93,34 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           if (EmscriptenReflect.Multi === operator) {
             /// 批量操作
             res = obj;
+            let $handler:
+              | ReturnType<ComlinkCore<IOB, TB, IMP_EXTENDS>["$getEsmReflectHanlder"]>
+              | undefined;
             for (let i = 0; i < paramList.length; ) {
               const len = paramList[i] as number;
               const $operator = paramList[i + 1] as EmscriptenReflect;
               const $paramList = paramList.slice(i + 2, i + 1 + len);
-              const $handler = this.$getEsmReflectHanlder($operator);
-              res = $handler.fun(res, $paramList);
-              if ($handler.type === "async") {
+              $handler = this.$getEsmReflectHanlder($operator);
+              res = $handler.fun(
+                res,
+                $handler.paramListDeserialization?.($paramList) || $paramList,
+              );
+              if ($handler.isAsync) {
                 res = await res;
               }
+              /// 因为是链式操作， 所以不需要立即执行hanlder对res进行编码
               i += len + 1;
             }
+            res = $handler?.resultSerialization?.(res) || [res];
           } else {
             /// 单项操作
             const handler = this.$getEsmReflectHanlder(operator);
-            res = handler.fun(obj, paramList);
-            if (handler.type === "async") {
+            res = handler.fun(obj, handler.paramListDeserialization?.(paramList) || paramList);
+
+            if (handler.isAsync) {
               res = await res;
             }
+            res = handler.resultSerialization?.(res) || [res];
           }
 
           /// 如果有返回结果的需要，那么就尝试进行返回
@@ -110,7 +131,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           }
         } catch (err) {
           linkOut.isThrow = true;
-          return out_linkOut(err);
+          return out_linkOut([err]);
         }
       } else if (linkObj.type === LinkObjType.Import) {
         const scope = this._getInitedExportScope();

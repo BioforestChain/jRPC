@@ -1,8 +1,4 @@
-import {
-  IOB_Type,
-  ModelTransfer,
-  refFunctionStaticToStringFactory,
-} from "@bfchain/link-protocol";
+import { IOB_Type, ModelTransfer, refFunctionStaticToStringFactory } from "@bfchain/link-protocol";
 import { LinkObjType } from "@bfchain/link-typings";
 import type { ComlinkAsync } from "./ComlinkAsync";
 import { helper } from "@bfchain/link-core";
@@ -27,6 +23,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
     port: ComlinkProtocol.BinaryPort,
     targetId: number,
     linkIn: readonly unknown[],
+    resTransfer?: (cb: BFChainLink.Callback<ComlinkProtocol.IOB>, resList: unknown[]) => void,
     hasOut?: BFChainLink.HolderReflect<R> | false,
   ) {
     const { transfer } = this.core;
@@ -42,7 +39,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
           }
 
           if (linkObj.isThrow) {
-            const err_iob = linkObj.out.slice().pop();
+            const err_iob = linkObj.out[0];
             if (!err_iob) {
               throw new TypeError();
             }
@@ -53,11 +50,15 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
               throw err_iob;
             }
           } else if (hasOut) {
-            const res_iob = linkObj.out.slice().pop();
-            if (!res_iob) {
-              throw new TypeError();
+            if (resTransfer) {
+              const resList: unknown[] = [];
+              for (const res_iob of linkObj.out) {
+                resList.push(transfer.InOutBinary2Any(res_iob));
+              }
+              resTransfer((ret) => hasOut.bindIOB(helper.OpenArg(ret)), linkObj.out);
+            } else {
+              hasOut.bindIOB(linkObj.out[0]);
             }
-            hasOut.bindIOB(res_iob);
           }
         },
         transfer.linkObj2TransferableBinary({

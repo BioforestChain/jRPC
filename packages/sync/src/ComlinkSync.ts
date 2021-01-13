@@ -47,7 +47,7 @@ export class ComlinkSync
         }
         return hanlder.fun(target, args);
       };
-      return { type: hanlder.type, fun: applyHanlder };
+      return { ...hanlder, fun: applyHanlder };
     }
     return hanlder;
   }

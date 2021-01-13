@@ -23,7 +23,7 @@ export async function installMixEnv(
     try {
       {
         const duplexFactory = new DuplexFactory();
-        const comlink = new Comlink(duplexFactory.getDuplex());
+        const comlink = new Comlink(duplexFactory.getDuplex(), { preciseness: true });
         /**模块控制器 */
         const moduleA = comlink.syncModule("A1");
 
@@ -42,7 +42,7 @@ export async function installMixEnv(
 
       {
         const duplexFactory2 = new DuplexFactory();
-        const comlink = new Comlink(duplexFactory2.getDuplex());
+        const comlink = new Comlink(duplexFactory2.getDuplex(), { preciseness: true });
 
         const moduleA2 = comlink.syncModule("A2");
         // 执行回调

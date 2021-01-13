@@ -14,6 +14,7 @@ import { EmscriptenReflect, LinkObjType } from "@bfchain/link-typings";
 import { CallbackToSync } from "./helper";
 import { PROTOCAL_SENDER } from "./const";
 import type { ComlinkSync } from "./ComlinkSync";
+import { helper } from "@bfchain/link-core";
 
 const SENDER_MARKER = Symbol("linkInSender");
 
@@ -27,8 +28,10 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
    */
   private _rfsts = refFunctionStaticToStringFactory();
   private _genLinkInSender(port: BFChainLink.BinaryPort<ComlinkProtocol.TB>, refId: number) {
-    const reqSync = <R = unknown>(linkIn: [EmscriptenReflect, ...unknown[]]) =>
-      this._reqLinkIn<R>(port, refId, linkIn);
+    const reqSync = <R = unknown>(
+      linkIn: [EmscriptenReflect, ...unknown[]],
+      resTransfer?: (resList: unknown[]) => R,
+    ) => this._reqLinkIn<R>(port, refId, linkIn, resTransfer);
     const reqNoOutput = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
       this._reqLinkInNoOutput(port, refId, linkIn);
     const sendNoBlock = (linkIn: [EmscriptenReflect, ...unknown[]]) =>
@@ -50,10 +53,10 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       isExtensible: (_target) => sender.req<boolean>([EmscriptenReflect.IsExtensible]),
       preventExtensions: (_target) => sender.req<boolean>([EmscriptenReflect.PreventExtensions]),
       getOwnPropertyDescriptor: (_target, prop: PropertyKey) =>
-        sender.req<PropertyDescriptor | undefined>([
-          EmscriptenReflect.GetOwnPropertyDescriptor,
-          prop,
-        ]),
+        sender.req<PropertyDescriptor | undefined>(
+          [EmscriptenReflect.GetOwnPropertyDescriptor, prop],
+          helper.propertyDescriptorDeserialization as never,
+        ),
       has: (_target, prop: PropertyKey) => sender.req<boolean>([EmscriptenReflect.Has, prop]),
       /**导入子模块 */
       get: (_target, prop, _reciver) =>
@@ -65,7 +68,11 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       deleteProperty: (_target, prop: PropertyKey) =>
         sender.req<boolean>([EmscriptenReflect.DeleteProperty, prop]),
       defineProperty: (_target, prop: PropertyKey, attr: PropertyDescriptor) =>
-        sender.req([EmscriptenReflect.DefineProperty, prop, attr]),
+        sender.req([
+          EmscriptenReflect.DefineProperty,
+          prop,
+          ...helper.propertyDescriptorSerialization(attr),
+        ]),
       ownKeys: (_target) => sender.req([EmscriptenReflect.OwnKeys]),
       apply: (_target, thisArg, argArray) =>
         sender.req([EmscriptenReflect.Apply, thisArg, ...argArray]),
@@ -99,6 +106,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     port: ComlinkProtocol.BinaryPort,
     targetId: number,
     linkIn: unknown[],
+    resTransfer?: (resList: unknown[]) => R,
   ) {
     const { transfer } = this.core;
     const tb = this._pkgLinkIn(targetId, linkIn, true);
@@ -113,16 +121,22 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     }
 
     if (linkObj.isThrow) {
-      const err_iob = linkObj.out.slice().pop();
+      const err_iob = linkObj.out[0];
       const err = err_iob && transfer.InOutBinary2Any(err_iob);
       throw err;
     }
-    const res_iob = linkObj.out.slice().pop();
-    if (!res_iob) {
+    if (linkObj.out.length === 0) {
       throw new TypeError();
     }
-    const res = transfer.InOutBinary2Any(res_iob);
-    return res as R;
+
+    if (resTransfer) {
+      const resList: unknown[] = [];
+      for (const res_iob of linkObj.out) {
+        resList.push(transfer.InOutBinary2Any(res_iob));
+      }
+      return resTransfer(resList);
+    }
+    return transfer.InOutBinary2Any(linkObj.out[0]) as R;
   }
   private _reqLinkInNoOutput(
     port: ComlinkProtocol.BinaryPort,
@@ -142,7 +156,7 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
     }
 
     if (linkObj.isThrow) {
-      const err_iob = linkObj.out.slice().pop();
+      const err_iob = linkObj.out[0];
       const err = err_iob && transfer.InOutBinary2Any(err_iob);
       throw err;
     }
