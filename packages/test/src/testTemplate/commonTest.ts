@@ -56,6 +56,9 @@ export class TestService {
   jsonAble() {
     return TestService.JsonAbleObj;
   }
+  stringify(obj: object) {
+    return JSON.stringify(obj);
+  }
 
   //#region 正常模式测试
 
@@ -215,12 +218,19 @@ export class TestService {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
   }
 
+  static async testCloneAble2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
+    const obj = { a: 1, b: [1, "2", true] };
+    Object.markCanClone(obj, true);
+    console.assert((await ctxA.stringify(obj)) === JSON.stringify(obj), "clone able");
+  }
+
   static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     await this.testApply2(ctxA);
     await this.testFunctionType2(ctxA);
     await this.testSymbol2(ctxA);
     await this.testThrow2(ctxA);
     await this.testPromise2(ctxA);
+    await this.testCloneAble2(ctxA);
   }
   //#endregion
 }

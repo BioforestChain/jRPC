@@ -12,6 +12,16 @@ import {
   IOB_Extends_Object_Type,
 } from "./const";
 
+const CLONEABLE_OBJS = new WeakSet<object>();
+Object.markCanClone = markCanClone;
+export function markCanClone(obj: object, canClone: boolean) {
+  if (canClone) {
+    CLONEABLE_OBJS.add(obj);
+  } else {
+    CLONEABLE_OBJS.delete(obj);
+  }
+}
+
 export abstract class ModelTransfer<
   Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
 > implements BFChainLink.ModelTransfer<ComlinkProtocol.IOB, ComlinkProtocol.TB> {
@@ -30,7 +40,7 @@ export abstract class ModelTransfer<
       case "function":
         return false;
       case "object":
-        return obj === null;
+        return obj === null || CLONEABLE_OBJS.has(obj);
     }
     return false;
   }

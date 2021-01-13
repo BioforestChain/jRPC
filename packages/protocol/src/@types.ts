@@ -93,3 +93,7 @@ declare namespace EmscriptionLinkRefExtends {
 
   //#endregion
 }
+
+interface ObjectConstructor {
+  markCanClone(object: object, canClone: boolean): void;
+}
