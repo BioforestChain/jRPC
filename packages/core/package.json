@@ -1,13 +1,13 @@
 {
   "name": "@bfchain/link-core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-typings": "1.2.0",
+    "@bfchain/link-typings": "1.2.1",
     "@bfchain/util-decorator": "4.10.20",
     "@bfchain/util-extends-promise-out": "4.10.20"
   },
