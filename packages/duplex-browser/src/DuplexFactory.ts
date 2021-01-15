@@ -31,13 +31,13 @@ export class DuplexFactory implements BFChainLink.Duplex.Factory {
       throw new TypeError();
     }
     PORT_SABS_WM.set(port2, sabs);
-    const duplex = new Duplex<ComlinkProtocol.TB>(new Endpoint(port2), sabs);
+    const duplex = new Duplex(new Endpoint(port2), sabs);
 
     return duplex;
   }
 
   constructor(private _mc = new MessageChannel()) {}
-  private _duplex?: Duplex<ComlinkProtocol.TB>;
+  private _duplex?: Duplex;
 
   private _getSabs(port: MessagePort) {
     let sabs = PORT_SABS_WM.get(port);
@@ -60,7 +60,7 @@ export class DuplexFactory implements BFChainLink.Duplex.Factory {
     let duplex = this._duplex;
     if (!duplex) {
       const sabs = this._getSabs(this._mc.port1);
-      duplex = new Duplex<ComlinkProtocol.TB>(new Endpoint(this._mc.port1), sabs);
+      duplex = new Duplex(new Endpoint(this._mc.port1), sabs);
       this._duplex = duplex;
     }
     return duplex;

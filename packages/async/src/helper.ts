@@ -13,7 +13,7 @@ export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
       data,
     };
   };
-  let syncReject = (error: Error) => {
+  let syncReject = (error: unknown) => {
     syncRet = {
       isError: true,
       error,

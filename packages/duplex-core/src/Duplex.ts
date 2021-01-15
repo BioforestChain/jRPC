@@ -6,50 +6,15 @@ import {
   SAB_MSG_TYPE,
   SIMPLEX_MSG_TYPE,
 } from "./const";
-// import { serialize, deserialize } from "v8";
-const serialize = (data: unknown) => {
-  const json = JSON.stringify(data);
-  const u16 = new Uint16Array(json.length);
-  for (let i = 0; i < json.length; i++) {
-    const code = json.charCodeAt(i);
-    if (code >= 65536) {
-      throw new RangeError("");
-    }
-    u16[i] = code;
-  }
-  return new Uint8Array(u16.buffer);
-  // const u8 = new Uint8Array(json.length);
-  // for (let i = 0; i < json.length; i++) {
-  //   const code = json.charCodeAt(i);
-  //   if (code >= 256) {
-  //     throw new RangeError("");
-  //   }
-  //   u8[i] = code;
-  // }
-  // return u8;
-};
-const deserialize = (u8: Uint8Array) => {
-  let json = "";
-  for (let i = 0; i < u8.byteLength; i += 2) {
-    const l = u8[i];
-    const h = u8[i + 1];
-    const code = (h << 8) + l;
-    json += String.fromCharCode(code);
-  }
-  // for (const code of u8) {
-  //   json += String.fromCharCode(code);
-  // }
-
-  return JSON.parse(json);
-};
 
 import { AtomicsNotifyer } from "./AtomicsNotifyer";
 import { u8Concat } from "./helper";
 import { DataPkg } from "./DataPkg";
 import { u32 } from "./u32";
 
-export class Duplex<TB> implements BFChainLink.Channel.Duplex<TB> {
-  static getPort(duplex: Duplex<any>) {
+type TB = ComlinkProtocol.TB;
+export class Duplex /* <TB> */ implements BFChainLink.Channel.Duplex<TB> {
+  static getPort(duplex: Duplex /* <any> */) {
     return duplex._port;
   }
   private _sync: {
@@ -394,23 +359,33 @@ export class Duplex<TB> implements BFChainLink.Channel.Duplex<TB> {
             msgId: u32
               .setByU8(msgBinary.subarray(1, 5 /* Uint32Array.BYTES_PER_ELEMENT+1 */))
               .getU32(),
-            msgContent: deserialize(msgBinary.subarray(5)),
+            msgContent: msgBinary.subarray(5), // deserialize(msgBinary.subarray(5)),
           };
           break;
         case MESSAGE_TYPE.RES:
+          const isError = msgBinary[6] === 1;
+          const msgContent: BFChainLink.CallbackArg<Uint8Array | undefined, undefined> = isError
+            ? {
+                isError: true,
+                error: undefined,
+              }
+            : {
+                isError: false,
+                data: msgBinary.subarray(6), //deserialize(msgBinary.subarray(6))
+              };
           msg = {
             msgType: "RES",
             msgId: u32
               .setByU8(msgBinary.subarray(1, 5 /* Uint32Array.BYTES_PER_ELEMENT+1 */))
               .getU32(),
-            msgContent: deserialize(msgBinary.subarray(5)),
+            msgContent, //deserialize(msgBinary.subarray(5)),
           };
           break;
         case MESSAGE_TYPE.SIM:
           msg = {
             msgType: "SIM",
             msgId: undefined,
-            msgContent: deserialize(msgBinary.subarray(1)),
+            msgContent: msgBinary.subarray(1), //deserialize(msgBinary.subarray(1)),
           };
           break;
         default:
@@ -441,13 +416,30 @@ export class Duplex<TB> implements BFChainLink.Channel.Duplex<TB> {
   private _serializeMsg(msg: BFChainLink.Channel.DuplexMessage<TB>) {
     let msgBinary: Uint8Array;
     if (msg.msgType === "SIM") {
-      msgBinary = u8Concat(ArrayBuffer, [[MESSAGE_TYPE.SIM], serialize(msg.msgContent)]);
-    } else {
       msgBinary = u8Concat(ArrayBuffer, [
-        [msg.msgType === "REQ" ? MESSAGE_TYPE.REQ : MESSAGE_TYPE.RES],
-        new Uint8Array(new Uint32Array([msg.msgId]).buffer),
-        serialize(msg.msgContent),
+        [MESSAGE_TYPE.SIM],
+        msg.msgContent /* serialize(msg.msgContent) */,
       ]);
+    } else if (msg.msgType === "REQ") {
+      msgBinary = u8Concat(ArrayBuffer, [
+        [MESSAGE_TYPE.REQ],
+        new Uint8Array(new Uint32Array([msg.msgId]).buffer),
+        msg.msgContent,
+        // serialize(msg.msgContent),
+      ]);
+    } else {
+      /// if (msg.msgType === "RES")
+      const u8s: ArrayLike<number>[] = [
+        [MESSAGE_TYPE.RES],
+        new Uint8Array(new Uint32Array([msg.msgId]).buffer),
+      ];
+      if (msg.msgContent.isError) {
+        u8s.push([1]);
+      } else {
+        u8s.push([0]);
+        u8s.push(msg.msgContent.data || []);
+      }
+      msgBinary = u8Concat(ArrayBuffer, u8s);
     }
     return msgBinary;
   }

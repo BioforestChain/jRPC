@@ -13,7 +13,7 @@ declare namespace BFChainLink {
     // pushTransferable(transferable: unknown): PromiseLike<void>;
   }
 
-  type CallbackArg<D, E = Error> =
+  type CallbackArg<D, E = unknown> =
     | {
         isError: true;
         error: E;
@@ -22,7 +22,7 @@ declare namespace BFChainLink {
         isError: false;
         data: D;
       };
-  type Callback<D, E = Error> = (ret: CallbackArg<D, E>) => unknown;
+  type Callback<D, E = unknown> = (ret: CallbackArg<D, E>) => unknown;
   type PipeCallback<I, O> = (inData: I, dataOuter: Callback<O>) => unknown;
 
   // type ComlinkIOB<T> = T extends <>

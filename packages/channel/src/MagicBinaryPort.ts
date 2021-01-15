@@ -29,7 +29,9 @@ export abstract class MagicBinaryPort<TB> implements BFChainLink.BinaryPort<TB> 
           this._postModeMessage({
             msgType: "RES",
             msgId: reqId,
-            msgContent: ret,
+            msgContent: ret.isError
+              ? { isError: ret.isError, error: undefined }
+              : { isError: ret.isError, data: ret.data },
           });
         }, msg.msgContent);
       }

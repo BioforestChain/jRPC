@@ -217,7 +217,7 @@ export const AsyncPiperFactory = <ARG extends unknown[], T>(
   };
 };
 
-export const OpenArg = <T>(arg: BFChainLink.CallbackArg<T>) => {
+export const OpenArg = <T>(arg: BFChainLink.CallbackArg<T, any>) => {
   if (arg.isError) {
     throw arg.error;
   }

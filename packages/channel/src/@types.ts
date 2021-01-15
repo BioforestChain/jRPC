@@ -37,7 +37,7 @@ declare namespace BFChainLink {
     type DuplexMessageRes<TB> = {
       msgType: "RES";
       msgId: number;
-      msgContent: BFChainLink.CallbackArg<TB | undefined>;
+      msgContent: BFChainLink.CallbackArg<TB | undefined, undefined>;
     };
   }
 }

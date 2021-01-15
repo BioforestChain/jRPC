@@ -11,6 +11,7 @@ import {
   IOB_Extends_Function_Type,
   IOB_Extends_Object_Type,
 } from "./const";
+import { serialize, deserialize } from "./helper";
 
 const CLONEABLE_OBJS = new WeakSet<object>();
 Object.markCanClone = markCanClone;
@@ -159,10 +160,10 @@ export abstract class ModelTransfer<
   abstract InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown;
 
   linkObj2TransferableBinary(obj: ComlinkProtocol.LinkObj) {
-    return obj as ComlinkProtocol.TB;
+    return serialize(obj) as ComlinkProtocol.TB;
   }
   transferableBinary2LinkObj(bin: ComlinkProtocol.TB) {
-    return bin as ComlinkProtocol.LinkObj;
+    return deserialize(bin) as ComlinkProtocol.LinkObj;
   }
   obj2TransferableObject(oid: number, obj: object): { objBox: object; transfer: object[] } {
     const objBox = { oid, obj };

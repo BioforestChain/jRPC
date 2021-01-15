@@ -1,8 +1,8 @@
 declare namespace ComlinkProtocol {
   type IOB = EmscriptionLinkRefExtends.InOutObj;
   type IOB_E = EmscriptionLinkRefExtends.IOB_Extends;
-  type TB = BFChainLink.LinkObj<IOB>;
-  type LinkObj = TB;
+  type TB = Uint8Array;// BFChainLink.LinkObj<IOB>;
+  type LinkObj = BFChainLink.LinkObj<IOB>;
   type BinaryPort = BFChainLink.BinaryPort<TB>;
   //   type LinkRefItem = BFChainLink.LinkRefItem<REF_E>;
 }
