@@ -1,6 +1,6 @@
 {
   "name": "@bfchain/link-async",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
@@ -8,7 +8,7 @@
   ],
   "dependencies": {
     "@bfchain/link-core": "1.2.1",
-    "@bfchain/link-protocol": "1.2.1",
+    "@bfchain/link-protocol": "1.2.2",
     "@bfchain/link-typings": "1.2.1",
     "@bfchain/util-decorator": "^4.10.27",
     "@bfchain/util-extends-promise": "^4.10.27"
