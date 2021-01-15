@@ -56,6 +56,9 @@ export class TestService {
   jsonAble() {
     return TestService.JsonAbleObj;
   }
+  checkEqual(a: unknown, b: unknown) {
+    return a === b;
+  }
   stringify(obj: object) {
     return JSON.stringify(obj);
   }
@@ -135,6 +138,12 @@ export class TestService {
       "JSON.stringify",
     );
   }
+  static testRef(ctxA: TestService) {
+    const z = ctxA.jsonAble();
+    const x = {};
+    Object.refRemote(x, z);
+    console.assert(ctxA.checkEqual(x, z), "refRemote");
+  }
   static testPromise(ctxA: TestService) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
   }
@@ -145,6 +154,7 @@ export class TestService {
     this.testSymbol(ctxA);
     this.testThrow(ctxA);
     this.testJSON(ctxA);
+    this.testRef(ctxA);
     await this.testPromise(ctxA);
   }
   //#endregion

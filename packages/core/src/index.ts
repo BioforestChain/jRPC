@@ -1,4 +1,5 @@
 import "@bfchain/link-typings";
+import "./@types";
 export * from "./ComlinkCore";
 export * from "./ImportStore";
 export * from "./ExportStore";
