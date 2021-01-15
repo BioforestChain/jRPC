@@ -62,6 +62,10 @@ export class TestService {
   stringify(obj: object) {
     return JSON.stringify(obj);
   }
+  printU8(u8: Uint8Array, size: number) {
+    console.assert(ArrayBuffer.isView(u8), "transfer uint8array");
+    console.assert(u8.length === size, "check transfer uint8array size");
+  }
 
   //#region 正常模式测试
 
@@ -144,6 +148,12 @@ export class TestService {
     Object.refRemote(x, z);
     console.assert(ctxA.checkEqual(x, z), "refRemote");
   }
+  static testTransferAble(ctxA: TestService) {
+    const u8 = new Uint8Array(10);
+    Object.bfslink.markCanTransfer(u8, true);
+    ctxA.printU8(u8, u8.length);
+    console.assert(u8.length === 0, "markCanTransfer");
+  }
   static testPromise(ctxA: TestService) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
   }
@@ -155,6 +165,7 @@ export class TestService {
     this.testThrow(ctxA);
     this.testJSON(ctxA);
     this.testRef(ctxA);
+    this.testTransferAble(ctxA);
     await this.testPromise(ctxA);
   }
   //#endregion
@@ -230,7 +241,7 @@ export class TestService {
 
   static async testCloneAble2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     const obj = { a: 1, b: [1, "2", true] };
-    Object.markCanClone(obj, true);
+    Object.bfslink.markCanClone(obj, true);
     console.assert((await ctxA.stringify(obj)) === JSON.stringify(obj), "clone able");
   }
 

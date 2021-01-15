@@ -1,7 +1,7 @@
 import { IOB_Type, ModelTransfer, refFunctionStaticToStringFactory } from "@bfchain/link-protocol";
 import { LinkObjType } from "@bfchain/link-typings";
 import type { ComlinkAsync } from "./ComlinkAsync";
-import { helper } from "@bfchain/link-core";
+import { ComlinkCore, helper } from "@bfchain/link-core";
 import { HolderReflect } from "./HolderReflect";
 import { getHolderReflect, isHolder } from "./Holder";
 import { IOB_CACHE_STATUS } from "./const";
@@ -10,11 +10,6 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   constructor(core: ComlinkAsync) {
     super(core);
   }
-
-  /**
-   * ref fun statis toString
-   */
-  private _rfsts = refFunctionStaticToStringFactory();
 
   /**这里保持使用cb风格，可以确保更好的性能
    * @TODO 内部的函数也应该尽可能使用cb风格来实现
@@ -85,34 +80,38 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
       /// 解析所有的参数
       for (let index = 0; index < linkIn.length; index++) {
         const item = linkIn[index];
-        transfer.Any2InOutBinary((ret) => {
-          if (isRejected) {
-            return;
-          }
-          if (ret.isError) {
-            isRejected = true;
-            if (hasOut) {
-              hasOut.bindIOB(
-                {
-                  type: IOB_Type.Clone,
-                  data: ret.error,
-                },
-                true,
-              );
-            } else {
-              throw ret.error;
-              // console.error("uncatch error:", ret.error);
+        transfer.Any2InOutBinary(
+          (ret) => {
+            if (isRejected) {
+              return;
             }
-            return;
-          }
-          /// 保存解析结果
-          linkInIOB[index] = ret.data;
-          linkInIOBLength += 1;
-          /// 完成所有任务，执行指令发送
-          if (linkInIOBLength === linkIn.length) {
-            doReq(linkInIOB);
-          }
-        }, item);
+            if (ret.isError) {
+              isRejected = true;
+              if (hasOut) {
+                hasOut.bindIOB(
+                  {
+                    type: IOB_Type.Clone,
+                    data: ret.error,
+                  },
+                  true,
+                );
+              } else {
+                throw ret.error;
+                // console.error("uncatch error:", ret.error);
+              }
+              return;
+            }
+            /// 保存解析结果
+            linkInIOB[index] = ret.data;
+            linkInIOBLength += 1;
+            /// 完成所有任务，执行指令发送
+            if (linkInIOBLength === linkIn.length) {
+              doReq(linkInIOB);
+            }
+          },
+          item,
+          this.core.$pushToRemote,
+        );
       }
     }
   }
@@ -151,7 +150,11 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
   //   ) => this.sendLinkIn(port, refId, linkIn, hasOut);
   // }
 
-  Any2InOutBinary(cb: BFChainLink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
+  Any2InOutBinary(
+    cb: BFChainLink.Callback<ComlinkProtocol.IOB>,
+    obj: unknown,
+    pushToRemote: BFChainUtil.ThirdArgument<ModelTransfer<ComlinkAsync>["Any2InOutBinary"]>,
+  ) {
     const reflectHolder = getHolderReflect(obj);
     if (reflectHolder !== undefined) {
       const iob = reflectHolder.getIOB();
@@ -161,7 +164,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
           if (valRet.isError) {
             return cb(valRet);
           }
-          this.Any2InOutBinary(cb, obj);
+          this.Any2InOutBinary(cb, obj, pushToRemote);
         });
         // throw new TypeError(`reflectHolder ${reflectHolder.name} no bind iob`);
       }
@@ -169,7 +172,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
         obj = iob.data;
       }
     }
-    return super.Any2InOutBinary(cb, obj);
+    return super.Any2InOutBinary(cb, obj, pushToRemote);
   }
 
   InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown {

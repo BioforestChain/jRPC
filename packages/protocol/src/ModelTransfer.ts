@@ -12,16 +12,7 @@ import {
   IOB_Extends_Object_Type,
 } from "./const";
 import { serialize, deserialize } from "./helper";
-
-const CLONEABLE_OBJS = new WeakSet<object>();
-Object.markCanClone = markCanClone;
-export function markCanClone(obj: object, canClone: boolean) {
-  if (canClone) {
-    CLONEABLE_OBJS.add(obj);
-  } else {
-    CLONEABLE_OBJS.delete(obj);
-  }
-}
+import { canClone, markCanClone, markCanTransfer, canTransfer } from "./helper";
 
 export abstract class ModelTransfer<
   Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
@@ -41,7 +32,7 @@ export abstract class ModelTransfer<
       case "function":
         return false;
       case "object":
-        return obj === null || CLONEABLE_OBJS.has(obj);
+        return obj === null || canClone(obj);
     }
     return false;
   }
@@ -109,19 +100,25 @@ export abstract class ModelTransfer<
     throw new TypeError();
   }
 
-  Any2InOutBinary(cb: BFChainLink.Callback<ComlinkProtocol.IOB>, obj: unknown) {
-    helper.SyncForCallback(cb, () => {
-      const needClone = this.canClone(obj);
+  Any2InOutBinary(
+    cb: BFChainLink.Callback<ComlinkProtocol.IOB>,
+    any: unknown,
+    pushToRemote: (cb: BFChainLink.Callback<number>, obj: object, transfer?: object[]) => void,
+  ) {
+    try {
+      const needClone = this.canClone(any);
       let item: ComlinkProtocol.IOB | undefined;
       /// 可直接通过赋值而克隆的对象
       if (needClone) {
         item = {
           type: IOB_Type.Clone,
-          data: obj,
+          data: any,
         };
       } else {
+        const obj = any as object;
+
         /// 对象是否是导入进来的
-        const imp = this.core.importStore.getProxy(obj as object);
+        const imp = this.core.importStore.getProxy(obj);
         if (imp) {
           item = {
             type: IOB_Type.Locale,
@@ -130,32 +127,51 @@ export abstract class ModelTransfer<
         }
         /// 符号对象需要在远端做一个克隆备份
         else {
-          switch (typeof obj) {
+          const needTransfer = canTransfer(obj);
+          if (needTransfer) {
+            /// 对象 只需要也只能 传输一次
+            markCanTransfer(obj, false);
+            pushToRemote(
+              helper.SyncPiperFactory(cb, (ret) => {
+                const refId = helper.OpenArg(ret);
+                return {
+                  type: IOB_Type.Locale,
+                  locId: refId,
+                } as const;
+              }),
+              obj,
+            );
+            return;
+          }
+
+          switch (typeof any) {
             case "symbol":
               item = {
                 type: IOB_Type.RemoteSymbol,
-                refId: this.core.exportStore.exportSymbol(obj),
-                extends: this._getRemoteSymbolItemExtends(obj),
+                refId: this.core.exportStore.exportSymbol(any),
+                extends: this._getRemoteSymbolItemExtends(any),
               };
               break;
             case "function":
             case "object":
-              if (obj !== null) {
+              if (any !== null) {
                 item = {
                   type: IOB_Type.Ref,
-                  refId: this.core.exportStore.exportObject(obj),
-                  extends: this._getRefItemExtends(obj),
+                  refId: this.core.exportStore.exportObject(any),
+                  extends: this._getRefItemExtends(any),
                 };
               }
           }
         }
       }
-      if (!item) {
+      if (item === undefined) {
         throw new TypeError("Cloud not transfer to IOB");
       }
 
-      return item;
-    });
+      cb({ isError: false, data: item });
+    } catch (error) {
+      cb({ isError: true, error });
+    }
   }
   abstract InOutBinary2Any(bin: ComlinkProtocol.IOB): unknown;
 
@@ -165,15 +181,21 @@ export abstract class ModelTransfer<
   transferableBinary2LinkObj(bin: ComlinkProtocol.TB) {
     return deserialize(bin) as ComlinkProtocol.LinkObj;
   }
-  obj2TransferableObject(oid: number, obj: object): { objBox: object; transfer: object[] } {
+  obj2TransferableObject(
+    oid: number,
+    obj: object,
+    transfer?: object[],
+  ): { objBox: object; transfer: object[] } {
     const objBox = { oid, obj };
-    const transfer: object[] = [];
-    if (ArrayBuffer.isView(obj)) {
-      transfer.push(obj.buffer);
-    } else if (obj.toString() === "[object SharedArrayBuffer]") {
-      /// 无需将SAB放到transfer中
-    } else {
-      transfer.push(obj);
+    if (transfer === undefined) {
+      transfer = [];
+      if (ArrayBuffer.isView(obj)) {
+        transfer.push(obj.buffer);
+      } else if (obj.toString() === "[object SharedArrayBuffer]") {
+        /// 无需将SAB放到transfer中
+      } else {
+        transfer.push(obj);
+      }
     }
     return { objBox, transfer };
   }

@@ -1,7 +1,7 @@
 declare namespace ComlinkProtocol {
   type IOB = EmscriptionLinkRefExtends.InOutObj;
   type IOB_E = EmscriptionLinkRefExtends.IOB_Extends;
-  type TB = Uint8Array;// BFChainLink.LinkObj<IOB>;
+  type TB = Uint8Array; // BFChainLink.LinkObj<IOB>;
   type LinkObj = BFChainLink.LinkObj<IOB>;
   type BinaryPort = BFChainLink.BinaryPort<TB>;
   //   type LinkRefItem = BFChainLink.LinkRefItem<REF_E>;
@@ -95,5 +95,10 @@ declare namespace EmscriptionLinkRefExtends {
 }
 
 interface ObjectConstructor {
-  markCanClone(object: object, canClone: boolean): void;
+  readonly bfslink: Readonly<{
+    canTransfer(object: object): boolean;
+    markCanTransfer(object: object, canTransfer: boolean): void;
+    canClone(object: object): boolean;
+    markCanClone(object: object, canClone: boolean): void;
+  }>;
 }

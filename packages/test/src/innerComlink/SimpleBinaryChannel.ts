@@ -8,14 +8,15 @@ export class SimpleBinaryChannel<TB> {
 }
 class _InnerTurn<TB> {
   postMessage!: BFChainLink.BinaryPort.MessageListener<TB>;
+  postObject!: BFChainLink.BinaryPort.ObjectListener;
 }
 class SimpleBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   constructor(protected localTurn: _InnerTurn<TB>, protected remoteTurn: _InnerTurn<TB>) {}
-  onObject(listener: BFChainLink.BinaryPort.Listener<object, unknown>): void {
-    return;
+  onObject(listener: BFChainLink.BinaryPort.ObjectListener): void {
+    this.localTurn.postObject = listener;
   }
   duplexObject(objBox: object, transfer: object[]): void {
-    return;
+    this.remoteTurn.postObject(objBox);
   }
 
   onMessage(listener: BFChainLink.BinaryPort.MessageListener<TB>) {
@@ -36,25 +37,4 @@ class SimpleBinaryPort<TB> implements BFChainLink.BinaryPort<TB> {
   simplexMessage(bin: TB) {
     this.remoteTurn.postMessage(() => {}, bin);
   }
-  //   readStream: AsyncIterator<TB>;
-  //   write(bin: TB) {
-  //     if (this.remoteQuene.quene) {
-  //       this.remoteQuene.quene.resolve(bin);
-  //     } else {
-  //       this.remoteQuene.cache.push(bin);
-  //     }
-  //   }
-  //   private _closed = false;
-  //   close() {
-  //     if (this._closed) {
-  //       return;
-  //     }
-  //     this._closed = true;
-  //     this.write = () => {};
-  //     const doneValue = Promise.resolve({
-  //       done: true,
-  //       value: undefined,
-  //     } as const);
-  //     this.readStream.next = () => doneValue;
-  //   }
 }

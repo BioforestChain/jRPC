@@ -6,7 +6,7 @@ declare namespace BFChainLink {
      * import { key } from port
      */
     import<T>(key?: string): PromiseLike<AsyncUtil.Remote<T>>;
-    push(obj: object): BFChainUtil.PromiseMaybe<void>;
+    push(obj: object): BFChainUtil.PromiseMaybe<unknown>;
   }
 
   type Holder<T = unknown> = T extends object

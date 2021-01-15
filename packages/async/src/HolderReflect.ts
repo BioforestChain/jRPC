@@ -882,7 +882,7 @@ export class HolderReflect<T /* extends object */> implements BFChainLink.Holder
   ) {
     this.getOwnPropertyDescriptorHolder(propertyKey).toValueSync(cb, (cb, propSed) => {
       const propDes = helper.propertyDescriptorDeserialization(propSed as never);
-      return this.core.transfer.Any2InOutBinary(cb, propDes);
+      return this.core.transfer.Any2InOutBinary(cb, propDes, this.core.$pushToRemote);
     });
   }
 

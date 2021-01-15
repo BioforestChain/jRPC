@@ -50,7 +50,7 @@ export class ComlinkAsync
     const importModule = await CallbackToAsync(this.$getImportModule, [], this);
     return Reflect.get(importModule, key);
   }
-  push(obj: object) {
-    return CallbackToAsync(this.$pushToRemote, [obj], this);
+  push(obj: object, transfer?: object[]) {
+    return CallbackToAsync(this.$pushToRemote, [obj, transfer], this);
   }
 }

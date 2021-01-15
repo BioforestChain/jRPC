@@ -2,6 +2,7 @@ import { LinkObjType, EmscriptenReflect } from "@bfchain/link-typings";
 import { ESM_REFLECT_FUN_MAP, OpenArg, resolveCallback, SyncPiperFactory } from "./helper";
 import type { ExportStore } from "./ExportStore";
 import type { ImportStore } from "./ImportStore";
+import { bindThis } from "@bfchain/util-decorator";
 
 export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP_EXTENDS>
   implements BFChainLink.ComlinkCore {
@@ -71,13 +72,17 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           const outStartIndex = linkOut.out.length;
           for (let i = 0; i < anyResList.length; i++) {
             const anyRes = anyResList[i];
-            this.transfer.Any2InOutBinary((iobRet) => {
-              if (iobRet.isError) {
-                return cb(iobRet);
-              }
-              linkOut.out[outStartIndex + i] = iobRet.data;
-              tryResolve();
-            }, anyRes);
+            this.transfer.Any2InOutBinary(
+              (iobRet) => {
+                if (iobRet.isError) {
+                  return cb(iobRet);
+                }
+                linkOut.out[outStartIndex + i] = iobRet.data;
+                tryResolve();
+              },
+              anyRes,
+              this.$pushToRemote,
+            );
           }
         };
 
@@ -135,18 +140,22 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
         }
       } else if (linkObj.type === LinkObjType.Import) {
         const scope = this._getInitedExportScope();
-        return this.transfer.Any2InOutBinary((scopeRet) => {
-          if (scopeRet.isError) {
-            return cb(scopeRet);
-          }
-          resolveCallback(
-            cb,
-            this.transfer.linkObj2TransferableBinary({
-              type: LinkObjType.Export,
-              module: scopeRet.data,
-            }),
-          );
-        }, scope);
+        return this.transfer.Any2InOutBinary(
+          (scopeRet) => {
+            if (scopeRet.isError) {
+              return cb(scopeRet);
+            }
+            resolveCallback(
+              cb,
+              this.transfer.linkObj2TransferableBinary({
+                type: LinkObjType.Export,
+                module: scopeRet.data,
+              }),
+            );
+          },
+          scope,
+          this.$pushToRemote,
+        );
       } else if (linkObj.type === LinkObjType.Release) {
         this.exportStore.releaseById(linkObj.locId);
       } else if (linkObj.type === LinkObjType.Push) {
@@ -220,11 +229,13 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
   //#endregion
 
   private _objIdAcc = new Uint32Array(1);
-  protected $pushToRemote(output: BFChainLink.Callback<void>, obj: object) {
+  @bindThis
+  $pushToRemote(output: BFChainLink.Callback<number>, obj: object, transfer?: object[]) {
     const { port } = this;
     const objId = this._objIdAcc[0]++;
-    const X = this.transfer.obj2TransferableObject(objId, obj);
+    const X = this.transfer.obj2TransferableObject(objId, obj, transfer);
     port.duplexObject(X.objBox, X.transfer);
+
     port.duplexMessage(
       SyncPiperFactory(output, (ret) => {
         const bin = OpenArg(ret);
@@ -233,6 +244,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
           throw new TypeError();
         }
         this.importStore.saveProxyId(obj, linkObj.refId);
+        return linkObj.refId;
       }),
       this.transfer.linkObj2TransferableBinary({ type: LinkObjType.Push, oid: objId }),
     );

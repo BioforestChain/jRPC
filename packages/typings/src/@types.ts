@@ -33,7 +33,7 @@ declare namespace BFChainLink {
     /**任意类型的对象 转换到 IOB
      * 因为obj的转换可能需要时间，所以这个接口是异步的
      */
-    Any2InOutBinary(cb: Callback<IOB>, obj: unknown): unknown;
+    Any2InOutBinary(cb: Callback<IOB>, obj: unknown,pushToRemote: (cb: BFChainLink.Callback<number>, obj: object) => void,): unknown;
     /**IOB 转换到 任意类型的对象 */
     InOutBinary2Any(/* port: BinaryPort<TB>, */ bin: IOB): unknown;
 
@@ -42,7 +42,11 @@ declare namespace BFChainLink {
     /**可传输的模型 转成 IO指令 */
     transferableBinary2LinkObj(bin: TB): LinkObj<IOB>;
 
-    obj2TransferableObject(oid: number, obj: object): { objBox: object; transfer: object[] };
+    obj2TransferableObject(
+      oid: number,
+      obj: object,
+      transfer?: object[],
+    ): { objBox: object; transfer: object[] };
     transferableObject2Obj(objBox: object): { oid: number; obj: object };
   }
 

@@ -22,7 +22,7 @@
 - [-] v2.5 支持自定义 CloneAble
   - [x] 实现 push/pull 协议，支持传输 MessagePort、ArrayBufferView、SharedArrayBuffer 等原始可传输对象
   - [ ] 支持自定义可传输对象
-  - [ ] 支持被标记的对象可以自动执行 push/pull 协议
+  - [x] 支持被标记的对象可以自动执行 push/pull 协议
 
 ## 异步与同步
 

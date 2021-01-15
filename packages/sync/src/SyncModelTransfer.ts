@@ -98,7 +98,9 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       type: LinkObjType.In,
       // reqId,
       targetId,
-      in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
+      in: linkIn.map((a) =>
+        CallbackToSync(transfer.Any2InOutBinary, [a, this.core.$pushToRemote], transfer),
+      ),
       hasOut,
     });
   }
@@ -173,7 +175,9 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
       type: LinkObjType.In,
       // reqId,
       targetId,
-      in: linkIn.map((a) => CallbackToSync(transfer.Any2InOutBinary, [a], transfer)),
+      in: linkIn.map((a) =>
+        CallbackToSync(transfer.Any2InOutBinary, [a, this.core.$pushToRemote], transfer),
+      ),
       hasOut: false,
     });
     port.simplexMessage(tb);
