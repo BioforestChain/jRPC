@@ -1,13 +1,13 @@
 {
   "name": "@bfchain/link-duplex-nodejs",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-duplex-core": "1.1.4",
+    "@bfchain/link-duplex-core": "1.1.5",
     "@bfchain/link-typings": "1.1.0"
   },
   "module": "build/esm/index.js",
