@@ -36,10 +36,10 @@ export const deserialize = (u8: Uint8Array) => {
 };
 
 const TRANSFERABLE_OBJS = new WeakSet();
-export const canTransfer = (obj: object) => {
+export const isMarkedTransferable = (obj: object) => {
   return TRANSFERABLE_OBJS.has(obj);
 };
-export const markCanTransfer = (obj: object, canTransfer: boolean) => {
+export const markTransferAble = (obj: object, canTransfer: boolean) => {
   if (canTransfer) {
     TRANSFERABLE_OBJS.add(obj);
   } else {
@@ -48,10 +48,10 @@ export const markCanTransfer = (obj: object, canTransfer: boolean) => {
 };
 
 const CLONEABLE_OBJS = new WeakSet<object>();
-export const canClone = (obj: object) => {
+export const isMarkedCloneable = (obj: object) => {
   return CLONEABLE_OBJS.has(obj);
 };
-export const markCanClone = (obj: object, canClone: boolean) => {
+export const markCloneable = (obj: object, canClone: boolean) => {
   if (canClone) {
     CLONEABLE_OBJS.add(obj);
   } else {
@@ -60,10 +60,10 @@ export const markCanClone = (obj: object, canClone: boolean) => {
 };
 Object.defineProperty(Object, "bfslink", {
   value: Object.freeze({
-    canTransfer,
-    markCanTransfer,
-    canClone,
-    markCanClone,
+    isMarkedTransferable: isMarkedTransferable,
+    markTransferAble: markTransferAble,
+    isMarkedCloneable: isMarkedCloneable,
+    markCloneable: markCloneable,
   }),
   writable: false,
 });

@@ -1,4 +1,4 @@
 import "./@types";
 export * from "./const";
 export * from "./ModelTransfer";
-export { canClone, canTransfer, markCanClone, markCanTransfer } from "./helper";
+export { isMarkedCloneable as canClone, isMarkedTransferable as canTransfer, markCloneable as markCanClone, markTransferAble as markCanTransfer } from "./helper";

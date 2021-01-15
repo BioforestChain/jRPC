@@ -12,7 +12,7 @@ import {
   IOB_Extends_Object_Type,
 } from "./const";
 import { serialize, deserialize } from "./helper";
-import { canClone, markCanClone, markCanTransfer, canTransfer } from "./helper";
+import { isMarkedCloneable, markCloneable, markTransferAble, isMarkedTransferable } from "./helper";
 
 export abstract class ModelTransfer<
   Core extends ComlinkCore<ComlinkProtocol.IOB, ComlinkProtocol.TB, ComlinkProtocol.IOB_E>
@@ -32,7 +32,7 @@ export abstract class ModelTransfer<
       case "function":
         return false;
       case "object":
-        return obj === null || canClone(obj);
+        return obj === null || isMarkedCloneable(obj);
     }
     return false;
   }
@@ -127,10 +127,10 @@ export abstract class ModelTransfer<
         }
         /// 符号对象需要在远端做一个克隆备份
         else {
-          const needTransfer = canTransfer(obj);
+          const needTransfer = isMarkedTransferable(obj);
           if (needTransfer) {
             /// 对象 只需要也只能 传输一次
-            markCanTransfer(obj, false);
+            markTransferAble(obj, false);
             pushToRemote(
               helper.SyncPiperFactory(cb, (ret) => {
                 const refId = helper.OpenArg(ret);
