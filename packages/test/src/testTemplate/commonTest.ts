@@ -150,9 +150,9 @@ export class TestService {
   }
   static testTransferAble(ctxA: TestService) {
     const u8 = new Uint8Array(10);
-    Object.bfslink.markCanTransfer(u8, true);
+    Object.bfslink.markTransferAble(u8, true);
     ctxA.printU8(u8, u8.length);
-    console.assert(u8.length === 0, "markCanTransfer");
+    console.assert(u8.length === 0, "markTransferAble");
   }
   static testPromise(ctxA: TestService) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
@@ -241,7 +241,7 @@ export class TestService {
 
   static async testCloneAble2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     const obj = { a: 1, b: [1, "2", true] };
-    Object.bfslink.markCanClone(obj, true);
+    Object.bfslink.markCloneable(obj, true);
     console.assert((await ctxA.stringify(obj)) === JSON.stringify(obj), "clone able");
   }
 
