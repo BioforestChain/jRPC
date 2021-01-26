@@ -1,16 +1,21 @@
 declare var AggregateError: AggregateErrorConstructor;
-interface AggregateErrorConstructor extends ErrorConstructor {
-  new (message?: string): AggregateError;
+interface AggregateErrorConstructor {
+  new (errors: Error[], message?: string): AggregateError;
   prototype: AggregateError;
 }
-interface AggregateError extends Error {}
+interface AggregateError extends Error {
+  errors: Error[];
+}
 
-declare var InternalError: Function;
+declare var InternalError: InternalErrorConstructor;
 interface InternalErrorConstructor extends ErrorConstructor {
-  new (message?: string): InternalError;
+  new (message?: string, fileName?: string, lineNumber?: number): InternalError;
   prototype: InternalError;
 }
-interface InternalError extends Error {}
+interface InternalError extends Error {
+  fileName?: string;
+  lineNumber?: number;
+}
 
 declare var WebAssembly: any;
 declare namespace Intl {

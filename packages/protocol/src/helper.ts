@@ -2,39 +2,45 @@ import { ComprotoFactroy } from '@bfchain/comproto';
 
 const comproto = ComprotoFactroy.getSingleton();
 (function initExtendComprotoCloneableHandler() {
-  type errorHandlerObject = {
-    name: string,
-    message: string,
-    stack: string | undefined,
-  };
-
-  const addErrorHandler = <T extends ErrorConstructor>(ErrorClass: T, tag: string) => {
-    comproto.addClassHandler({
-        handlerObj: ErrorClass,
-        handlerName: tag,
-        serialize(err) {
-            return {
-                name: err.name,
-                message: err.message,
-                stack: err.stack,
-            };
-        },
-        deserialize(errorObject: errorHandlerObject) {
-            const err = new ErrorClass();
-            err.name = errorObject.name;
-            err.message = errorObject.message;
-            err.stack = errorObject.stack;
-            return err;
-        },
-    });
-  };
-
   // AggregateError
-  addErrorHandler(AggregateError, 'AggregateError');
-  // // InternalError
-  // if (typeof InternalError === "function") {
-  //   addErrorHandler(InternalError, 'InternalError');
-  // }
+  comproto.addClassHandler({
+    handlerObj: AggregateError,
+    handlerName: "AggregateError",
+    serialize(err: AggregateError) {
+      return {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+        errors: err.errors,
+      };
+    },
+    deserialize(errorObject: { name: string, message: string, stack: string | undefined, errors: Error[] }) {
+      const err = new AggregateError(errorObject.errors, errorObject.message);
+      err.name = errorObject.name;
+      err.stack = errorObject.stack;
+      return err;
+    },
+  });
+  //InternalError
+  comproto.addClassHandler({
+    handlerObj: InternalError,
+    handlerName: "InternalError",
+    serialize(err: InternalError) {
+      return {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+        fileName: err.fileName,
+        lineNumber: err.lineNumber,
+      };
+    },
+    deserialize(errorObject: {name: string, message: string, stack: string | undefined, fileName:string | undefined, lineNumber: number | undefined}) {
+      const err = new InternalError(errorObject.message, errorObject.fileName, errorObject.lineNumber);
+      err.name = errorObject.name;
+      err.stack = errorObject.stack;
+      return err;
+    },
+  });
   // BigInt64Array
   comproto.addClassHandler({
     handlerObj: BigInt64Array,
@@ -89,8 +95,6 @@ const comproto = ComprotoFactroy.getSingleton();
     },
   });
 })();
-
-
 
 export function addCloneableClassHandler(handler: BFChainComproto.TransferClassHandler) {
   return comproto.addClassHandler(handler);
