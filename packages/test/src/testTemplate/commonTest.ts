@@ -258,12 +258,6 @@ export class TestService {
     console.assert(Object.bfslink.isMarkedCloneable(obj2) === true, "TestCloneableComproto2 clone able");
     Object.bfslink.deleteCloneableClassHandler(TestCloneableComprotoHandler.handlerName);
     console.assert(Object.bfslink.isMarkedCloneable(obj2) === false, "TestCloneableComproto2 not clone able");
-
-    Object.bfslink.markCloneable(TestCloneableComproto3, true);
-    const obj3 = new TestCloneableComproto3("test", 1);
-    console.assert(Object.bfslink.isMarkedCloneable(obj3) === true, "TestCloneableComproto3 clone able");
-    Object.bfslink.markCloneable(TestCloneableComproto3, false);
-    console.assert(Object.bfslink.isMarkedCloneable(obj3) === false, "TestCloneableComproto3 not clone able");
   }
 
   static async testSerializeComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
@@ -296,8 +290,6 @@ class TestCloneableComproto1 {
 }
 
 class TestCloneableComproto2 extends TestCloneableComproto1 { }
-
-class TestCloneableComproto3 extends TestCloneableComproto2 { }
 
 const TestCloneableComprotoHandler = {
   handlerName: "TestCloneableComprotoHandler",

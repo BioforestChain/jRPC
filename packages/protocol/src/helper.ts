@@ -1,6 +1,96 @@
 import { ComprotoFactroy } from '@bfchain/comproto';
 
 const comproto = ComprotoFactroy.getSingleton();
+(function initExtendComprotoCloneableHandler() {
+  type errorHandlerObject = {
+    name: string,
+    message: string,
+    stack: string | undefined,
+  };
+
+  const addErrorHandler = <T extends ErrorConstructor>(ErrorClass: T, tag: string) => {
+    comproto.addClassHandler({
+        handlerObj: ErrorClass,
+        handlerName: tag,
+        serialize(err) {
+            return {
+                name: err.name,
+                message: err.message,
+                stack: err.stack,
+            };
+        },
+        deserialize(errorObject: errorHandlerObject) {
+            const err = new ErrorClass();
+            err.name = errorObject.name;
+            err.message = errorObject.message;
+            err.stack = errorObject.stack;
+            return err;
+        },
+    });
+  };
+
+  // AggregateError
+  addErrorHandler(AggregateError, 'AggregateError');
+  // // InternalError
+  // if (typeof InternalError === "function") {
+  //   addErrorHandler(InternalError, 'InternalError');
+  // }
+  // BigInt64Array
+  comproto.addClassHandler({
+    handlerObj: BigInt64Array,
+    handlerName: "BigInt64Array",
+    serialize(arr: BigInt64Array) {
+      const i8adv = new DataView(new Int8Array(8 * arr.length).buffer);
+      arr.forEach((value, i) => {
+        i8adv.setBigInt64(i * 8, value);
+      });
+      return new Int8Array(i8adv.buffer);
+    },
+    deserialize(i8a: Int8Array) {
+      const u8adv = new DataView(i8a.buffer);
+      const len = i8a.length / 8;
+      const arr = new BigInt64Array(len);
+      for (let i = 0; i < len; i += 1) {
+        arr[i] = u8adv.getBigInt64(i * 8);
+      }
+      return arr;
+    },
+  });
+  // BigUint64Array
+  comproto.addClassHandler({
+    handlerObj: BigUint64Array,
+    handlerName: "BigUint64Array",
+    serialize(arr: BigUint64Array) {
+      const u8adv = new DataView(new Uint8Array(8 * arr.length).buffer);
+      arr.forEach((value, i) => {
+        u8adv.setBigUint64(i * 8, value);
+      });
+      return new Uint8Array(u8adv.buffer);
+    },
+    deserialize(u8a: Uint8Array) {
+      const u8adv = new DataView(u8a.buffer);
+      const len = u8a.length / 8;
+      const arr = new BigUint64Array(len);
+      for (let i = 0; i < len; i += 1) {
+        arr[i] = u8adv.getBigUint64(i * 8);
+      }
+      return arr;
+    },
+  });
+  // DataView
+  comproto.addClassHandler({
+    handlerObj: DataView,
+    handlerName: "DataView",
+    serialize(dataview: DataView) {
+      return new Uint8Array(dataview.buffer);
+    },
+    deserialize(u8a: Uint8Array) {
+      return new DataView(u8a);
+    },
+  });
+})();
+
+
 
 export function addCloneableClassHandler(handler: BFChainComproto.TransferClassHandler) {
   return comproto.addClassHandler(handler);
@@ -10,63 +100,17 @@ export function deleteCloneableClassHandler(handlerName: string) {
   return comproto.deleteClassHandler(handlerName);
 }
 
-function canClone(obj: unknown) {
+function isComprotoHandlable(obj: unknown) {
   return comproto.canHandle(obj);
 }
 
-const jsonSerializeFlag: number = 0xd5d6;
-// import { serialize, deserialize } from "v8";
 export const serialize = (data: unknown) => {
-  try {
-    return comproto.serialize(data);
-  } catch (err) {
-    // ignore err, use Json.stringify for serialize
-  } 
-
-  const json = JSON.stringify(data);
-  const u16 = new Uint16Array(json.length + 1);
-  u16[0] = jsonSerializeFlag; // add Flag
-  for (let i = 0; i < json.length; i++) {
-    const code = json.charCodeAt(i);
-    if (code >= 65536) {
-      throw new RangeError("");
-    }
-    u16[i + 1] = code;
-  }
-  return new Uint8Array(u16.buffer);
-  // const u8 = new Uint8Array(json.length);
-  // for (let i = 0; i < json.length; i++) {
-  //   const code = json.charCodeAt(i);
-  //   if (code >= 256) {
-  //     throw new RangeError("");
-  //   }
-  //   u8[i] = code;
-  // }
-  // return u8;
+  return comproto.serialize(data);
 };
+
 export const deserialize = (u8: Uint8Array) => {
-  if (u8[0] + (u8[1] << 8) !== jsonSerializeFlag) {
-    try {
-      return comproto.deserialize(u8);
-    } catch (err) {
-      // ignore deserialize error
-    }
-    return;
-  }
-
-  let json = "";
-  for (let i = 0; i < u8.byteLength; i += 2) {
-    const l = u8[i + 2];
-    const h = u8[i + 2 + 1];
-    const code = (h << 8) + l;
-    json += String.fromCharCode(code);
-  }
-  // for (const code of u8) {
-  //   json += String.fromCharCode(code);
-  // }
-
-  return JSON.parse(json);
-};
+  return comproto.deserialize(u8);
+}
 
 const TRANSFERABLE_OBJS = new WeakSet();
 export const isMarkedTransferable = (obj: object) => {
@@ -80,33 +124,19 @@ export const markTransferAble = (obj: object, canTransfer: boolean) => {
   }
 };
 
-function isConstructor(obj: any) {
-  try {
-    new new Proxy(obj, {construct() { return {};}});
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-type Ctor = (new () => any);
 const CLONEABLE_OBJS = new WeakSet<object>();
-const CLONEABLE_CTOR = new WeakSet<Ctor>();
 export const isMarkedCloneable = (obj: object) => {
-  return CLONEABLE_OBJS.has(obj) || CLONEABLE_CTOR.has(obj.constructor as Ctor) || canClone(obj);
+  return CLONEABLE_OBJS.has(obj) || isComprotoHandlable(obj);
 };
-export const markCloneable = (obj: object | (new () => any), canClone: boolean) => {
-  if (isConstructor(obj)) {
-    if (canClone) {
-      CLONEABLE_CTOR.add(obj as Ctor);
-    } else {
-      CLONEABLE_CTOR.delete(obj as Ctor);
-    }
+export const markCloneable = (obj: object, canClone: boolean) => {
+  if (isComprotoHandlable(obj) === false) {
+    throw(new Error(`object ${obj} is not cloneable`));
+  }
+
+  if (canClone) {
+    CLONEABLE_OBJS.add(obj);
   } else {
-    if (canClone) {
-      CLONEABLE_OBJS.add(obj);
-    } else {
-      CLONEABLE_OBJS.delete(obj);
-    }
+    CLONEABLE_OBJS.delete(obj);
   }
 };
 
