@@ -80,17 +80,36 @@ export const markTransferAble = (obj: object, canTransfer: boolean) => {
   }
 };
 
+function isConstructor(obj: any) {
+  try {
+    new new Proxy(obj, {construct() { return {};}});
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+type Ctor = (new () => any);
 const CLONEABLE_OBJS = new WeakSet<object>();
+const CLONEABLE_CTOR = new WeakSet<Ctor>();
 export const isMarkedCloneable = (obj: object) => {
-  return CLONEABLE_OBJS.has(obj) || canClone(obj);
+  return CLONEABLE_OBJS.has(obj) || CLONEABLE_CTOR.has(obj.constructor as Ctor) || canClone(obj);
 };
-export const markCloneable = (obj: object, canClone: boolean) => {
-  if (canClone) {
-    CLONEABLE_OBJS.add(obj);
+export const markCloneable = (obj: object | (new () => any), canClone: boolean) => {
+  if (isConstructor(obj)) {
+    if (canClone) {
+      CLONEABLE_CTOR.add(obj as Ctor);
+    } else {
+      CLONEABLE_CTOR.delete(obj as Ctor);
+    }
   } else {
-    CLONEABLE_OBJS.delete(obj);
+    if (canClone) {
+      CLONEABLE_OBJS.add(obj);
+    } else {
+      CLONEABLE_OBJS.delete(obj);
+    }
   }
 };
+
 Object.defineProperty(Object, "bfslink", {
   value: Object.freeze({
     isMarkedTransferable: isMarkedTransferable,
@@ -99,6 +118,8 @@ Object.defineProperty(Object, "bfslink", {
     markCloneable: markCloneable,
     addCloneableClassHandler: addCloneableClassHandler,
     deleteCloneableClassHandler: deleteCloneableClassHandler,
+    serialize: serialize,
+    deserialize: deserialize,
   }),
   writable: false,
 });

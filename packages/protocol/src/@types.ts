@@ -102,5 +102,7 @@ interface ObjectConstructor {
     markCloneable(object: object, canClone: boolean): void;
     addCloneableClassHandler(handler: BFChainComproto.TransferClassHandler): void;
     deleteCloneableClassHandler(handlerName: string): void;
+    serialize(data: unknown): Uint8Array;
+    deserialize(u8: Uint8Array): unknown;
   }>;
 }
