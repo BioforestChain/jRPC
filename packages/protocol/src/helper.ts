@@ -14,7 +14,7 @@ function canClone(obj: unknown) {
   return comproto.canHandle(obj);
 }
 
-const jsonSerializeFlag: number = 0xFFFF;
+const jsonSerializeFlag: number = 0xd5d6;
 // import { serialize, deserialize } from "v8";
 export const serialize = (data: unknown) => {
   try {
