@@ -150,9 +150,9 @@ export class TestService {
   }
   static testTransferAble(ctxA: TestService) {
     const u8 = new Uint8Array(10);
-    Object.bfslink.markCanTransfer(u8, true);
+    Object.bfslink.markTransferAble(u8, true);
     ctxA.printU8(u8, u8.length);
-    console.assert(u8.length === 0, "markCanTransfer");
+    console.assert(u8.length === 0, "markTransferAble");
   }
   static testPromise(ctxA: TestService) {
     return Promise.all([ctxA.think(10), ctxA.think(10)]);
@@ -241,8 +241,45 @@ export class TestService {
 
   static async testCloneAble2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     const obj = { a: 1, b: [1, "2", true] };
-    Object.bfslink.markCanClone(obj, true);
+    Object.bfslink.markCloneable(obj, true);
     console.assert((await ctxA.stringify(obj)) === JSON.stringify(obj), "clone able");
+  }
+
+  static async testCloneableComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
+    Object.bfslink.addCloneableClassHandler(TestCloneableComprotoHandler);
+    const obj = new TestCloneableComproto("Steve", "Jobs", 1);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+    Object.bfslink.markCloneable(obj, true);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === true, "TestCloneableComproto clone able");
+    Object.bfslink.markCloneable(obj, false);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+
+    // AggregateError
+    if (typeof AggregateError === 'function') {
+      const aggregateError = new AggregateError([new Error("test"), new ReferenceError("test")], "test");
+      Object.bfslink.markCloneable(aggregateError, true);
+      console.assert(Object.bfslink.isMarkedCloneable(aggregateError) === true, "AggregateError clone able");
+    }
+    // InternalError
+    if (typeof InternalError === 'function') {
+      const internalError = new InternalError("test", "test.js", 1);
+      Object.bfslink.markCloneable(internalError, true);
+      console.assert(Object.bfslink.isMarkedCloneable(internalError) === true, "InternalError clone able");
+    }
+
+    // Promise
+    const promise = new Promise((resolve, reject) => {});
+    try {
+      Object.bfslink.markCloneable(promise, true);
+    } catch(err) {}
+    console.assert(Object.bfslink.isMarkedCloneable(promise) === false, "Promise not clone able");
+  }
+
+  static async testSerializeComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
+    const obj = new TestCloneableComproto("Steve", "Jobs", 1);
+    const serializeData = Object.bfslink.serialize(obj);
+    const deserializeData = Object.bfslink.deserialize(serializeData) as TestCloneableComproto;
+    console.assert(obj.fullName === deserializeData.fullName && obj.age === deserializeData.age, "serialize able");
   }
 
   static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
@@ -252,6 +289,26 @@ export class TestService {
     await this.testThrow2(ctxA);
     await this.testPromise2(ctxA);
     await this.testCloneAble2(ctxA);
+    await this.testCloneableComproto(ctxA);
+    await this.testSerializeComproto(ctxA);
   }
   //#endregion
+}
+
+class TestCloneableComproto {
+  fullName: string;
+  constructor(public firstName: string, public lastName: string, public age: number) { 
+    this.fullName = this.firstName + " " + this.lastName;
+  }
+}
+
+const TestCloneableComprotoHandler = {
+  handlerName: "TestCloneableComprotoHandler",
+  handlerObj: TestCloneableComproto,
+  serialize(obj: TestCloneableComproto) {
+    return {firstName: obj.firstName, lastName: obj.lastName, age: obj.age, memo: "please drop me"};
+  },
+  deserialize(obj: {firstName: string, lastName: string, age: number, memo: string }){
+    return new TestCloneableComproto(obj.firstName, obj.lastName, obj.age);
+  }
 }

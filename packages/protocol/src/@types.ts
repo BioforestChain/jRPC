@@ -96,9 +96,13 @@ declare namespace EmscriptionLinkRefExtends {
 
 interface ObjectConstructor {
   readonly bfslink: Readonly<{
-    canTransfer(object: object): boolean;
-    markCanTransfer(object: object, canTransfer: boolean): void;
-    canClone(object: object): boolean;
-    markCanClone(object: object, canClone: boolean): void;
+    isMarkedTransferable(object: object): boolean;
+    markTransferAble(object: object, canTransfer: boolean): void;
+    isMarkedCloneable(object: object): boolean;
+    markCloneable(object: object, canClone: boolean): void;
+    addCloneableClassHandler(handler: BFChainComproto.TransferClassHandler): void;
+    deleteCloneableClassHandler(handlerName: string): void;
+    serialize(data: unknown): Uint8Array;
+    deserialize(u8: Uint8Array): unknown;
   }>;
 }
