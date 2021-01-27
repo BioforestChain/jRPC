@@ -246,30 +246,40 @@ export class TestService {
   }
 
   static async testCloneableComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
-    const obj = new TestCloneableComproto1("test", 1);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto1 not clone able");
-    Object.bfslink.markCloneable(obj, true);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === true, "TestCloneableComproto1 clone able");
-    Object.bfslink.markCloneable(obj, false);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto1 not clone able");
-
     Object.bfslink.addCloneableClassHandler(TestCloneableComprotoHandler);
-    const obj2 = new TestCloneableComproto2("test", 1);
-    console.assert(Object.bfslink.isMarkedCloneable(obj2) === true, "TestCloneableComproto2 clone able");
-    Object.bfslink.deleteCloneableClassHandler(TestCloneableComprotoHandler.handlerName);
-    console.assert(Object.bfslink.isMarkedCloneable(obj2) === false, "TestCloneableComproto2 not clone able");
+    const obj = new TestCloneableComproto("Steve", "Jobs", 1);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+    Object.bfslink.markCloneable(obj, true);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === true, "TestCloneableComproto clone able");
+    Object.bfslink.markCloneable(obj, false);
+    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+
+    // AggregateError
+    if (typeof AggregateError === 'function') {
+      const aggregateError = new AggregateError([new Error("test"), new ReferenceError("test")], "test");
+      Object.bfslink.markCloneable(aggregateError, true);
+      console.assert(Object.bfslink.isMarkedCloneable(aggregateError) === true, "AggregateError clone able");
+    }
+    // InternalError
+    if (typeof InternalError === 'function') {
+      const internalError = new InternalError("test", "test.js", 1);
+      Object.bfslink.markCloneable(internalError, true);
+      console.assert(Object.bfslink.isMarkedCloneable(internalError) === true, "InternalError clone able");
+    }
+
+    // Promise
+    const promise = new Promise((resolve, reject) => {});
+    try {
+      Object.bfslink.markCloneable(promise, true);
+    } catch(err) {}
+    console.assert(Object.bfslink.isMarkedCloneable(promise) === false, "Promise not clone able");
   }
 
   static async testSerializeComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
-    const obj = new TestCloneableComproto1("test", 1);
+    const obj = new TestCloneableComproto("Steve", "Jobs", 1);
     const serializeData = Object.bfslink.serialize(obj);
-    const deserializeData = Object.bfslink.deserialize(serializeData) as TestCloneableComproto1;
-    console.assert(obj.name === deserializeData.name && obj.age === deserializeData.age, "serialize able");
-
-    const obj2 = new TestCloneableComproto2("test", 1);
-    const serializeData2 = Object.bfslink.serialize(obj2);
-    const deserializeData2 = Object.bfslink.deserialize(serializeData2) as TestCloneableComproto2;
-    console.assert(obj2.name === deserializeData2.name && obj2.age === deserializeData2.age, "serialize able");
+    const deserializeData = Object.bfslink.deserialize(serializeData) as TestCloneableComproto;
+    console.assert(obj.fullName === deserializeData.fullName && obj.age === deserializeData.age, "serialize able");
   }
 
   static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
@@ -285,21 +295,20 @@ export class TestService {
   //#endregion
 }
 
-class TestCloneableComproto1 {
-  constructor(public name: string, public age: number) { }
+class TestCloneableComproto {
+  fullName: string;
+  constructor(public firstName: string, public lastName: string, public age: number) { 
+    this.fullName = this.firstName + " " + this.lastName;
+  }
 }
-
-class TestCloneableComproto2 extends TestCloneableComproto1 { }
 
 const TestCloneableComprotoHandler = {
   handlerName: "TestCloneableComprotoHandler",
-  handlerObj: TestCloneableComproto2,
-  serialize(obj: TestCloneableComproto2) {
-    return {name: obj.name, age: obj.age};
+  handlerObj: TestCloneableComproto,
+  serialize(obj: TestCloneableComproto) {
+    return {firstName: obj.firstName, lastName: obj.lastName, age: obj.age, memo: "please drop me"};
   },
-  deserialize(obj: { [key: string]: string | number }){
-    const name: string = obj['name'] as string  || "";
-    const age: number = obj['age'] as number || 0;
-    return new TestCloneableComproto2(name, age);
+  deserialize(obj: {firstName: string, lastName: string, age: number, memo: string }){
+    return new TestCloneableComproto(obj.firstName, obj.lastName, obj.age);
   }
 }

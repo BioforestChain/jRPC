@@ -1,100 +1,52 @@
-import { ComprotoFactroy } from '@bfchain/comproto';
+import { ComprotoFactory } from '@bfchain/comproto';
 
-const comproto = ComprotoFactroy.getSingleton();
-(function initExtendComprotoCloneableHandler() {
+const comproto = ComprotoFactory.getSingleton();
+
+function initExtendComprotoCloneableHandler() {
   // AggregateError
-  comproto.addClassHandler({
-    handlerObj: AggregateError,
-    handlerName: "AggregateError",
-    serialize(err: AggregateError) {
-      return {
-        name: err.name,
-        message: err.message,
-        stack: err.stack,
-        errors: err.errors,
-      };
-    },
-    deserialize(errorObject: { name: string, message: string, stack: string | undefined, errors: Error[] }) {
-      const err = new AggregateError(errorObject.errors, errorObject.message);
-      err.name = errorObject.name;
-      err.stack = errorObject.stack;
-      return err;
-    },
-  });
+  if (typeof AggregateError === "function") {
+    comproto.addClassHandler({
+      handlerObj: AggregateError,
+      handlerName: "AggregateError",
+      serialize(err: AggregateError) {
+        return {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          errors: err.errors,
+        };
+      },
+      deserialize(errorObject: { name: string, message: string, stack: string | undefined, errors: Error[] }) {
+        const err = new AggregateError(errorObject.errors, errorObject.message);
+        err.name = errorObject.name;
+        err.stack = errorObject.stack;
+        return err;
+      },
+    });
+  }
   //InternalError
-  comproto.addClassHandler({
-    handlerObj: InternalError,
-    handlerName: "InternalError",
-    serialize(err: InternalError) {
-      return {
-        name: err.name,
-        message: err.message,
-        stack: err.stack,
-        fileName: err.fileName,
-        lineNumber: err.lineNumber,
-      };
-    },
-    deserialize(errorObject: {name: string, message: string, stack: string | undefined, fileName:string | undefined, lineNumber: number | undefined}) {
-      const err = new InternalError(errorObject.message, errorObject.fileName, errorObject.lineNumber);
-      err.name = errorObject.name;
-      err.stack = errorObject.stack;
-      return err;
-    },
-  });
-  // BigInt64Array
-  comproto.addClassHandler({
-    handlerObj: BigInt64Array,
-    handlerName: "BigInt64Array",
-    serialize(arr: BigInt64Array) {
-      const i8adv = new DataView(new Int8Array(8 * arr.length).buffer);
-      arr.forEach((value, i) => {
-        i8adv.setBigInt64(i * 8, value);
-      });
-      return new Int8Array(i8adv.buffer);
-    },
-    deserialize(i8a: Int8Array) {
-      const u8adv = new DataView(i8a.buffer);
-      const len = i8a.length / 8;
-      const arr = new BigInt64Array(len);
-      for (let i = 0; i < len; i += 1) {
-        arr[i] = u8adv.getBigInt64(i * 8);
-      }
-      return arr;
-    },
-  });
-  // BigUint64Array
-  comproto.addClassHandler({
-    handlerObj: BigUint64Array,
-    handlerName: "BigUint64Array",
-    serialize(arr: BigUint64Array) {
-      const u8adv = new DataView(new Uint8Array(8 * arr.length).buffer);
-      arr.forEach((value, i) => {
-        u8adv.setBigUint64(i * 8, value);
-      });
-      return new Uint8Array(u8adv.buffer);
-    },
-    deserialize(u8a: Uint8Array) {
-      const u8adv = new DataView(u8a.buffer);
-      const len = u8a.length / 8;
-      const arr = new BigUint64Array(len);
-      for (let i = 0; i < len; i += 1) {
-        arr[i] = u8adv.getBigUint64(i * 8);
-      }
-      return arr;
-    },
-  });
-  // DataView
-  comproto.addClassHandler({
-    handlerObj: DataView,
-    handlerName: "DataView",
-    serialize(dataview: DataView) {
-      return new Uint8Array(dataview.buffer);
-    },
-    deserialize(u8a: Uint8Array) {
-      return new DataView(u8a);
-    },
-  });
-})();
+  if (typeof InternalError === "function") {
+    comproto.addClassHandler({
+      handlerObj: InternalError,
+      handlerName: "InternalError",
+      serialize(err: InternalError) {
+        return {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          fileName: err.fileName,
+          lineNumber: err.lineNumber,
+        };
+      },
+      deserialize(errorObject: {name: string, message: string, stack: string | undefined, fileName:string | undefined, lineNumber: number | undefined}) {
+        const err = new InternalError(errorObject.message, errorObject.fileName, errorObject.lineNumber);
+        err.name = errorObject.name;
+        err.stack = errorObject.stack;
+        return err;
+      },
+    });
+  }
+}
 
 export function addCloneableClassHandler(handler: BFChainComproto.TransferClassHandler) {
   return comproto.addClassHandler(handler);
@@ -104,8 +56,15 @@ export function deleteCloneableClassHandler(handlerName: string) {
   return comproto.deleteClassHandler(handlerName);
 }
 
+let _initExtendComprotoCloneableHandler = false;
 function isComprotoHandlable(obj: unknown) {
-  return comproto.canHandle(obj);
+  // add extend comproto calss Handler
+  if (_initExtendComprotoCloneableHandler == false) {
+    initExtendComprotoCloneableHandler();
+    _initExtendComprotoCloneableHandler = true;
+  }
+
+  return comproto.canTransferType(obj) || comproto.canHandle(obj);
 }
 
 export const serialize = (data: unknown) => {
@@ -130,7 +89,7 @@ export const markTransferAble = (obj: object, canTransfer: boolean) => {
 
 const CLONEABLE_OBJS = new WeakSet<object>();
 export const isMarkedCloneable = (obj: object) => {
-  return CLONEABLE_OBJS.has(obj) || isComprotoHandlable(obj);
+  return CLONEABLE_OBJS.has(obj);
 };
 export const markCloneable = (obj: object, canClone: boolean) => {
   if (isComprotoHandlable(obj) === false) {
