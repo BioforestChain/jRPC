@@ -31,16 +31,16 @@ export const enum SAB_MSG_TYPE {
 
 /**
  * SAB EVENT 数据格式
- * [TYPE,STATUS,eventId<i32>,msgTotalSize<i32>,chunkOffset,chunkSize,...chunk]
+ * [STATUS, TYPE(EVENT), eventId<i32>,chunkCount<u16>,chunkID<u16>,chunkSize<i32>,...chunk]
  */
 export const enum SAB_EVENT_HELPER {
   U32_EVENT_ID_INDEX = SAB_HELPER.SI32_MSG_TYPE + 1,
   /**分包的数量 */
-  U16_CHUNK_COUNT_INDEX = SAB_EVENT_HELPER.U32_EVENT_ID_INDEX * 2 + 1,
+  U16_CHUNK_COUNT_INDEX = (SAB_EVENT_HELPER.U32_EVENT_ID_INDEX + 1) * 2,
   /**分包的数据包编号 */
   U16_CHUNK_ID_INDEX = SAB_EVENT_HELPER.U16_CHUNK_COUNT_INDEX + 1,
   /**此分包数据包的大小 */
-  U32_MSG_CHUNK_SIZE_INDEX = SAB_EVENT_HELPER.U16_CHUNK_ID_INDEX / 2 + 1,
+  U32_MSG_CHUNK_SIZE_INDEX = SAB_EVENT_HELPER.U16_CHUNK_COUNT_INDEX / 2 + 1,
   U8_MSG_DATA_OFFSET = (SAB_EVENT_HELPER.U32_MSG_CHUNK_SIZE_INDEX + 1) *
     /* Int32Array.BYTES_PER_ELEMENT */ 4,
 }
