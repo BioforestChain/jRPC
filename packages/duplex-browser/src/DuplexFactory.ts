@@ -3,12 +3,17 @@ import { Endpoint } from "./Endpoint";
 
 const PORT_SABS_WM = new WeakMap<MessagePort, BFChainLink.Duplex.SABS>();
 
-export class DuplexFactory implements BFChainLink.Duplex.Factory {
+type _MessagePortTypeIn = Pick<MessagePort, "addEventListener" | "removeEventListener">;
+type _MessagePortTypeOut = Pick<MessagePort, "postMessage">;
+type _MessagePortTypeCtrl = Pick<MessagePort, "start" /* | "close" */>;
+
+export class DuplexFactory
+  implements BFChainLink.Duplex.Factory<_MessagePortTypeOut, _MessagePortTypeCtrl> {
+  static createMessageChannel() {
+    return new MessageChannel();
+  }
   /**作为子线程运作 */
-  static async asCluster(
-    workerSelf: Pick<MessagePort, "addEventListener" | "removeEventListener"> &
-      Partial<Pick<MessagePort, "start">>,
-  ) {
+  static async asCluster(workerSelf: _MessagePortTypeIn & Partial<_MessagePortTypeCtrl>) {
     let sabs: BFChainLink.Duplex.SABS | undefined;
     const port2 = await new Promise<MessagePort>((resolve, reject) => {
       const onMessage = (me: MessageEvent) => {
@@ -66,7 +71,7 @@ export class DuplexFactory implements BFChainLink.Duplex.Factory {
     return duplex;
   }
   /**作为主线程运作 */
-  asMain(workerIns: Pick<MessagePort, "postMessage"> & Partial<Pick<MessagePort, "start">>) {
+  asMain(workerIns: _MessagePortTypeOut & Partial<_MessagePortTypeCtrl>) {
     const sabs = this._getSabs(this._mc.port1);
     workerIns.start?.();
     try {
