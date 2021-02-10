@@ -10,6 +10,7 @@ declare namespace BFChainLink {
       interface Ctor<MP_I = any, MP_O = any, MP_C = any> {
         new (): Factory<MP_O, MP_C>;
         asCluster: AsCluster<MP_I, MP_C>;
+        createPorts(): { localePort: MP_I & MP_O & MP_C; remotePort: MP_I & MP_O & MP_C };
         prototype: Factory<MP_O, MP_C>;
       }
       type AsCluster<MP_I = any, MP_C = any> = (

@@ -9,8 +9,9 @@ type _MessagePortTypeCtrl = Pick<MessagePort, "start" /* | "close" */>;
 
 export class DuplexFactory
   implements BFChainLink.Duplex.Factory<_MessagePortTypeOut, _MessagePortTypeCtrl> {
-  static createMessageChannel() {
-    return new MessageChannel();
+  static createPorts() {
+    const { port1, port2 } = new MessageChannel();
+    return { localePort: port1, remotePort: port2 };
   }
   /**作为子线程运作 */
   static async asCluster(workerSelf: _MessagePortTypeIn & Partial<_MessagePortTypeCtrl>) {
