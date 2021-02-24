@@ -231,6 +231,10 @@ export class HolderReflect<T /* extends object */> implements BFChainLink.Holder
           iob,
         };
         break;
+      case IOB_Type.Var:
+        throw new TypeError();
+      default:
+        checkNever(iob);
     }
     if (isError) {
       newIobCacher = {
@@ -443,6 +447,84 @@ export class HolderReflect<T /* extends object */> implements BFChainLink.Holder
   @cacheGetter
   get apply() {
     return CallbackToAsyncBind(this.applyCallback, this);
+  }
+
+  //#endregion
+
+  //#region
+
+  private async unpromisifyApply_local(
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.AsyncReturnType<T>>,
+    thisArgument: unknown,
+    argumentsList: BFChainLink.AsyncUtil.Parameters<T>,
+  ) {
+    helper.resolveCallback(
+      cb,
+      await Reflect.apply(
+        ((this._iobCacher as unknown) as BFChainLink.HolderReflect.IOB_CacherLocal<Function>).value,
+        thisArgument,
+        argumentsList,
+      ),
+    );
+  }
+
+  unpromisifyApplyHolder(
+    thisArgument: unknown,
+    argumentsList: BFChainLink.AsyncUtil.Parameters<T>,
+  ) {
+    return this.createSubHolder<BFChainLink.AsyncUtil.AsyncReturnType<T>>([
+      EmscriptenReflect.UnpromisifyApply,
+      thisArgument,
+      ...argumentsList,
+    ]);
+  }
+
+  private unpromisifyApply_remote(
+    cb: CallbackAsyncValue<BFChainLink.AsyncUtil.AsyncReturnType<T>>,
+    thisArgument: unknown,
+    argumentsList: BFChainLink.AsyncUtil.Parameters<T>,
+  ) {
+    this.unpromisifyApplyHolder(thisArgument, argumentsList).toValueSync(cb);
+  }
+  @cacheGetter
+  get unpromisifyApplyCallback(): HolderReflect<T>["unpromisifyApply_remote"] {
+    const { _iobCacher: iobCacher } = this;
+
+    if (
+      // 未知，未发送
+      !iobCacher ||
+      // 未知，未返回
+      iobCacher.type === IOB_CACHE_STATUS.WAITING ||
+      /// 已知，远端是函数
+      (iobCacher.type === IOB_CACHE_STATUS.REMOTE_REF &&
+        iobCacher.iob.type === IOB_Type.Ref &&
+        iobCacher.iob.extends.type === IOB_Extends_Type.Function)
+    ) {
+      return this.unpromisifyApply_remote;
+    }
+    /// 已知，本地函数
+    if (iobCacher.type === IOB_CACHE_STATUS.LOCAL && typeof iobCacher.value === "function") {
+      return this.unpromisifyApply_local;
+    }
+
+    /// 其它
+    if (
+      iobCacher.type === IOB_CACHE_STATUS.REMOTE_REF ||
+      iobCacher.type === IOB_CACHE_STATUS.REMOTE_SYMBOL ||
+      iobCacher.type === IOB_CACHE_STATUS.LOCAL
+    ) {
+      return reflectForbidenMethods.apply;
+    }
+
+    if (iobCacher.type === IOB_CACHE_STATUS.THROW) {
+      return this.throw_binded;
+    }
+    /// 类型安全的非return结束
+    end(iobCacher);
+  }
+  @cacheGetter
+  get unpromisifyApply() {
+    return CallbackToAsyncBind(this.unpromisifyApplyCallback, this);
   }
 
   //#endregion

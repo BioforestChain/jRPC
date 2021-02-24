@@ -132,7 +132,9 @@ export function createHolderProxyHanlder<T extends object>(holderReflect: Holder
       return res;
     },
     apply: (_target, thisArg, argArray) => {
-      const applyHolderReflect = holderReflect.applyHolder(thisArg, argArray);
+      // holderReflect.toHolder()===thisArg
+      // getHolderReflect(thisArg) === holderReflect;
+      const applyHolderReflect = holderReflect.unpromisifyApplyHolder(thisArg, argArray);
       applyHolderReflect.toValueSync(() => {
         ///强行调取触发指令发送
       });

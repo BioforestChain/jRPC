@@ -15,6 +15,14 @@ export const enum IOB_Type {
   Locale,
   //   /**默认引用 */
   //   Default,
+
+  /**临时内存申请指令
+   * 用于Multi指令中：
+   * 原始对象默认为Var(i=0)，
+   * 后续每一个表达式，自动会隐式地赋值给Var(++i)
+   * 开发者可以显式地使用Var(n)来获取某一个表达式的存储值
+   */
+  Var,
 }
 
 export const enum IOB_Extends_Type {

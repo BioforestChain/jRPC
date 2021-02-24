@@ -28,7 +28,7 @@ export class ComlinkAsync
 
   protected $getEsmReflectHanlder(opeartor: EmscriptenReflect) {
     const hanlder = super.$getEsmReflectHanlder(opeartor);
-    if (opeartor === EmscriptenReflect.Apply || opeartor === EmscriptenReflect.SyncApply) {
+    if (opeartor === EmscriptenReflect.Apply || opeartor === EmscriptenReflect.UnpromisifyApply) {
       const applyHanlder = (target: Function, args: unknown[]) => {
         if (target === Function.prototype.toString) {
           const ctx = args[0] as Function;

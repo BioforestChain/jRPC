@@ -103,7 +103,7 @@ export const ESM_REFLECT_FUN_MAP = new Map<EmscriptenReflect, EsmReflectHanlder>
     ),
   ],
   [
-    EmscriptenReflect.SyncApply,
+    EmscriptenReflect.UnpromisifyApply,
     _AsyncToCallback((target: object, [ctx, ...args]: unknown[]) =>
       Reflect.apply(target as Function, ctx, args as ArrayLike<unknown>),
     ),

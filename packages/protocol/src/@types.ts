@@ -79,15 +79,20 @@ declare namespace EmscriptionLinkRefExtends {
     type: import("./const").IOB_Type.Locale;
     locId: number;
   };
+  type VarItem = {
+    type: import("./const").IOB_Type.Var;
+    id: number;
+  };
   // type LocalSymbolItem = {
   //   type: import("./const").IOB_Type.LocalSymbol;
   //   lsId: number;
   // };
 
-  type InOutObj = InOutObj.Local | InOutObj.Remote;
+  type InOutObj = InOutObj.Local | InOutObj.Remote | InOutObj.Cmd;
   namespace InOutObj {
     type Local = CloneItem | LocaleItem;
     type Remote = RefItem | RemoteSymbolItem;
+    type Cmd = VarItem;
   }
   // | LocalSymbolItem;
 

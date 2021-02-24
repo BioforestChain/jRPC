@@ -14,7 +14,7 @@ import { EmscriptenReflect, LinkObjType } from "@bfchain/link-typings";
 import { CallbackToSync } from "./helper";
 import { PROTOCAL_SENDER } from "./const";
 import type { ComlinkSync } from "./ComlinkSync";
-import { helper } from "@bfchain/link-core";
+import { helper, Var } from "@bfchain/link-core";
 
 const SENDER_MARKER = Symbol("linkInSender");
 
@@ -374,7 +374,9 @@ export class SyncModelTransfer extends ModelTransfer<ComlinkSync> {
         return cachedProxy;
       case IOB_Type.Clone:
         return bin.data;
+      case IOB_Type.Var:
+        return new Var(bin.id);
     }
-    throw new TypeError();
+    checkNever(bin);
   }
 }

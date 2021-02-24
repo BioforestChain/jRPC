@@ -116,6 +116,7 @@ declare namespace BFChainLink {
     type NoPrimitive<T> = T extends object ? T : never;
     type Parameters<T> = T extends (...args: infer P) => any ? P : never;
     type ReturnType<T> = T extends (...args: any) => infer R ? R : any;
+    type AsyncReturnType<T> = Util.Unpromisify<ReturnType<T>>
     type ConstructorParameters<T> = T extends new (...args: infer P) => any ? P : never;
     type InstanceType<T> = T extends new (...args: any) => infer R ? R : any;
     type PropertyKey<T> = keyof T;

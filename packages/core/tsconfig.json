@@ -17,6 +17,7 @@
     "src/helper.ts",
     "src/ImportStore.ts",
     "src/index.ts",
-    "src/refStore.ts"
+    "src/refStore.ts",
+    "src/Var.ts"
   ]
 }

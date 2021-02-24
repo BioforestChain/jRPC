@@ -1,7 +1,7 @@
 import { IOB_Type, ModelTransfer, refFunctionStaticToStringFactory } from "@bfchain/link-protocol";
 import { LinkObjType } from "@bfchain/link-typings";
 import type { ComlinkAsync } from "./ComlinkAsync";
-import { ComlinkCore, helper } from "@bfchain/link-core";
+import { ComlinkCore, helper, Var } from "@bfchain/link-core";
 import { HolderReflect } from "./HolderReflect";
 import { getHolderReflect, isHolder } from "./Holder";
 import { IOB_CACHE_STATUS } from "./const";
@@ -197,7 +197,9 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
         return cachedHolder;
       case IOB_Type.Clone:
         return bin.data;
+      case IOB_Type.Var:
+        return new Var(bin.id);
     }
-    throw new TypeError();
+    checkNever(bin);
   }
 }

@@ -52,7 +52,7 @@ export const enum EmscriptenReflect {
   /**批量操作 */
   Multi,
   /**强制异步转同步 */
-  SyncApply,
+  UnpromisifyApply,
   /**强制同步转异步 */
   AsyncApply,
 }

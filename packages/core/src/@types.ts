@@ -44,3 +44,5 @@ interface ObjectConstructor {
   refRemote: BFChainLink.RefStore["refRemote"];
   unrefRemote: BFChainLink.RefStore["unrefRemote"];
 }
+
+declare var checkNever: (arg: never) => never;

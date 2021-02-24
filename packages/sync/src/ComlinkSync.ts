@@ -34,7 +34,7 @@ export class ComlinkSync
 
   protected $getEsmReflectHanlder(opeartor: EmscriptenReflect) {
     const hanlder = super.$getEsmReflectHanlder(opeartor);
-    if (opeartor === EmscriptenReflect.Apply || opeartor === EmscriptenReflect.SyncApply) {
+    if (opeartor === EmscriptenReflect.Apply || opeartor === EmscriptenReflect.UnpromisifyApply) {
       const applyHanlder = (target: Function, args: unknown[]) => {
         if (target === Function.prototype.toString) {
           const ctx = args[0] as Function;
@@ -82,7 +82,7 @@ export class ComlinkSync
           return Reflect.get(fun, prop, r);
         },
         apply: (_target: Function, thisArg: any, argArray?: any) => {
-          return sender.req([EmscriptenReflect.SyncApply, thisArg, ...argArray]);
+          return sender.req([EmscriptenReflect.UnpromisifyApply, thisArg, ...argArray]);
         },
       }) as BFChainLink.AsyncToSync<T>;
 
