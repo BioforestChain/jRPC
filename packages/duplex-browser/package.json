@@ -1,14 +1,14 @@
 {
   "name": "@bfchain/link-duplex-browser",
-  "version": "1.3.5",
+  "version": "1.4.0",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-duplex-core": "1.3.5",
-    "@bfchain/link-typings": "1.3.3"
+    "@bfchain/link-duplex-core": "1.4.0",
+    "@bfchain/link-typings": "1.4.0"
   },
   "module": "build/esm/index.js",
   "gitHead": "8f7b1ef91bdaf676753a5ac6dd6def08ed3945ce"
