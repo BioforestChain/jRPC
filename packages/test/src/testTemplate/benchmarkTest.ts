@@ -1,4 +1,17 @@
+import { ComlinkSync } from "@bfchain/link";
 import { performance } from "perf_hooks";
+
+class ConfigServiceChild {
+  private config: { [key: string]: unknown } = {};
+  set(key: string, value: unknown) {
+    console.log("set", key);
+    return Reflect.set(this.config, key, value);
+  }
+  get<T>(key: string) {
+    console.log("get", key);
+    return Reflect.get(this.config, key) as T | undefined;
+  }
+}
 
 export class ConfigService {
   private config: { [key: string]: unknown } = {};
@@ -26,6 +39,8 @@ export class ConfigService {
   del(key: string) {
     return Reflect.deleteProperty(this.config, key);
   }
+
+  readonly child = new ConfigServiceChild();
 
   static testAll(ctxA: ConfigService, TIMES: number) {
     const s = performance.now();
@@ -106,5 +121,10 @@ export class ConfigService {
       console.assert((await ctxA.del("a")) === false, "freeze, could note delete");
     }
     return performance.now() - s;
+  }
+  static async test3(ctxA: BFChainLink.AsyncUtil.Remote<ConfigService>) {
+    const a1 = await ctxA.child.set("a", 1);
+    const a2 = await ctxA.child.get("a");
+    console.assert(a1 === a2);
   }
 }

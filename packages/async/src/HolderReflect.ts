@@ -1,4 +1,4 @@
-import { helper } from "@bfchain/link-core";
+import { helper, Var } from "@bfchain/link-core";
 import {
   globalSymbolStore,
   IMPORT_FUN_EXTENDS_SYMBOL,
@@ -297,45 +297,10 @@ export class HolderReflect<T /* extends object */> implements BFChainLink.Holder
 
   createSubHolder<T>(subHolderLinkIn: [EmscriptenReflect, ...unknown[]]) {
     const { linkSenderArgs } = this;
-    /// 从空指令变成单指令
-    if (linkSenderArgs.linkIn.length === 0) {
-      return new HolderReflect<T>(
-        {
-          ...linkSenderArgs,
-          linkIn: subHolderLinkIn,
-        },
-        this.core,
-      );
-    }
-    /// 单指令变成多指令
-    if (linkSenderArgs.linkIn[0] !== EmscriptenReflect.Multi) {
-      return new HolderReflect<T>(
-        {
-          ...linkSenderArgs,
-          linkIn: [
-            EmscriptenReflect.Multi,
-            /// 加入原有的单指令
-            linkSenderArgs.linkIn.length,
-            ...linkSenderArgs.linkIn,
-            /// 加入新的单指令
-            subHolderLinkIn.length,
-            ...subHolderLinkIn,
-          ],
-        },
-        this.core,
-      );
-    }
-
-    /// 维持多指令
     return new HolderReflect<T>(
       {
         ...linkSenderArgs,
-        linkIn: [
-          ...linkSenderArgs.linkIn,
-          /// 加入新的单指令
-          subHolderLinkIn.length,
-          ...subHolderLinkIn,
-        ],
+        linkIn: this.core.transfer.appendLinkIn(linkSenderArgs.linkIn, subHolderLinkIn),
       },
       this.core,
     );

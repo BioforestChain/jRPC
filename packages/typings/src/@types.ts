@@ -33,7 +33,11 @@ declare namespace BFChainLink {
     /**任意类型的对象 转换到 IOB
      * 因为obj的转换可能需要时间，所以这个接口是异步的
      */
-    Any2InOutBinary(cb: Callback<IOB>, obj: unknown,pushToRemote: (cb: BFChainLink.Callback<number>, obj: object) => void,): unknown;
+    Any2InOutBinary(
+      cb: Callback<IOB>,
+      obj: unknown,
+      pushToRemote: (cb: BFChainLink.Callback<number>, obj: object) => void,
+    ): unknown;
     /**IOB 转换到 任意类型的对象 */
     InOutBinary2Any(/* port: BinaryPort<TB>, */ bin: IOB): unknown;
 
@@ -138,4 +142,8 @@ declare namespace BFChainLink {
     type Promisify<T> = T extends PromiseLike<unknown> ? T : PromiseLike<T>;
     type Unpromisify<P> = P extends PromiseLike<infer T> ? T : P;
   }
+
+  type LinkIn = [import("./const").EmscriptenReflect, ...unknown[]];
 }
+
+declare var console: any;

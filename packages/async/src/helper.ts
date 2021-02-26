@@ -1,4 +1,7 @@
-import { helper } from "@bfchain/link-core";
+import { helper, Var } from "@bfchain/link-core";
+import { EmscriptenReflect } from "@bfchain/link-typings";
+import { cleanAllGetterCache, cacheGetter, cleanGetterCache } from "@bfchain/util-decorator";
+
 export function CallbackToAsync<R, ARGS extends readonly unknown[]>(
   cbCaller: (cb: BFChainLink.Callback<R>, ...args: ARGS) => void,
   args: ARGS,
@@ -92,4 +95,126 @@ export function isNoNilPrimivite(value: unknown) {
       return true;
   }
   return false;
+}
+
+export class GroupItem {
+  constructor(public readonly target: number | Var, public readonly linkIn: BFChainLink.LinkIn) {}
+  clearGetterCache() {
+    cleanGetterCache(this, "startIndex");
+    cleanGetterCache(this, "endIndex");
+    // 后续的节点也要清除
+    this.nextItem?.clearGetterCache();
+  }
+  private _prevItem?: GroupItem;
+  public get prevItem() {
+    return this._prevItem;
+  }
+  public set prevItem(value) {
+    if (value !== this._prevItem) {
+      this._prevItem = value;
+      value && (value.nextItem = this);
+      this.clearGetterCache();
+    }
+  }
+  private _nextItem?: GroupItem;
+  public get nextItem() {
+    return this._nextItem;
+  }
+  public set nextItem(value) {
+    if (value !== this._nextItem) {
+      this._nextItem = value;
+      value && (value.prevItem = this);
+      this.clearGetterCache();
+    }
+  }
+  @cacheGetter
+  get startIndex() {
+    return this.prevItem ? this.prevItem.endIndex + 1 : 0;
+  }
+  @cacheGetter
+  get endIndex(): number {
+    return this.startIndex + this.linkIn.length + 2 /* target+length */;
+  }
+  get length() {
+    return this.linkIn.length;
+  }
+}
+
+export class LinkInGroup {
+  constructor(readonly itemList: GroupItem[] = []) {}
+  append(groupItem: GroupItem) {
+    this.insert(this.itemList.length, groupItem);
+  }
+  insert(index: number, groupItem: GroupItem) {
+    const { itemList } = this;
+    const prev = itemList[index - 1] as GroupItem | undefined;
+    const next = itemList[index] as GroupItem | undefined;
+
+    let movedVars: Set<Var> | undefined;
+    const moveVarId = (param: Var) => {
+      if (movedVars === undefined) {
+        movedVars = new Set();
+      } else if (movedVars.has(param)) {
+        return;
+      }
+      movedVars.add(param);
+
+      /// 顺序模式下，往后偏移
+      if (param.id > index) {
+        param.id += 1;
+      }
+      // /// 逆序模式，如果要保持逆序，那么往前偏移，或者直接转正绕过条件。
+      // else if (param.id < 0) {
+      //   /**
+      //    * 这里直接转正，因为varList的长度在执行过程中长度会一直改变，所以逆序的可靠性不如正序
+      //    * Var对象可能在不同的GroupItem中共享
+      //    */
+      //   const orderId = param.id + oldCount;
+      //   if (orderId < index) {
+      //     param.id = orderId;
+      //   }
+      // }
+    };
+    /// 对Var对象的指针进行偏移
+    for (const item of itemList) {
+      for (const param of item.linkIn) {
+        if (param instanceof Var) {
+          moveVarId(param);
+        }
+      }
+      if (item.target instanceof Var) {
+        moveVarId(item.target);
+      }
+    }
+
+    /// 最后执行插入
+    groupItem.prevItem = prev;
+    groupItem.nextItem = next;
+    itemList.splice(index, 0, groupItem);
+  }
+  get lastestItem() {
+    return this.itemList[this.itemList.length - 1] as GroupItem | undefined;
+  }
+  get size() {
+    return this.itemList.length;
+  }
+  toLinkIn() {
+    const linkIn: BFChainLink.LinkIn = [EmscriptenReflect.Multi];
+    for (const item of this.itemList) {
+      linkIn.push(item.target, item.length, ...item.linkIn);
+    }
+    return linkIn;
+  }
+  static from(multiLinkIn: unknown[]) {
+    const itemList: GroupItem[] = [];
+    for (let i = 1; i < multiLinkIn.length; ) {
+      const target = multiLinkIn[i] as number | Var;
+      const len = multiLinkIn[i + 1] as number;
+      const linkIn = multiLinkIn.slice(i + 2, i + 2 + len) as BFChainLink.LinkIn;
+      itemList.push(new GroupItem(target, linkIn));
+
+      i += len + 2;
+    }
+    return new LinkInGroup(itemList);
+  }
 }

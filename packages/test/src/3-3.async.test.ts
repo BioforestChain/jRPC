@@ -22,9 +22,10 @@ installNativeEnv(
      */
     const ctxA = await moduleB.import<ConfigService>();
 
-    const TIMES = 1000;
-    console.log("start run test %d times", TIMES);
-    const caseTime = await ConfigService.testAll2(ctxA, TIMES);
-    console.log("use %d ms", caseTime);
+    // const TIMES = 1000;
+    // console.log("start run test %d times", TIMES);
+    // const caseTime = await ConfigService.testAll2(ctxA, TIMES);
+    // console.log("use %d ms", caseTime);
+    await ConfigService.test3(ctxA);
   },
 );

@@ -104,14 +104,20 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
               | undefined;
             const varList: unknown[] = [obj];
             for (let i = 0; i < paramList.length; ) {
-              const len = paramList[i] as number;
-              const $operator = paramList[i + 1] as EmscriptenReflect;
+              const $obj_source = paramList[i] as Var | number;
+              const $obj =
+                $obj_source instanceof Var
+                  ? $obj_source.read(varList)
+                  : this.exportStore.getObjById($obj_source);
+
+              const len = paramList[i + 1] as number;
+              const $operator = paramList[i + 2] as EmscriptenReflect;
               const $paramList = paramList
-                .slice(i + 2, i + 1 + len)
-                .map((param) => (param instanceof Var ? varList[param.id] : param));
+                .slice(i + 3, i + 3 + len - 1 /* - opeartor */)
+                .map((param) => (param instanceof Var ? param.read(varList) : param));
               $handler = this.$getEsmReflectHanlder($operator);
               res = $handler.fun(
-                res,
+                $obj,
                 $handler.paramListDeserialization?.($paramList) || $paramList,
               );
               if ($handler.isAsync) {
@@ -119,7 +125,7 @@ export abstract class ComlinkCore<IOB /*  = unknown */, TB /*  = unknown */, IMP
               }
               varList.push(res);
               /// 因为是链式操作， 所以不需要立即执行hanlder对res进行编码
-              i += len + 1;
+              i += len + 2;
             }
             res = $handler?.resultSerialization?.(res) || [res];
           } else {

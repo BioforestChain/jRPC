@@ -22,9 +22,10 @@ installWorkerEnv(
      */
     const ctxA = await moduleB.import<ConfigService>();
 
-    const TIMES = 100;
-    console.warn("start run test %d times", TIMES);
-    const caseTime = await ConfigService.testAll2(ctxA, TIMES);
-    console.warn("use %d ms", caseTime);
+    // const TIMES = 100;
+    // console.warn("start run test %d times", TIMES);
+    // const caseTime = await ConfigService.testAll2(ctxA, TIMES);
+    // console.warn("use %d ms", caseTime);
+    await ConfigService.test3(ctxA);
   },
 );

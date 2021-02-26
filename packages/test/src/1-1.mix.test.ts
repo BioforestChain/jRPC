@@ -32,7 +32,8 @@ installMixEnv(
 
     const ctxA = await moduleB.import<TestService>();
     Reflect.set(globalThis, "ctxA", ctxA);
-    await TestService.testAll2(ctxA);
+    // await TestService.testAll2(ctxA);
+    await TestService.testChainCall(ctxA);
   },
   async (moduleB, console) => {
     /**

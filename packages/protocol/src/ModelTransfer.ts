@@ -1,4 +1,4 @@
-import { ComlinkCore, helper } from "@bfchain/link-core";
+import { ComlinkCore, helper, Var } from "@bfchain/link-core";
 import {
   IOB_Type,
   globalSymbolStore,
@@ -154,7 +154,12 @@ export abstract class ModelTransfer<
               break;
             case "function":
             case "object":
-              if (any !== null) {
+              if (any instanceof Var) {
+                item = {
+                  type: IOB_Type.Var,
+                  id: any.id,
+                };
+              } else if (any !== null) {
                 item = {
                   type: IOB_Type.Ref,
                   refId: this.core.exportStore.exportObject(any),

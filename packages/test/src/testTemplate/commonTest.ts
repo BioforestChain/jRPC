@@ -1,10 +1,23 @@
 // 通用测试
 
+import { markCloneable } from "@bfchain/link";
 import { format } from "util";
 
+class SimpleStorage {
+  private config: { [key: string]: unknown } = {};
+  set(key: string, value: unknown) {
+    return Reflect.set(this.config, key, value);
+  }
+  get<T>(key: string) {
+    const res = { v: Reflect.get(this.config, key) as T | undefined, height: 1 };
+    markCloneable(res, true);
+    return res;
+  }
+}
 /**基础测试类 */
 export class TestService {
   private name = "Gaubee";
+  readonly data = new SimpleStorage();
   say(word: string) {
     return `${this.name}: xxxx-${word}-xxxx`;
   }
@@ -248,30 +261,48 @@ export class TestService {
   static async testCloneableComproto(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
     Object.bfslink.addCloneableClassHandler(TestCloneableComprotoHandler);
     const obj = new TestCloneableComproto("Steve", "Jobs", 1);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+    console.assert(
+      Object.bfslink.isMarkedCloneable(obj) === false,
+      "TestCloneableComproto not clone able",
+    );
     Object.bfslink.markCloneable(obj, true);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === true, "TestCloneableComproto clone able");
+    console.assert(
+      Object.bfslink.isMarkedCloneable(obj) === true,
+      "TestCloneableComproto clone able",
+    );
     Object.bfslink.markCloneable(obj, false);
-    console.assert(Object.bfslink.isMarkedCloneable(obj) === false, "TestCloneableComproto not clone able");
+    console.assert(
+      Object.bfslink.isMarkedCloneable(obj) === false,
+      "TestCloneableComproto not clone able",
+    );
 
     // AggregateError
-    if (typeof AggregateError === 'function') {
-      const aggregateError = new AggregateError([new Error("test"), new ReferenceError("test")], "test");
+    if (typeof AggregateError === "function") {
+      const aggregateError = new AggregateError(
+        [new Error("test"), new ReferenceError("test")],
+        "test",
+      );
       Object.bfslink.markCloneable(aggregateError, true);
-      console.assert(Object.bfslink.isMarkedCloneable(aggregateError) === true, "AggregateError clone able");
+      console.assert(
+        Object.bfslink.isMarkedCloneable(aggregateError) === true,
+        "AggregateError clone able",
+      );
     }
     // InternalError
-    if (typeof InternalError === 'function') {
+    if (typeof InternalError === "function") {
       const internalError = new InternalError("test", "test.js", 1);
       Object.bfslink.markCloneable(internalError, true);
-      console.assert(Object.bfslink.isMarkedCloneable(internalError) === true, "InternalError clone able");
+      console.assert(
+        Object.bfslink.isMarkedCloneable(internalError) === true,
+        "InternalError clone able",
+      );
     }
 
     // Promise
     const promise = new Promise((resolve, reject) => {});
     try {
       Object.bfslink.markCloneable(promise, true);
-    } catch(err) {}
+    } catch (err) {}
     console.assert(Object.bfslink.isMarkedCloneable(promise) === false, "Promise not clone able");
   }
 
@@ -279,7 +310,16 @@ export class TestService {
     const obj = new TestCloneableComproto("Steve", "Jobs", 1);
     const serializeData = Object.bfslink.serialize(obj);
     const deserializeData = Object.bfslink.deserialize(serializeData) as TestCloneableComproto;
-    console.assert(obj.fullName === deserializeData.fullName && obj.age === deserializeData.age, "serialize able");
+    console.assert(
+      obj.fullName === deserializeData.fullName && obj.age === deserializeData.age,
+      "serialize able",
+    );
+  }
+
+  static async testChainCall(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
+    await ctxA.data.set("a", 1);
+    const a = await ctxA.data.get("a");
+    console.log(JSON.stringify(a) === JSON.stringify({ v: 1, height: 1 }));
   }
 
   static async testAll2(ctxA: BFChainLink.AsyncUtil.Remote<TestService>) {
@@ -297,7 +337,7 @@ export class TestService {
 
 class TestCloneableComproto {
   fullName: string;
-  constructor(public firstName: string, public lastName: string, public age: number) { 
+  constructor(public firstName: string, public lastName: string, public age: number) {
     this.fullName = this.firstName + " " + this.lastName;
   }
 }
@@ -306,9 +346,14 @@ const TestCloneableComprotoHandler = {
   handlerName: "TestCloneableComprotoHandler",
   handlerObj: TestCloneableComproto,
   serialize(obj: TestCloneableComproto) {
-    return {firstName: obj.firstName, lastName: obj.lastName, age: obj.age, memo: "please drop me"};
+    return {
+      firstName: obj.firstName,
+      lastName: obj.lastName,
+      age: obj.age,
+      memo: "please drop me",
+    };
   },
-  deserialize(obj: {firstName: string, lastName: string, age: number, memo: string }){
+  deserialize(obj: { firstName: string; lastName: string; age: number; memo: string }) {
     return new TestCloneableComproto(obj.firstName, obj.lastName, obj.age);
-  }
-}
+  },
+};
