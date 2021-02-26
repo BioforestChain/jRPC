@@ -4,7 +4,7 @@
   ],
   "useWorkspaces": true,
   "npmClient": "yarn",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "publishConifg": {
     "registry": "http://192.168.250.245:4873/"
   },
