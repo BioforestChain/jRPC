@@ -301,7 +301,7 @@ export class AsyncModelTransfer extends ModelTransfer<ComlinkAsync> {
       if (iob.type === IOB_Type.Clone) {
         obj = iob.data;
       } else {
-        throw new TypeError(`@TODO: fix reflectHolder.iob.type ${iob.type}`);
+        // throw new TypeError(`@TODO: fix reflectHolder.iob.type ${iob.type}`);
       }
     }
     return super.Any2InOutBinary(cb, obj, pushToRemote);
