@@ -363,7 +363,7 @@ export class Duplex /* <TB> */ implements BFChainLink.Channel.Duplex<TB> {
           };
           break;
         case MESSAGE_TYPE.RES:
-          const isError = msgBinary[6] === 1;
+          const isError = msgBinary[5] === 1;
           const msgContent: BFChainLink.CallbackArg<Uint8Array | undefined, undefined> = isError
             ? {
                 isError: true,
