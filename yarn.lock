@@ -35,34 +35,34 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@bfchain/comproto-core@1.3.3":
-  version "1.3.3"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-core/-/comproto-core-1.3.3.tgz#b46f56dd2ce2e9dbc827f23e017aa7cd1257661d"
-  integrity sha512-Kh2oAd0F8XZ2F3WRzOyA8HLOCiSarSfXM8ABuXQAfGKZP4C2ob30CoACi6pnMCk3gbOrWRyx5pxTnMkrQiXbtQ==
+"@bfchain/comproto-core@1.3.4":
+  version "1.3.4"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-core/-/comproto-core-1.3.4.tgz#8ccd9b57abe81521220e72586185bce2efc20422"
+  integrity sha512-3chCYhUtYRdh1ZHIhI4KID0gfZvpjrqaTDCuI/c0O9z9KOzWg64vvDuk4Ia73AuTszCfJQoytBXlz81sOmd/Mw==
   dependencies:
-    "@bfchain/comproto-helps" "1.3.3"
-    "@bfchain/comproto-typings" "1.3.3"
+    "@bfchain/comproto-helps" "1.3.4"
+    "@bfchain/comproto-typings" "1.3.4"
 
-"@bfchain/comproto-helps@1.3.3":
-  version "1.3.3"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-helps/-/comproto-helps-1.3.3.tgz#66133c1a1886be0f10ce752bbb3ce706eae53a6e"
-  integrity sha512-IJkRvDsyDAQtfo0OoPLC8+DKUHz/odNk+/S7w8gTrmQIVYxQGSGEWBXaXQhNu7Ow4rA51DyNTd9EflwGiIEv/A==
+"@bfchain/comproto-helps@1.3.4":
+  version "1.3.4"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-helps/-/comproto-helps-1.3.4.tgz#6adb27230723bc601037b261539ef860a7c16aba"
+  integrity sha512-CrfHoH4XtMriw3iU/m4Ask8EwKPxEAno5qdPZsrJ3eS2PNTPbk2mCEty4K4LzsemgjTYlghgm593+CN+Sp7NHw==
   dependencies:
-    "@bfchain/comproto-typings" "1.3.3"
+    "@bfchain/comproto-typings" "1.3.4"
 
-"@bfchain/comproto-typings@1.3.3":
-  version "1.3.3"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-typings/-/comproto-typings-1.3.3.tgz#ce6b92a43759688cc40f3345e4e1a8233c694c03"
-  integrity sha512-MGyZEXZc8W2sOL1gaX2eCwgmQW4o3Dq9GHPKHYjFbfMGEcYw2D98cNZCggRQJG6DsO7u+tOK4G/diwPAdZ65MQ==
+"@bfchain/comproto-typings@1.3.4":
+  version "1.3.4"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-typings/-/comproto-typings-1.3.4.tgz#490866c8be34368e3d3437506215967c124ec286"
+  integrity sha512-KiYy5srDbtHXg4ePgEpCk3Mq0HwGoLomtGSjoTGjt6B/zczMuBjvTU+VlvgmaIPrFHy6UTWZ9DiBO2E7xl9m/Q==
 
-"@bfchain/comproto@~1.3.2":
-  version "1.3.3"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto/-/comproto-1.3.3.tgz#4a1b32076811409ace33deed95b068656a1ddba8"
-  integrity sha512-5RaRQ+fojmRLrTsfN2BIFzJ3fGZZgWiFnh2VmFBg6KwKa0kSTW8ObnzHSJoNATt72UqG79N2pxAAsWiWX7vaFQ==
+"@bfchain/comproto@~1.3.3":
+  version "1.3.4"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto/-/comproto-1.3.4.tgz#230c65a0df96896c7287a0f06a4069a8ab84742f"
+  integrity sha512-iFiLCkHrlZjv+5e+3xb3xssbUiTfAEZ7jL4uUvN3j9DU7N0gBb99wcPXcgVahd0khJcqqlMqVFT4KkJWe2uE/Q==
   dependencies:
-    "@bfchain/comproto-core" "1.3.3"
-    "@bfchain/comproto-helps" "1.3.3"
-    "@bfchain/comproto-typings" "1.3.3"
+    "@bfchain/comproto-core" "1.3.4"
+    "@bfchain/comproto-helps" "1.3.4"
+    "@bfchain/comproto-typings" "1.3.4"
 
 "@bfchain/devkit-ts-creator@^1.3.4":
   version "1.3.4"
