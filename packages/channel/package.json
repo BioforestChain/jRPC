@@ -1,17 +1,17 @@
 {
   "name": "@bfchain/link-channel",
-  "version": "1.4.2",
+  "version": "1.4.4",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-async": "1.4.2",
-    "@bfchain/link-core": "1.4.0",
-    "@bfchain/link-protocol": "1.4.2",
-    "@bfchain/link-sync": "1.4.2",
-    "@bfchain/link-typings": "1.4.0"
+    "@bfchain/link-async": "1.4.4",
+    "@bfchain/link-core": "1.4.4",
+    "@bfchain/link-protocol": "1.4.4",
+    "@bfchain/link-sync": "1.4.4",
+    "@bfchain/link-typings": "1.4.4"
   },
   "module": "build/esm/index.js",
   "gitHead": "8f7b1ef91bdaf676753a5ac6dd6def08ed3945ce"
