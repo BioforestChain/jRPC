@@ -35,10 +35,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@bfchain/comproto-core@1.5.2":
-  version "1.5.2"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-core/-/comproto-core-1.5.2.tgz#68176b04d8ba4252767804656ada0639162e8946"
-  integrity sha512-rP1AfGoGv8zjUt2lb7CM6DNBGSPZcJOaE7S/krgkywnGYa6lgGgYBiP+/0kSWb0ali7TmnuGUZ5HvNXXGvN7Sg==
+"@bfchain/comproto-core@1.4.5":
+  version "1.4.5"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-core/-/comproto-core-1.4.5.tgz#3d5d42cbdf3070a0c39d27bec125a4a09dcb8187"
+  integrity sha512-ULIS823fj6rV5Pzl/r7Ly/2FBA9aKHKy8Xg/g4Oz638KOEH9OIjHdkkKA4xIHlXft9q4qAtauTdckdSmEA5Asw==
   dependencies:
     "@bfchain/comproto-helps" "1.4.2"
     "@bfchain/comproto-typings" "1.4.2"
@@ -55,12 +55,12 @@
   resolved "http://192.168.250.245:4873/@bfchain%2fcomproto-typings/-/comproto-typings-1.4.2.tgz#8f9289224902e01891f545256aab45b373c5326a"
   integrity sha512-fnfxsYBXx+DYHn9yyHLxTdpvHczsLBgWgmVXQVQ8/4M0EhjjqHXdHublDQcokpn8A1fNgpKrgCPPTH/Sx4A0pg==
 
-"@bfchain/comproto@~1.5.2":
-  version "1.5.2"
-  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto/-/comproto-1.5.2.tgz#e517021b6a5bc756b7090c83313edc6bc601ee8a"
-  integrity sha512-RaVXCmpE4eAPdgx6LKcDNyIwavQsvV5r4gdudGZsBnPBE7U0/Wlr2hUQhZXRN98ky7IRLZckGeloGaRk7R0vZg==
+"@bfchain/comproto@~1.4.5":
+  version "1.4.5"
+  resolved "http://192.168.250.245:4873/@bfchain%2fcomproto/-/comproto-1.4.5.tgz#2301b9563632144232ca9e5b2821915794ae39c1"
+  integrity sha512-03pTuXNl3YacscVijglIv0IXQIIkzv+sQcPpBeVVxpoau8YvhaMRcRiEbTA7i/09Xas2iItYHZzTwo5iyBP0oA==
   dependencies:
-    "@bfchain/comproto-core" "1.5.2"
+    "@bfchain/comproto-core" "1.4.5"
     "@bfchain/comproto-helps" "1.4.2"
     "@bfchain/comproto-typings" "1.4.2"
 
