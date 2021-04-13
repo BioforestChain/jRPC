@@ -1,15 +1,15 @@
 {
   "name": "@bfchain/link-async",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-core": "1.4.4",
-    "@bfchain/link-protocol": "1.4.4",
-    "@bfchain/link-typings": "1.4.4",
+    "@bfchain/link-core": "1.4.5",
+    "@bfchain/link-protocol": "1.4.5",
+    "@bfchain/link-typings": "1.4.5",
     "@bfchain/util-decorator": "^4.10.27",
     "@bfchain/util-extends-promise": "^4.10.27"
   },

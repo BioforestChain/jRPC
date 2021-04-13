@@ -1,15 +1,15 @@
 {
   "name": "@bfchain/link-sync",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "main": "build/cjs/index.js",
   "type": "build/cjs/index.d.ts",
   "files": [
     "build"
   ],
   "dependencies": {
-    "@bfchain/link-core": "1.4.4",
-    "@bfchain/link-protocol": "1.4.4",
-    "@bfchain/link-typings": "1.4.4"
+    "@bfchain/link-core": "1.4.5",
+    "@bfchain/link-protocol": "1.4.5",
+    "@bfchain/link-typings": "1.4.5"
   },
   "module": "build/esm/index.js",
   "gitHead": "8f7b1ef91bdaf676753a5ac6dd6def08ed3945ce"
